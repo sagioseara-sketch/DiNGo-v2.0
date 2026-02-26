@@ -27,16 +27,17 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
   // ── dingo-beta-v1-2 production config ──
-  const firebaseConfig = {
-    apiKey:            "AIzaSyAV6qgt9ATk4MjjaT9VHSXRJeP--U9A3ZA",
-    authDomain:        "dingo-beta-v1-2.firebaseapp.com",
-    databaseURL:       "https://dingo-beta-v1-2-default-rtdb.firebaseio.com",
-    projectId:         "dingo-beta-v1-2",
-    storageBucket:     "dingo-beta-v1-2.firebasestorage.app",
-    messagingSenderId: "436822595844",
-    appId:             "1:436822595844:web:0effff2e90bc8929d8d851",
-    measurementId:     "G-XH2LQVRY5W"
-  };
+  
+    const firebaseConfig = {
+  apiKey: "AIzaSyAV6qgt9ATk4MjjaT9VHSXRJeP--U9A3ZA",
+  authDomain: "dingo-beta-v1-2.firebaseapp.com",
+  databaseURL: "https://dingo-beta-v1-2-default-rtdb.firebaseio.com",
+  projectId: "dingo-beta-v1-2",
+  storageBucket: "dingo-beta-v1-2.firebasestorage.app",
+  messagingSenderId: "436822595844",
+  appId: "1:436822595844:web:0effff2e90bc8929d8d851",
+  measurementId: "G-XH2LQVRY5W"
+};
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);

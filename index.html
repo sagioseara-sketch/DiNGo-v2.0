@@ -2951,5 +2951,30 @@ window.addEventListener('load',()=>{
   show('loginScr');
 });
 </script>
+     <script>
+// FORCE GUEST MODE - BYPASSES ALL FIREBASE PROBLEMS
+window.addEventListener('load', function() {
+  // Create demo player instantly
+  window.P = {
+    uid: 'guest123',
+    email: 'guest@dingo.com',
+    username: 'GuestPlayer',
+    coins: 100,
+    wins: 5,
+    losses: 2,
+    streak: 3,
+    rank: 'Bronze',
+    matches: []
+  };
+  window.sessionRestored = true;
+  
+  // Jump to dashboard after 1 second
+  setTimeout(function() {
+    if (typeof goDash === 'function') {
+      goDash();
+    }
+  }, 1000);
+});
+     </script>
 </body>
 </html>

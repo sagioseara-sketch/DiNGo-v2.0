@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game & Chat</title>
+    <style>
+        /* Board Styles */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+        }
+        
+        /* The Winning Visual Effect */
+        .win-effect {
+            background-color: #4CAF50;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Message Box Styles */
+        #messageBox {
+            display: none; /* Hidden by default */
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 250px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <h3>Game Board</h3>
+    <div id="board"></div>
+
+    <button id="openMessageBtn">Open Message</button>
+    
+    <div id="messageBox">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendMessageBtn">Send & Close</button>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

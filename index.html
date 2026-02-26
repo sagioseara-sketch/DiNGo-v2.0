@@ -1,64 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game & Chat</title>
-    <style>
-        /* Board Styles */
-        #board {
-            display: grid;
-            grid-template-columns: repeat(5, 50px);
-            gap: 5px;
-            margin-bottom: 20px;
-        }
-        .cell {
-            width: 50px;
-            height: 50px;
-            background-color: #eee;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-        }
-        
-        /* The Winning Visual Effect */
-        .win-effect {
-            background-color: #4CAF50;
-            color: white;
-            animation: pulse 1s infinite;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>DiNGo — Multiplayer Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #07090f; --surf: #0d1220; --surf2: #131927; --border: rgba(255,255,255,0.07);
+      --cyan: #00e5ff; --pink: #ff3cac; --gold: #ffd166; --green: #06ffa5;
+      --text: #dde6f0; --muted: #4e5f78; --radius: 14px;
+    }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
+    /* Existing Styles + New Animations */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+    
+    .bg-mesh { position: fixed; inset: 0; z-index: 0; background: radial-gradient(circle at 50% 50%, rgba(0,229,255,0.05), transparent); }
+    
+    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: all 0.4s ease; z-index: 10; }
+    .screen.active { opacity: 1; pointer-events: all; transform: scale(1); }
 
-        /* Message Box Styles */
-        #messageBox {
-            display: none; /* Hidden by default */
-            border: 1px solid #ccc;
-            padding: 10px;
-            width: 250px;
-            background-color: #f9f9f9;
-        }
-    </style>
+    .card { background: var(--surf); border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 440px; padding: 30px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    
+    /* New: Glowing Line Effect */
+    .cell.winning-line {
+      background: var(--gold) !important;
+      color: #000 !important;
+      box-shadow: 0 0 20px var(--gold);
+      animation: glowPulse 1.5s infinite;
+      z-index: 2;
+    }
+    @keyframes glowPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); box-shadow: 0 0 30px var(--gold); }
+      100% { transform: scale(1); }
+    }
+
+    /* Buttons & Inputs */
+    .btn { cursor: pointer; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; text-transform: uppercase; transition: 0.2s; width: 100%; margin-top: 10px; }
+    .btn-cyan { background: var(--cyan); color: #000; }
+    .btn-ghost { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border); }
+    .btn-close-chat { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+
+    input { width: 100%; padding: 12px; background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; color: #fff; margin-bottom: 10px; }
+
+    /* Board Grid */
+    .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; aspect-ratio: 1; margin: 20px 0; }
+    .cell { background: var(--surf2); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 24px; cursor: pointer; transition: 0.2s; }
+    .cell.crossed { background: rgba(255,60,172,0.2); border-color: var(--pink); color: var(--pink); }
+
+    /* Chat UI */
+    .chat-fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--cyan); border: none; font-size: 24px; cursor: pointer; z-index: 100; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    .chat-panel { position: fixed; bottom: 90px; right: 20px; width: 280px; background: var(--surf); border: 1px solid var(--border); border-radius: 20px; padding: 15px; display: none; z-index: 99; flex-direction: column; }
+    .chat-panel.open { display: flex; }
+    .emoji-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+    .emoji-btn { font-size: 24px; background: none; border: none; cursor: pointer; transition: 0.2s; }
+    .emoji-btn:hover { transform: scale(1.2); }
+  </style>
 </head>
 <body>
 
-    <h3>Game Board</h3>
-    <div id="board"></div>
+<div class="bg-mesh"></div>
 
-    <button id="openMessageBtn">Open Message</button>
+<div id="home-screen" class="screen active">
+  <div class="card">
+    <h1 style="font-family:'Bebas Neue'; font-size: 60px; text-align: center; color: var(--cyan);">DiNGo</h1>
+    <button id="create-btn" class="btn btn-cyan">Create Room</button>
+    <div style="margin: 20px 0; text-align: center; color: var(--muted);">OR</div>
+    <input id="room-code-input" type="text" placeholder="Enter Room Code" maxlength="4" />
+    <button id="join-btn" class="btn btn-ghost">Join Room</button>
+  </div>
+</div>
+
+<div id="setup-screen" class="screen">
+  <div class="card">
+    <h2 id="display-room-code" style="color: var(--gold); text-align: center;">CODE</h2>
+    <p style="text-align: center; font-size: 12px; color: var(--muted);">Tap to arrange 1-25</p>
+    <div id="setup-board" class="board"></div>
+    <button id="ready-btn" class="btn btn-cyan" disabled>I'm Ready</button>
+    <button class="btn btn-ghost home-trigger">Exit to Home</button>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="card">
+    <div id="turn-indicator" style="text-align: center; font-weight: 800; margin-bottom: 10px;">Waiting...</div>
+    <div id="game-board" class="board"></div>
+    <button class="btn btn-ghost home-trigger">Quit Game</button>
+  </div>
+</div>
+
+<button id="chat-toggle" class="chat-fab" style="display:none;">💬</button>
+<div id="chat-panel" class="chat-panel">
+  <button class="btn-close-chat" id="close-chat">✕</button>
+  <div style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Quick Reaction</div>
+  <div id="emoji-container" class="emoji-grid"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCPr1ZTE5450Qv1OhF2S13h12835sodmOw",
+    authDomain: "dingo-beta-c280a.firebaseapp.com",
+    databaseURL: "https://dingo-beta-c280a-default-rtdb.firebaseio.com",
+    projectId: "dingo-beta-c280a",
+    appId: "1:842477284115:web:613295de28df40ed2a48e6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let myPlayerId = Math.random().toString(36).substring(7);
+  let roomId = "";
+  let playerRole = "";
+  let myBoard = [];
+  let setupCounter = 1;
+
+  // Navigation Logic
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  document.querySelectorAll('.home-trigger').forEach(btn => {
+    btn.onclick = () => location.reload();
+  });
+
+  // Room Creation
+  document.getElementById('create-btn').onclick = async () => {
+    roomId = Math.random().toString(36).substring(2, 6).toUpperCase();
+    playerRole = "p1";
+    await set(ref(db, `rooms/${roomId}`), {
+      players: { p1: myPlayerId },
+      gameState: { status: "waiting", currentTurn: "p1", selectedNumbers: [0] }
+    });
+    initSetup();
+  };
+
+  // Join Room
+  document.getElementById('join-btn').onclick = async () => {
+    const code = document.getElementById('room-code-input').value.toUpperCase();
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (snap.exists() && !snap.val().players.p2) {
+      roomId = code;
+      playerRole = "p2";
+      await update(ref(db, `rooms/${roomId}/players`), { p2: myPlayerId });
+      initSetup();
+    }
+  };
+
+  function initSetup() {
+    showScreen('setup');
+    document.getElementById('display-room-code').innerText = roomId;
+    const boardDiv = document.getElementById('setup-board');
+    boardDiv.innerHTML = '';
+    myBoard = new Array(25).fill(null);
+    setupCounter = 1;
+
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.onclick = () => {
+        if (!cell.innerText && setupCounter <= 25) {
+          cell.innerText = setupCounter;
+          myBoard[i] = setupCounter;
+          setupCounter++;
+          if (setupCounter > 25) document.getElementById('ready-btn').disabled = false;
+        }
+      };
+      boardDiv.appendChild(cell);
+    }
+  }
+
+  document.getElementById('ready-btn').onclick = async () => {
+    await update(ref(db, `rooms/${roomId}/boards`), { [playerRole]: myBoard });
+    onValue(ref(db, `rooms/${roomId}/boards`), (snap) => {
+      const b = snap.val();
+      if (b?.p1 && b?.p2) startGame();
+    });
+  };
+
+  function startGame() {
+    showScreen('game');
+    document.getElementById('chat-toggle').style.display = 'block';
+    const boardDiv = document.getElementById('game-board');
+    boardDiv.innerHTML = '';
     
-    <div id="messageBox">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendMessageBtn">Send & Close</button>
-    </div>
+    myBoard.forEach(num => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${num}`;
+      cell.innerText = num;
+      cell.onclick = () => handleMove(num);
+      boardDiv.appendChild(cell);
+    });
 
-    <script type="module" src="app.js"></script>
+    onValue(ref(db, `rooms/${roomId}/gameState`), (snap) => {
+      const state = snap.val();
+      const indicator = document.getElementById('turn-indicator');
+      
+      if (state.winner) {
+        indicator.innerText = state.winner === playerRole ? "🏆 YOU WON!" : "💀 DEFEAT";
+        return;
+      }
+      
+      indicator.innerText = state.currentTurn === playerRole ? "YOUR TURN" : "OPPONENT'S TURN";
+      
+      state.selectedNumbers?.forEach(n => {
+        if (n !== 0) document.getElementById(`cell-${n}`)?.classList.add('crossed');
+      });
+      
+      checkWinLogic(state.selectedNumbers || []);
+    });
+  }
+
+  async function handleMove(num) {
+    const snap = await get(ref(db, `rooms/${roomId}/gameState`));
+    const state = snap.val();
+    if (state.currentTurn === playerRole && !state.selectedNumbers.includes(num) && !state.winner) {
+      await update(ref(db, `rooms/${roomId}/gameState`), {
+        selectedNumbers: [...state.selectedNumbers, num],
+        currentTurn: playerRole === "p1" ? "p2" : "p1"
+      });
+    }
+  }
+
+  // Win Logic with Visual Highlight
+  function checkWinLogic(selected) {
+    const hits = myBoard.map(n => selected.includes(n));
+    let lineIndices = [];
+    
+    // Rows
+    for (let i = 0; i < 25; i+=5) {
+      if ([0,1,2,3,4].every(j => hits[i+j])) lineIndices.push(...[i,i+1,i+2,i+3,i+4]);
+    }
+    // Columns
+    for (let i = 0; i < 5; i++) {
+      if ([0,5,10,15,20].every(j => hits[i+j])) lineIndices.push(...[i,i+5,i+10,i+15,i+20]);
+    }
+    // Diagonals
+    if ([0,6,12,18,24].every(i => hits[i])) lineIndices.push(0,6,12,18,24);
+    if ([4,8,12,16,20].every(i => hits[i])) lineIndices.push(4,8,12,16,20);
+
+    // Visual Effect
+    lineIndices.forEach(idx => {
+      const num = myBoard[idx];
+      document.getElementById(`cell-${num}`).classList.add('winning-line');
+    });
+
+    const uniqueLines = lineIndices.length / 5;
+    if (uniqueLines >= 5) {
+      update(ref(db, `rooms/${roomId}/gameState`), { winner: playerRole });
+    }
+  }
+
+  // Chat Logic (Auto-Click & Close)
+  const emojis = ['🔥', '😂', '🎯', '👍', '💀', '😱', '👑', '⚡'];
+  const container = document.getElementById('emoji-container');
+  const panel = document.getElementById('chat-panel');
+
+  emojis.forEach(e => {
+    const b = document.createElement('button');
+    b.className = 'emoji-btn';
+    b.innerText = e;
+    b.onclick = async () => {
+      await push(ref(db, `rooms/${roomId}/chat`), { emoji: e, sender: playerRole });
+      panel.classList.remove('open'); // Auto-close
+    };
+    container.appendChild(b);
+  });
+
+  document.getElementById('chat-toggle').onclick = () => panel.classList.toggle('open');
+  document.getElementById('close-chat').onclick = () => panel.classList.remove('open');
+
+</script>
 </body>
-</html>
+    </html>
+    

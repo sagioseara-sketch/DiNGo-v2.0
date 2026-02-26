@@ -1,0 +1,2954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="theme-color" content="#04040a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DiNGo — Strategic Number Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ═══════════════════════════════════════════════
+     FIREBASE SDK — LIVE & CONNECTED
+     Project: dingo-beta-v1-2
+═══════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+           signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getDatabase, ref, set, get, onValue, update, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAnalytics }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+  // ── dingo-beta-v1-2 production config ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyAV6qgt9ATk4MjjaT9VHSXRJeP--U9A3ZA",
+    authDomain:        "dingo-beta-v1-2.firebaseapp.com",
+    databaseURL:       "https://dingo-beta-v1-2-default-rtdb.firebaseio.com",
+    projectId:         "dingo-beta-v1-2",
+    storageBucket:     "dingo-beta-v1-2.firebasestorage.app",
+    messagingSenderId: "436822595844",
+    appId:             "1:436822595844:web:0effff2e90bc8929d8d851",
+    measurementId:     "G-XH2LQVRY5W"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  const rtdb = getDatabase(app);
+  getAnalytics(app); // Firebase Analytics — tracks user events automatically
+
+  // Expose all Firebase methods on window._FB so the main <script>
+  // (non-module) can access them. ES modules are isolated by default,
+  // so this bridge is the cleanest way to share them.
+  window._FB = {
+    auth, db, rtdb,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged,
+    doc, setDoc, getDoc, updateDoc,
+    ref, set, get, onValue, update, remove
+  };
+
+  // ── Auto-resume session ──
+  // When a returning player opens the game, Firebase finds their
+  // saved auth token (stored in the browser) and logs them back in
+  // silently — they land straight on the dashboard without typing
+  // their password again. This fires once per page load.
+  onAuthStateChanged(auth, async (user) => {
+    if (user && !window._sessionRestored) {
+      window._sessionRestored = true;
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          // Restore full player object from Firestore
+          window.P = { uid: user.uid, email: user.email, ...snap.data() };
+          // Small delay so the main script's functions are ready
+          setTimeout(() => {
+            if (typeof refreshDash === 'function') {
+              refreshDash();
+              show('dashScr');
+            }
+          }, 200);
+        }
+      } catch(e) {
+        console.warn('[DiNGo] Session restore failed:', e);
+      }
+    }
+  });
+</script>
+
+
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — VARIABLES
+═══════════════════════════════════════════════ */
+:root {
+  /* Core palette */
+  --ink:    #04040a;
+  --ink1:   #080812;
+  --ink2:   #0d0d1c;
+  --ink3:   #121228;
+  --ink4:   #181835;
+  --glass:  rgba(255,255,255,0.035);
+  --rim:    rgba(255,255,255,0.07);
+  --rim2:   rgba(255,255,255,0.14);
+
+  /* Accent system */
+  --r:      #ff2d55;   /* red — player 1 */
+  --r10:    rgba(255,45,85,.10);
+  --r25:    rgba(255,45,85,.25);
+  --b:      #00e5ff;   /* blue — player 2 */
+  --b10:    rgba(0,229,255,.10);
+  --b25:    rgba(0,229,255,.25);
+  --v:      #7c5cfc;   /* violet — UI accent */
+  --v10:    rgba(124,92,252,.10);
+  --v25:    rgba(124,92,252,.25);
+  --g:      #00d68f;   /* green — success */
+  --g10:    rgba(0,214,143,.10);
+  --gold:   #ffc93c;
+  --gold10: rgba(255,201,60,.10);
+
+  /* Typography */
+  --fh: 'Syne',       sans-serif;
+  --fm: 'Space Mono', monospace;
+  --fb: 'DM Sans',    sans-serif;
+
+  /* Geometry */
+  --xs: 8px; --sm: 12px; --md: 16px; --lg: 24px; --xl: 32px;
+}
+
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;scroll-behavior:smooth;}
+body{
+  background:var(--ink);color:#f0f0f8;
+  font-family:var(--fb);min-height:100vh;
+  overflow:hidden;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+
+/* ── BACKGROUND ── */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.bg-grid{
+  background-image:
+    linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
+  background-size:36px 36px;
+}
+.bg-orb{
+  position:absolute;border-radius:50%;filter:blur(90px);opacity:.18;
+  animation:drift 18s ease-in-out infinite alternate;
+}
+.bg-orb:nth-child(2){width:500px;height:500px;background:var(--v);top:-120px;left:-100px;animation-delay:0s;}
+.bg-orb:nth-child(3){width:400px;height:400px;background:var(--r);bottom:-80px;right:-80px;animation-delay:-8s;}
+.bg-orb:nth-child(4){width:350px;height:350px;background:var(--b);top:40%;left:55%;animation-delay:-4s;}
+@keyframes drift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(30px,25px) scale(1.08);}}
+
+/* ═══════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════ */
+.scr{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  overflow-y:auto;overflow-x:hidden;
+  padding:20px 16px 32px;
+  z-index:10;
+  transition:opacity .3s ease,transform .3s ease;
+}
+.scr.center{justify-content:center;}
+.scr.gone{opacity:0;pointer-events:none;transform:translateY(10px);}
+.scr-inner{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY HELPERS
+═══════════════════════════════════════════════ */
+.h1{font-family:var(--fh);font-size:clamp(38px,10vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1;}
+.h2{font-family:var(--fh);font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.h3{font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:.5px;}
+.mono{font-family:var(--fm);}
+.dim{color:rgba(240,240,248,.45);}
+.caps{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:600;}
+
+.grad-text{
+  background:linear-gradient(135deg,var(--r) 0%,var(--v) 50%,var(--b) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ═══════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 24px;border:none;border-radius:var(--md);
+  font-family:var(--fh);font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .16s ease;
+  position:relative;overflow:hidden;white-space:nowrap;
+}
+.btn::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(120deg,rgba(255,255,255,.12),transparent);
+  opacity:0;transition:opacity .2s;}
+.btn:hover::after{opacity:1;}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:scale(.96)!important;}
+
+.btn-v   {background:var(--v);   color:#fff;box-shadow:0 4px 20px var(--v25);}
+.btn-r   {background:var(--r);   color:#fff;box-shadow:0 4px 20px var(--r25);}
+.btn-b   {background:var(--b);   color:#04040a;box-shadow:0 4px 20px var(--b25);}
+.btn-g   {background:var(--g);   color:#04040a;}
+.btn-gold{background:var(--gold);color:#04040a;box-shadow:0 4px 16px rgba(255,201,60,.3);}
+.btn-ghost{background:var(--glass);color:rgba(240,240,248,.6);border:1px solid var(--rim2);}
+.btn-ghost:hover{color:#f0f0f8;border-color:rgba(255,255,255,.25);}
+
+.btn-lg{padding:17px 32px;font-size:15px;border-radius:var(--lg);}
+.btn-sm{padding:9px 16px;font-size:12px;border-radius:var(--xs);}
+.btn-full{width:100%;}
+
+/* ═══════════════════════════════════════════════
+   INPUTS
+═══════════════════════════════════════════════ */
+.inp-wrap{position:relative;width:100%;}
+.inp-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:rgba(240,240,248,.4);pointer-events:none;}
+.inp{
+  width:100%;padding:14px 14px 14px 44px;
+  background:var(--ink3);border:1px solid var(--rim2);
+  border-radius:var(--md);font-family:var(--fb);font-size:15px;color:#f0f0f8;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.inp:focus{border-color:var(--v);box-shadow:0 0 0 3px var(--v10);}
+.inp::placeholder{color:rgba(240,240,248,.3);}
+.inp.bare{padding-left:14px;}
+.inp.code-inp{
+  font-family:var(--fm);font-size:30px;letter-spacing:10px;
+  text-align:center;text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.card{
+  background:var(--ink2);border:1px solid var(--rim);
+  border-radius:var(--lg);padding:var(--md);width:100%;
+}
+.card-glow-r{border-color:var(--r25);box-shadow:0 0 30px rgba(255,45,85,.06);}
+.card-glow-b{border-color:var(--b25);box-shadow:0 0 30px rgba(0,229,255,.06);}
+.card-glow-v{border-color:var(--v25);box-shadow:0 0 30px rgba(124,92,252,.06);}
+
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 11px;border-radius:100px;font-size:11px;font-weight:700;
+}
+.pill-r{background:var(--r10);color:var(--r);border:1px solid var(--r25);}
+.pill-b{background:var(--b10);color:var(--b);border:1px solid var(--b25);}
+.pill-v{background:var(--v10);color:var(--v);border:1px solid var(--v25);}
+.pill-g{background:var(--g10);color:var(--g);border:1px solid rgba(0,214,143,.3);}
+.pill-gold{background:var(--gold10);color:var(--gold);border:1px solid rgba(255,201,60,.3);}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  LOGIN        ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.logo-ring{width:80px;height:80px;position:relative;margin:0 auto 20px;}
+.logo-ring::before,.logo-ring::after{
+  content:'';position:absolute;inset:0;border-radius:50%;border:2px solid transparent;
+}
+.logo-ring::before{border-top-color:var(--r);border-right-color:var(--r);animation:spin 3s linear infinite;}
+.logo-ring::after{inset:10px;border-bottom-color:var(--b);border-left-color:var(--b);animation:spin 2s linear infinite reverse;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.logo-center{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:26px;font-weight:800;
+}
+
+.auth-tabs{display:flex;background:var(--ink3);border-radius:var(--sm);padding:3px;margin-bottom:20px;}
+.auth-tab{
+  flex:1;padding:10px;border:none;border-radius:10px;
+  background:transparent;font-family:var(--fh);font-size:13px;font-weight:700;
+  color:rgba(240,240,248,.4);cursor:pointer;transition:all .2s;
+}
+.auth-tab.on{background:var(--ink2);color:#f0f0f8;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+
+.login-card{
+  background:rgba(13,13,28,.85);border:1px solid var(--rim2);
+  border-radius:var(--xl);padding:28px;backdrop-filter:blur(20px);
+  box-shadow:0 40px 80px rgba(0,0,0,.6);
+}
+.err-msg{color:var(--r);font-size:12px;text-align:center;min-height:18px;}
+
+.oauth-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.oauth-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;background:var(--ink3);border:1px solid var(--rim2);
+  border-radius:var(--sm);font-family:var(--fb);font-size:13px;font-weight:500;
+  color:#f0f0f8;cursor:pointer;transition:all .2s;
+}
+.oauth-btn:hover{background:var(--ink4);border-color:var(--rim2);}
+
+.divider-line{
+  display:flex;align-items:center;gap:12px;
+  color:rgba(240,240,248,.3);font-size:12px;
+}
+.divider-line::before,.divider-line::after{content:'';flex:1;height:1px;background:var(--rim);}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  DASHBOARD    ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.dash-header{
+  width:100%;position:relative;overflow:hidden;
+  padding:48px 20px 24px;margin-bottom:0;
+}
+.dash-hdr-bg{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(124,92,252,.18),rgba(255,45,85,.12),rgba(0,229,255,.08));
+  border-bottom:1px solid var(--rim);
+}
+.dash-profile{
+  position:relative;z-index:1;display:flex;align-items:center;
+  gap:16px;max-width:420px;margin:0 auto;
+}
+.avatar-ring{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;position:relative;
+}
+.avatar-ring::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  background:linear-gradient(135deg,var(--v),var(--r),var(--b));z-index:-1;
+}
+.avatar-inner{
+  width:100%;height:100%;border-radius:50%;background:var(--ink2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:24px;font-weight:800;
+}
+
+.stats-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:10px;width:100%;max-width:420px;padding:14px 0 4px;
+}
+.stat-tile{
+  background:var(--ink2);border:1px solid var(--rim);
+  border-radius:var(--md);padding:14px 8px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.stat-tile::before{content:'';position:absolute;top:0;inset-x:0;height:2px;}
+.st-gold::before{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.st-r::before{background:linear-gradient(90deg,transparent,var(--r),transparent);}
+.st-b::before{background:linear-gradient(90deg,transparent,var(--b),transparent);}
+.stat-val{font-family:var(--fm);font-size:22px;font-weight:700;}
+.stat-lbl{font-size:10px;color:rgba(240,240,248,.4);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+
+/* Heatmap */
+.heatmap{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;}
+.hc{aspect-ratio:1;border-radius:2px;transition:transform .1s;}
+.hc:hover{transform:scale(1.4);}
+.h0{background:var(--ink3);}
+.h1{background:rgba(124,92,252,.3);}
+.h2{background:rgba(124,92,252,.55);}
+.h3{background:rgba(124,92,252,.8);}
+.h4{background:var(--v);box-shadow:0 0 4px var(--v);}
+
+/* Match list */
+.match-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--ink2);border:1px solid var(--rim);
+  border-radius:var(--md);
+}
+.match-badge{
+  font-family:var(--fm);font-size:10px;font-weight:700;
+  padding:3px 9px;border-radius:4px;letter-spacing:1px;flex-shrink:0;
+}
+.mb-w{background:var(--g10);color:var(--g);border:1px solid rgba(0,214,143,.25);}
+.mb-l{background:var(--r10);color:var(--r);border:1px solid var(--r25);}
+
+/* Mission card */
+.mission-row{
+  display:flex;align-items:center;gap:12px;padding:14px;
+  background:var(--ink2);border:1px solid var(--rim);border-radius:var(--md);
+}
+.mission-bar-wrap{flex:1;height:5px;background:var(--ink3);border-radius:5px;overflow:hidden;}
+.mission-bar{height:100%;background:linear-gradient(90deg,var(--v),var(--b));border-radius:5px;transition:width .5s ease;}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  GAME GRID    ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.grid-wrap{
+  background:var(--ink2);border:1px solid var(--rim);
+  border-radius:var(--lg);padding:10px;
+}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+
+.cell{
+  width:58px;height:58px;
+  background:var(--ink3);border:1px solid var(--rim);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s ease;
+  position:relative;overflow:hidden;color:rgba(240,240,248,.5);
+}
+/* Setup states */
+.cell.placed{color:#f0f0f8;border-color:rgba(255,255,255,.1);background:var(--ink4);}
+.cell.placed:hover{border-color:var(--r);background:var(--r10);}
+.cell.empty:hover{background:var(--ink4);border-color:rgba(124,92,252,.45);color:#f0f0f8;}
+
+/* Game states */
+.cell.sel{border-color:var(--v);background:var(--v10);color:#f0f0f8;transform:scale(1.07);z-index:2;box-shadow:0 0 14px var(--v25);}
+.cell.cx-r{background:var(--r10);border-color:var(--r25);cursor:default;}
+.cell.cx-b{background:var(--b10);border-color:var(--b25);cursor:default;}
+.cell.cx-r:hover,.cell.cx-b:hover{transform:none;box-shadow:none;}
+
+/* Power cell */
+.cell.power::after{
+  content:'⚡';position:absolute;top:2px;right:3px;font-size:9px;
+  opacity:.7;line-height:1;
+}
+
+/* Cross mark */
+.cx-mark{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;opacity:0;
+  transform:scale(.5) rotate(-15deg);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+}
+.cx-r .cx-mark{opacity:1;color:var(--r);transform:scale(1) rotate(0);text-shadow:0 0 10px var(--r);}
+.cx-b .cx-mark{opacity:1;color:var(--b);transform:scale(1) rotate(0);text-shadow:0 0 10px var(--b);}
+
+.cell-n{position:relative;z-index:1;transition:opacity .2s;}
+.cx-r .cell-n,.cx-b .cell-n{opacity:.2;}
+
+/* Win glow */
+.cell.win-glow{animation:wglow .7s ease-in-out infinite alternate;}
+@keyframes wglow{
+  0%{box-shadow:inset 0 0 0 1px var(--gold);}
+  100%{box-shadow:inset 0 0 14px 2px var(--gold),0 0 14px var(--gold);}
+}
+
+/* Flash on select */
+.cell.flash{animation:cflash .25s ease;}
+@keyframes cflash{0%{background:rgba(124,92,252,.5);}100%{background:var(--ink3);}}
+
+@media(max-width:380px){.cell{width:52px;height:52px;font-size:13px;}.grid{gap:4px;}.grid-wrap{padding:8px;}}
+@media(min-width:500px){.cell{width:64px;height:64px;font-size:16px;}}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  HUD          ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.hud{
+  width:100%;max-width:420px;
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:8px;
+}
+.hud-p{display:flex;flex-direction:column;gap:3px;}
+.hud-p.right{align-items:flex-end;}
+.hud-pname{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.hud-pname.r{color:var(--r);}
+.hud-pname.b{color:var(--b);}
+.line-dots{display:flex;gap:3px;}
+.ld{width:16px;height:3px;border-radius:3px;background:var(--ink3);transition:all .3s ease;}
+.ld.on-r{background:var(--r);box-shadow:0 0 5px var(--r);}
+.ld.on-b{background:var(--b);box-shadow:0 0 5px var(--b);}
+.line-count{font-family:var(--fm);font-size:11px;color:rgba(240,240,248,.4);}
+
+/* Timer ring */
+.timer-wrap{display:flex;flex-direction:column;align-items:center;gap:0;}
+.timer-svg{width:54px;height:54px;transform:rotate(-90deg);}
+.t-track{fill:none;stroke:var(--ink3);stroke-width:4;}
+.t-fill{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:144;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .5s;}
+.timer-over{position:relative;margin-top:-50px;width:54px;height:54px;display:flex;align-items:center;justify-content:center;}
+.timer-num{font-family:var(--fm);font-size:17px;font-weight:700;}
+
+/* Turn banner */
+.turn-banner{
+  width:100%;max-width:420px;padding:9px 16px;border-radius:var(--sm);
+  text-align:center;font-family:var(--fh);font-size:12px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;transition:all .3s;
+}
+.tb-r{background:var(--r10);color:var(--r);border:1px solid var(--r25);}
+.tb-b{background:var(--b10);color:var(--b);border:1px solid var(--b25);}
+
+/* Board label */
+.blbl{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;text-align:center;margin-bottom:6px;font-weight:700;}
+.blbl.r{color:var(--r);}
+.blbl.b{color:var(--b);}
+
+/* Reactions */
+.reactions{
+  display:flex;gap:8px;justify-content:center;
+  width:100%;max-width:420px;
+}
+.react-btn{
+  flex:1;padding:8px 4px;background:var(--ink2);
+  border:1px solid var(--rim);border-radius:var(--sm);
+  font-size:20px;cursor:pointer;transition:all .15s;
+  text-align:center;
+}
+.react-btn:hover{background:var(--ink3);transform:scale(1.1);}
+.react-btn:active{transform:scale(.9);}
+.floating-react{
+  position:fixed;pointer-events:none;z-index:999;
+  font-size:36px;animation:floatUp 1.5s ease both;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateY(0) scale(.8);}
+  100%{opacity:0;transform:translateY(-120px) scale(1.4);}
+}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  WIN SCREEN   ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+#winScr{background:rgba(4,4,10,.96);backdrop-filter:blur(28px);}
+.win-emoji{font-size:80px;display:block;animation:winpop .65s cubic-bezier(.34,1.56,.64,1) both;margin-bottom:16px;}
+@keyframes winpop{from{opacity:0;transform:scale(.2) rotate(-30deg);}to{opacity:1;transform:scale(1) rotate(0);}}
+.win-title{font-family:var(--fh);font-size:48px;font-weight:800;letter-spacing:-1px;animation:fadeup .5s ease .3s both;}
+.win-title.wn{color:var(--gold);text-shadow:0 0 40px rgba(255,201,60,.45);}
+.win-title.ls{color:rgba(240,240,248,.4);}
+@keyframes fadeup{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.win-sub{font-size:14px;color:rgba(240,240,248,.5);letter-spacing:1px;margin-top:6px;margin-bottom:28px;animation:fadeup .5s ease .45s both;}
+.win-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;animation:fadeup .5s ease .6s both;}
+.wstat{background:var(--ink2);border:1px solid var(--rim);border-radius:var(--md);padding:14px 8px;text-align:center;}
+.wstat-val{font-family:var(--fm);font-size:24px;font-weight:700;color:var(--gold);}
+.wstat-lbl{font-size:10px;color:rgba(240,240,248,.4);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+
+/* Replay viewer */
+.replay-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;max-width:280px;margin:0 auto;}
+.rp-cell{
+  width:100%;aspect-ratio:1;border-radius:6px;background:var(--ink3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:11px;font-weight:700;color:rgba(240,240,248,.4);
+  position:relative;overflow:hidden;border:1px solid var(--rim);
+}
+.rp-cell.rp-r{background:var(--r10);color:var(--r);border-color:var(--r25);}
+.rp-cell.rp-b{background:var(--b10);color:var(--b);border-color:var(--b25);}
+.rp-cell.rp-win{animation:wglow .6s ease-in-out infinite alternate;}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  MODALS       ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(4,4,10,.85);backdrop-filter:blur(12px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-sheet{
+  width:100%;max-width:480px;
+  background:var(--ink2);border:1px solid var(--rim2);
+  border-radius:var(--xl) var(--xl) 0 0;
+  padding:0 20px 40px;max-height:90vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.modal-overlay.open .modal-sheet{transform:translateY(0);}
+.modal-handle{width:40px;height:4px;background:var(--rim2);border-radius:4px;margin:14px auto 20px;}
+.modal-title{font-family:var(--fh);font-size:18px;font-weight:800;margin-bottom:16px;text-align:center;}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  THEMES       ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.theme-card{
+  border-radius:var(--md);padding:16px;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;text-align:center;
+}
+.theme-card.active{border-color:var(--v);}
+.theme-card:hover{transform:scale(1.03);}
+.tc-preview{
+  width:60px;height:60px;border-radius:var(--sm);margin:0 auto 10px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+
+/* Daily Spin wheel */
+.spin-wheel{
+  width:220px;height:220px;border-radius:50%;position:relative;
+  margin:0 auto;border:4px solid var(--rim2);
+  background:conic-gradient(
+    #ff2d55 0deg 60deg, #7c5cfc 60deg 120deg, #00e5ff 120deg 180deg,
+    #ffc93c 180deg 240deg, #00d68f 240deg 300deg, #ff6b35 300deg 360deg
+  );
+  transition:transform 4s cubic-bezier(.17,.67,.15,.99);
+  cursor:pointer;
+}
+.spin-wheel::after{
+  content:'▼';position:absolute;top:-20px;left:50%;
+  transform:translateX(-50%);font-size:24px;color:var(--gold);
+  text-shadow:0 0 10px var(--gold);
+}
+.spin-center{
+  position:absolute;inset:20%;border-radius:50%;
+  background:var(--ink2);display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:13px;font-weight:700;
+  border:3px solid var(--rim2);
+}
+
+/* Player card */
+.player-card{
+  background:linear-gradient(135deg,var(--ink3) 0%,rgba(124,92,252,.1) 50%,var(--ink3) 100%);
+  border:1px solid var(--v25);border-radius:var(--xl);padding:24px;
+  position:relative;overflow:hidden;width:100%;max-width:320px;
+}
+.player-card::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,92,252,.15),transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════
+   ╔═══════════════╗
+   ║  MANUAL       ║
+   ╚═══════════════╝
+═══════════════════════════════════════════════ */
+.manual-step{
+  display:flex;gap:14px;padding:16px;
+  background:var(--ink2);border:1px solid var(--rim);border-radius:var(--md);
+}
+.step-num{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--v);display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:13px;font-weight:800;flex-shrink:0;
+}
+.step-text{font-size:14px;color:rgba(240,240,248,.7);line-height:1.6;}
+.step-text strong{color:#f0f0f8;}
+
+/* ═══════════════════════════════════════════════
+   MISC UTILITIES
+═══════════════════════════════════════════════ */
+.full{width:100%;}
+.gap4{gap:4px;}.gap8{gap:8px;}.gap10{gap:10px;}.gap12{gap:12px;}.gap16{gap:16px;}.gap20{gap:20px;}
+.flex{display:flex;}.col{flex-direction:column;}.row{flex-direction:row;}.center-x{align-items:center;}.center-y{justify-content:center;}
+.sep{height:1px;width:100%;background:var(--rim);margin:4px 0;}
+.sec-title{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(240,240,248,.4);margin-bottom:8px;}
+.hidden{display:none!important;}
+.spinner{animation:spin .8s linear infinite;display:inline-block;}
+
+/* Code display */
+.code-box{
+  background:var(--ink3);border:1px solid var(--rim2);
+  border-radius:var(--lg);padding:20px;text-align:center;width:100%;
+}
+.code-val{font-family:var(--fm);font-size:38px;font-weight:700;letter-spacing:10px;color:var(--b);text-shadow:0 0 20px var(--b25);}
+
+/* Waiting dots */
+.w-dots{display:flex;gap:6px;}
+.wd{width:8px;height:8px;border-radius:50%;animation:wdp 1.3s ease-in-out infinite;}
+.wd:nth-child(1){background:var(--r);animation-delay:0s;}
+.wd:nth-child(2){background:var(--v);animation-delay:.2s;}
+.wd:nth-child(3){background:var(--b);animation-delay:.4s;}
+@keyframes wdp{0%,80%,100%{transform:scale(.5);opacity:.3;}40%{transform:scale(1);opacity:1;}}
+
+/* Confetti container */
+#cfWrap{position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden;}
+.cf{position:absolute;top:-20px;border-radius:2px;animation:cffall linear both;}
+@keyframes cffall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(800deg);opacity:0;}}
+
+/* Notification toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--ink2);border:1px solid var(--rim2);border-radius:var(--md);
+  padding:12px 20px;font-family:var(--fh);font-size:13px;font-weight:700;
+  z-index:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;max-width:calc(100vw - 32px);text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ═══════════════════════════════════════════════
+   HELP CENTER STYLES
+═══════════════════════════════════════════════ */
+.help-tab{
+  flex-shrink:0;padding:8px 14px;border:none;border-radius:var(--sm) var(--sm) 0 0;
+  background:transparent;font-family:var(--fh);font-size:12px;font-weight:700;
+  color:rgba(240,240,248,.4);cursor:pointer;transition:all .2s;
+  border-bottom:2px solid transparent;white-space:nowrap;
+}
+.help-tab.on{color:#f0f0f8;border-bottom-color:var(--v);background:rgba(124,92,252,.08);}
+
+.hc-hero{
+  text-align:center;padding:20px 16px;
+  background:linear-gradient(135deg,rgba(124,92,252,.08),rgba(0,229,255,.05));
+  border:1px solid var(--rim);border-radius:var(--lg);
+  margin-bottom:16px;
+}
+
+.hc-step{
+  display:flex;gap:14px;padding:16px;
+  background:var(--ink2);border:1px solid var(--rim);border-radius:var(--md);
+}
+.hc-num{
+  width:30px;height:30px;border-radius:50%;background:var(--v);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:13px;font-weight:800;flex-shrink:0;color:#fff;
+}
+.hc-step-title{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:5px;}
+.hc-step-body{font-size:13px;color:rgba(240,240,248,.6);line-height:1.7;}
+
+.hc-tip{
+  display:flex;gap:10px;padding:14px;
+  background:rgba(255,201,60,.06);border:1px solid rgba(255,201,60,.2);
+  border-radius:var(--md);font-size:13px;color:rgba(240,240,248,.65);
+  line-height:1.7;margin-top:8px;
+}
+
+.hc-eco-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:var(--ink2);border:1px solid var(--rim);
+  border-radius:var(--sm);font-size:13px;
+}
+
+.hc-rank-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border:1px solid var(--rim);border-radius:var(--md);
+}
+
+.hc-feat-card{
+  background:var(--ink2);border:1px solid var(--rim);border-radius:var(--md);
+  padding:14px;text-align:center;
+}
+.hc-feat-title{font-family:var(--fh);font-size:12px;font-weight:700;margin-bottom:4px;}
+.hc-feat-body{font-size:11px;color:rgba(240,240,248,.5);line-height:1.5;}
+
+/* Missed turn */
+.missed-bar{
+  width:100%;max-width:420px;padding:7px 14px;
+  background:rgba(255,193,60,.07);border:1px solid rgba(255,193,60,.2);
+  border-radius:var(--xs);font-size:12px;color:var(--gold);text-align:center;
+}
+
+/* Bet row */
+.bet-confirm{
+  width:100%;max-width:420px;padding:10px 16px;
+  background:var(--gold10);border:1px solid rgba(255,201,60,.2);
+  border-radius:var(--sm);display:flex;align-items:center;
+  justify-content:space-between;font-size:13px;font-family:var(--fh);
+}
+
+</style>
+</head>
+<body>
+
+<div class="bg bg-grid">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+</div>
+<div id="cfWrap"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════ -->
+
+<!-- Power-up modal -->
+<div class="modal-overlay" id="powerModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚡ Power-Up Activated!</div>
+    <div id="powerModalBody" style="text-align:center;color:rgba(240,240,248,.6);font-size:14px;line-height:1.7;"></div>
+    <button class="btn btn-v btn-full btn-lg" style="margin-top:20px;" onclick="closeModal('powerModal')">Got It!</button>
+  </div>
+</div>
+
+<!-- Theme store -->
+<div class="modal-overlay" id="themeModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🎨 Board Themes</div>
+    <div class="theme-grid" id="themeGrid"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:16px;" onclick="closeModal('themeModal')">Close</button>
+  </div>
+</div>
+
+<!-- Player Card -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🪪 Your Player Card</div>
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <div class="player-card" id="playerCardEl"></div>
+    </div>
+    <button class="btn btn-v btn-full" onclick="shareCard()">📤 Share Card</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:10px;" onclick="closeModal('cardModal')">Close</button>
+  </div>
+</div>
+
+<!-- Daily Spin -->
+<div class="modal-overlay" id="spinModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🎰 Daily Lucky Spin</div>
+    <div style="margin:20px 0 8px;position:relative;">
+      <div class="spin-wheel" id="spinWheel" onclick="doSpin()">
+        <div class="spin-center">TAP!</div>
+      </div>
+    </div>
+    <div id="spinResult" style="text-align:center;min-height:40px;font-family:var(--fh);font-size:16px;font-weight:700;color:var(--gold);"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:16px;" onclick="closeModal('spinModal')">Close</button>
+  </div>
+</div>
+
+<!-- Replay viewer -->
+<div class="modal-overlay" id="replayModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📼 Match Replay</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:16px;" id="replayBoards"></div>
+    <div style="text-align:center;">
+      <div id="replayStep" style="font-family:var(--fm);font-size:13px;color:rgba(240,240,248,.5);margin-bottom:12px;">Move 1 of 0</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-ghost btn-sm" onclick="replayPrev()">◀</button>
+        <button class="btn btn-v btn-sm" onclick="replayPlay()" id="replayPlayBtn">▶ Play</button>
+        <button class="btn btn-ghost btn-sm" onclick="replayNext()">▶</button>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-full" style="margin-top:16px;" onclick="closeModal('replayModal')">Close</button>
+  </div>
+</div>
+
+<!-- Clan modal -->
+<div class="modal-overlay" id="clanModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="clanModalTitle">⚔️ Clans</div>
+    <div id="clanModalBody"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:16px;" onclick="closeModal('clanModal')">Close</button>
+  </div>
+</div>
+
+<!-- Bet modal -->
+<div class="modal-overlay" id="betModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💰 Coin Bet</div>
+    <div style="font-size:14px;color:rgba(240,240,248,.6);text-align:center;margin-bottom:20px;line-height:1.7;">
+      Both players stake coins. Winner takes all (5% platform fee). Are you ready to risk it?
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="betOptions"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:10px;" onclick="closeModal('betModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1: LOGIN
+═══════════════════════════════════════════ -->
+<div class="scr center" id="loginScr">
+  <div class="scr-inner" style="max-width:400px;">
+
+    <div style="text-align:center;">
+      <div class="logo-ring">
+        <div class="logo-center grad-text">D</div>
+      </div>
+      <div class="h1 grad-text">DiNGo</div>
+      <div class="dim caps" style="margin-top:6px;letter-spacing:4px;">Strategic Number Grid</div>
+    </div>
+
+    <div class="login-card full">
+      <div class="auth-tabs" id="authTabs">
+        <button class="auth-tab on" onclick="switchTab('in')">Sign In</button>
+        <button class="auth-tab" onclick="switchTab('up')">Register</button>
+      </div>
+
+      <form id="formIn" style="display:flex;flex-direction:column;gap:12px;" onsubmit="doAuth(event,'in')">
+        <div><div class="caps" style="margin-bottom:6px;color:rgba(240,240,248,.4);">Email</div>
+          <div class="inp-wrap"><span class="inp-icon">✉</span><input class="inp" id="inEmail" type="email" placeholder="you@example.com" autocomplete="email"></div></div>
+        <div><div class="caps" style="margin-bottom:6px;color:rgba(240,240,248,.4);">Password</div>
+          <div class="inp-wrap"><span class="inp-icon">🔒</span><input class="inp" id="inPass" type="password" placeholder="Your password" autocomplete="current-password"></div></div>
+        <div class="err-msg" id="inErr"></div>
+        <button class="btn btn-v btn-lg btn-full" type="submit">Sign In →</button>
+      </form>
+
+      <form id="formUp" style="display:none;flex-direction:column;gap:12px;" onsubmit="doAuth(event,'up')">
+        <div><div class="caps" style="margin-bottom:6px;color:rgba(240,240,248,.4);">Username</div>
+          <div class="inp-wrap"><span class="inp-icon">🎮</span><input class="inp" id="upName" type="text" placeholder="YourGameTag" autocomplete="nickname"></div></div>
+        <div><div class="caps" style="margin-bottom:6px;color:rgba(240,240,248,.4);">Email</div>
+          <div class="inp-wrap"><span class="inp-icon">✉</span><input class="inp" id="upEmail" type="email" placeholder="you@example.com" autocomplete="email"></div></div>
+        <div><div class="caps" style="margin-bottom:6px;color:rgba(240,240,248,.4);">Password</div>
+          <div class="inp-wrap"><span class="inp-icon">🔒</span><input class="inp" id="upPass" type="password" placeholder="Min 6 characters" autocomplete="new-password"></div></div>
+        <div class="err-msg" id="upErr"></div>
+        <button class="btn btn-v btn-lg btn-full" type="submit">Create Account →</button>
+      </form>
+
+      <div class="divider-line" style="margin:16px 0;">or</div>
+      <div class="oauth-row">
+        <button class="oauth-btn" onclick="oauthLogin('Google')">🇬 Google</button>
+        <button class="oauth-btn" onclick="oauthLogin('Guest')">👤 Guest</button>
+      </div>
+    </div>
+
+    <div class="dim" style="font-size:11px;text-align:center;">By continuing you agree to our Terms & Privacy Policy</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2: DASHBOARD
+═══════════════════════════════════════════ -->
+<div class="scr gone" id="dashScr" style="padding:0 0 32px;">
+
+  <!-- Header banner -->
+  <div class="dash-header full">
+    <div class="dash-hdr-bg"></div>
+    <div class="dash-profile">
+      <div class="avatar-ring">
+        <div class="avatar-inner" id="avLetter">?</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--fh);font-size:18px;font-weight:700;" id="dashName">Player</div>
+        <div class="dim" style="font-size:12px;margin-top:2px;" id="dashEmail">—</div>
+        <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;">
+          <span class="pill pill-gold" id="rankPill">🥉 Bronze</span>
+          <span class="pill pill-g" id="streakPill">🔥 0</span>
+          <span class="pill pill-v" id="clanPill" style="cursor:pointer;" onclick="openClanModal()">⚔️ No Clan</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        <button class="btn btn-sm btn-ghost" onclick="openCardModal()">🪪</button>
+        <button class="btn btn-sm btn-ghost" onclick="openThemeModal()">🎨</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="width:100%;max-width:420px;padding:0 16px;" id="dashBody">
+    <div class="stats-grid">
+      <div class="stat-tile st-gold"><div class="stat-val" style="color:var(--gold);" id="dCoins">0</div><div class="stat-lbl">💰 Coins</div></div>
+      <div class="stat-tile st-r"><div class="stat-val" style="color:var(--r);" id="dWins">0</div><div class="stat-lbl">🏆 Wins</div></div>
+      <div class="stat-tile st-b"><div class="stat-val" style="color:var(--b);" id="dWR">0%</div><div class="stat-lbl">📈 Rate</div></div>
+    </div>
+
+    <!-- Daily missions -->
+    <div style="margin-top:4px;">
+      <div class="sec-title">Daily Missions</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="missionList"></div>
+    </div>
+
+    <!-- Daily spin -->
+    <div style="margin-top:4px;display:flex;gap:10px;">
+      <button class="btn btn-gold" style="flex:1;" onclick="openSpinModal()" id="spinBtn">🎰 Daily Spin</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="openTournamentInfo()">🏆 Tournament</button>
+    </div>
+
+    <!-- Activity heatmap -->
+    <div style="margin-top:4px;">
+      <div class="sec-title">Activity — Last 28 Days</div>
+      <div class="card" style="padding:14px;">
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+    </div>
+
+    <!-- Number heatmap stats -->
+    <div style="margin-top:4px;">
+      <div class="sec-title">Favourite Numbers (Most Called)</div>
+      <div class="card" style="padding:12px;" id="numHeatmap"></div>
+    </div>
+
+    <!-- Recent matches -->
+    <div style="margin-top:4px;">
+      <div class="sec-title">Recent Matches</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="matchList"></div>
+    </div>
+
+    <!-- Play buttons -->
+    <div style="margin-top:4px;display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-r btn-lg btn-full" onclick="goLobby()">⚡ Play Now</button>
+      <button class="btn btn-ghost btn-full" onclick="show('manualScr')">📖 User Manual</button>
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+      <div class="h3 grad-text">DiNGo</div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3: LOBBY
+═══════════════════════════════════════════ -->
+<div class="scr center gone" id="lobbyScr">
+  <div class="scr-inner">
+    <div style="text-align:center;">
+      <div class="h1 grad-text">DiNGo</div>
+      <div class="dim caps" style="margin-top:4px;">Game Lobby</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
+      <button class="btn btn-r btn-lg btn-full" onclick="doCreateRoom()">🌐 Create Room</button>
+      <button class="btn btn-b btn-lg btn-full" onclick="show('joinScr')">🔗 Join by Code</button>
+      <button class="btn btn-gold btn-full" onclick="openBetModal()">💰 Bet Mode</button>
+      <div class="sep"></div>
+      <button class="btn btn-ghost btn-full" onclick="show('dashScr')">← Back to Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4: CREATE ROOM / WAITING
+═══════════════════════════════════════════ -->
+<div class="scr center gone" id="createScr">
+  <div class="scr-inner">
+    <div class="code-box">
+      <div class="caps dim" style="margin-bottom:10px;">Room Code</div>
+      <div class="code-val" id="roomCodeVal">——</div>
+      <div class="dim" style="font-size:12px;margin-top:10px;">Share this with your opponent</div>
+    </div>
+    <button class="btn btn-b btn-full" id="copyLinkBtn" onclick="copyInviteLink()">📋 Copy Invite Link</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div class="w-dots"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+      <div class="dim" style="font-size:13px;letter-spacing:1px;">Waiting for opponent…</div>
+    </div>
+    <div class="card" style="font-size:12px;color:var(--gold);line-height:1.7;text-align:center;">
+      🔥 Firebase config required for true online play. Demo mode: click below to play vs AI opponent.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+      <button class="btn btn-v btn-full" onclick="startDemo()">▶ Play Demo vs AI</button>
+      <button class="btn btn-ghost btn-full" onclick="show('lobbyScr')">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 5: JOIN ROOM
+═══════════════════════════════════════════ -->
+<div class="scr center gone" id="joinScr">
+  <div class="scr-inner" style="max-width:360px;">
+    <div style="text-align:center;">
+      <div class="h2">Join Room</div>
+      <div class="dim" style="font-size:13px;margin-top:4px;">Enter the code from your opponent</div>
+    </div>
+    <input class="inp bare code-inp full" id="joinCode" maxlength="6"
+      placeholder="XXXXXX" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+    <button class="btn btn-b btn-lg btn-full" onclick="doJoin()">Join Game →</button>
+    <button class="btn btn-ghost btn-full" onclick="show('lobbyScr')">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 6: SETUP (Board Arrangement)
+═══════════════════════════════════════════ -->
+<div class="scr gone" id="setupScr" style="padding-top:20px;">
+  <div class="scr-inner">
+    <div style="text-align:center;width:100%;">
+      <div class="h2" id="setupTitle">Arrange Your Board</div>
+      <div class="dim" style="font-size:13px;margin-top:4px;" id="setupSub">Tap to place numbers 1–25</div>
+    </div>
+
+    <!-- Progress -->
+    <div style="width:100%;height:3px;background:var(--ink3);border-radius:4px;overflow:hidden;">
+      <div style="height:100%;background:linear-gradient(90deg,var(--r),var(--v),var(--b));border-radius:4px;transition:width .25s;" id="setupProg"></div>
+    </div>
+
+    <!-- Board -->
+    <div class="grid-wrap"><div class="grid" id="setupGrid"></div></div>
+
+    <!-- Power cell setup hint -->
+    <div class="card" style="font-size:12px;color:rgba(240,240,248,.6);line-height:1.7;" id="powerHint">
+      ⚡ <strong style="color:#f0f0f8;">Power Cells:</strong> After placing numbers, mark 2 cells as power cells. When opponent crosses them, you get a special power-up!
+    </div>
+
+    <div style="display:flex;gap:10px;width:100%;">
+      <button class="btn btn-ghost" style="flex:1;font-size:12px;" onclick="clearSetup()">Clear</button>
+      <button class="btn btn-ghost" style="flex:1;font-size:12px;" onclick="autoFill()">Auto Fill</button>
+      <button class="btn btn-v" style="flex:2;font-size:12px;" id="confirmBtn" onclick="confirmSetup()" disabled>Confirm →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 7: POWER CELL SELECTION
+═══════════════════════════════════════════ -->
+<div class="scr gone" id="powerSetupScr" style="padding-top:20px;">
+  <div class="scr-inner">
+    <div style="text-align:center;">
+      <div class="h2">⚡ Choose Power Cells</div>
+      <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">
+        Tap <strong style="color:#f0f0f8;">2 cells</strong> on your board to mark as Power Cells.<br>
+        When opponent calls that number — you trigger a power-up!
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;width:100%;" id="powerTypeList"></div>
+
+    <div style="color:var(--gold);font-size:12px;text-align:center;" id="powerSelCount">Selected: 0 / 2</div>
+    <div class="grid-wrap"><div class="grid" id="powerGrid"></div></div>
+
+    <button class="btn btn-v btn-full" id="powerConfirmBtn" onclick="confirmPowerCells()" disabled>Set Power Cells →</button>
+    <button class="btn btn-ghost btn-full" style="font-size:12px;" onclick="skipPowerCells()">Skip (no power cells)</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 8: GAME
+═══════════════════════════════════════════ -->
+<div class="scr gone" id="gameScr" style="padding-top:12px;">
+  <div class="scr-inner" style="gap:10px;">
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-p">
+        <div class="hud-pname r" id="hudP1">PLAYER 1</div>
+        <div class="line-dots" id="ldP1"></div>
+        <div class="line-count"><span id="lcP1">0</span> lines</div>
+      </div>
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 54 54">
+          <circle class="t-track" cx="27" cy="27" r="23"/>
+          <circle class="t-fill" id="tArc" cx="27" cy="27" r="23"/>
+        </svg>
+        <div class="timer-over"><div class="timer-num" id="tNum">20</div></div>
+      </div>
+      <div class="hud-p right">
+        <div class="hud-pname b" id="hudP2">PLAYER 2</div>
+        <div class="line-dots" id="ldP2" style="justify-content:flex-end;"></div>
+        <div class="line-count"><span id="lcP2">0</span> lines</div>
+      </div>
+    </div>
+
+    <!-- Turn banner -->
+    <div class="turn-banner tb-r" id="turnBanner">⚔ YOUR TURN — Tap a number</div>
+
+    <!-- Missed / Bet info -->
+    <div class="missed-bar hidden" id="missedBar">⚠ Missed: <span id="missedN">0</span>/3</div>
+    <div class="bet-confirm hidden" id="betBar">
+      <span>💰 Stakes:</span>
+      <span id="betLabel" style="color:var(--gold);font-weight:700;">0 coins each</span>
+    </div>
+
+    <!-- MY board -->
+    <div style="width:100%;">
+      <div class="blbl r" id="myLbl">YOUR BOARD — TAP TO CALL</div>
+      <div class="grid-wrap"><div class="grid" id="myGrid"></div></div>
+      <div style="font-size:11px;color:rgba(240,240,248,.35);text-align:center;margin-top:4px;" id="boardHint">Tap any uncrossed cell to call that number</div>
+    </div>
+
+    <!-- Emoji reactions -->
+    <div class="reactions">
+      <div class="react-btn" onclick="sendReact('🔥')">🔥</div>
+      <div class="react-btn" onclick="sendReact('😤')">😤</div>
+      <div class="react-btn" onclick="sendReact('🎯')">🎯</div>
+    </div>
+
+    <!-- VS divider -->
+    <div style="display:flex;align-items:center;gap:12px;width:100%;">
+      <div style="flex:1;height:1px;background:var(--rim);"></div>
+      <div class="dim caps">VS</div>
+      <div style="flex:1;height:1px;background:var(--rim);"></div>
+    </div>
+
+    <!-- OPPONENT board -->
+    <div style="width:100%;margin-bottom:8px;">
+      <div class="blbl b" id="oppLbl">OPPONENT'S BOARD</div>
+      <div class="grid-wrap"><div class="grid" id="oppGrid"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 9: WIN / LOSE
+═══════════════════════════════════════════ -->
+<div class="scr center gone" id="winScr" style="background:rgba(4,4,10,.96);backdrop-filter:blur(28px);">
+  <div class="scr-inner" style="text-align:center;">
+    <span class="win-emoji" id="winEmoji">🎉</span>
+    <div class="win-title wn" id="winTitle">YOU WIN!</div>
+    <div class="win-sub" id="winSub">Outstanding performance!</div>
+    <div class="win-stats">
+      <div class="wstat"><div class="wstat-val" id="wMoves">0</div><div class="wstat-lbl">Moves</div></div>
+      <div class="wstat"><div class="wstat-val" id="wLines">0</div><div class="wstat-lbl">Lines</div></div>
+      <div class="wstat"><div class="wstat-val" id="wCoins">+50</div><div class="wstat-lbl">Coins</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:4px;animation:fadeup .5s ease .75s both;">
+      <button class="btn btn-v btn-lg btn-full" onclick="openReplay()">📼 Watch Replay</button>
+      <button class="btn btn-r btn-full" onclick="playAgain()">🔄 Play Again</button>
+      <button class="btn btn-ghost btn-full" onclick="show('dashScr');refreshDash()">🏠 Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 10: HELP CENTER (tabbed, designed)
+═══════════════════════════════════════════ -->
+<div class="scr gone" id="manualScr" style="padding:0 0 32px;">
+
+  <!-- Fixed header -->
+  <div style="width:100%;position:sticky;top:0;z-index:20;background:var(--ink);border-bottom:1px solid var(--rim);padding:16px 16px 0;">
+    <div style="max-width:420px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="show('dashScr')" style="padding:8px 14px;">← Back</button>
+        <div style="font-family:var(--fh);font-size:16px;font-weight:800;">Help Center</div>
+        <div style="width:60px;"></div>
+      </div>
+      <!-- Tab bar -->
+      <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:1px;scrollbar-width:none;" id="helpTabBar">
+        <button class="help-tab on" onclick="switchHelp('play')"  id="htab-play">🎮 Play</button>
+        <button class="help-tab"    onclick="switchHelp('power')" id="htab-power">⚡ Powers</button>
+        <button class="help-tab"    onclick="switchHelp('eco')"   id="htab-eco">💰 Economy</button>
+        <button class="help-tab"    onclick="switchHelp('feat')"  id="htab-feat">🌟 Features</button>
+        <button class="help-tab"    onclick="switchHelp('data')"  id="htab-data">🗄️ Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab panels -->
+  <div style="width:100%;max-width:420px;margin:0 auto;padding:20px 16px 0;">
+
+    <!-- ── TAB: HOW TO PLAY ── -->
+    <div id="hpanel-play">
+      <div class="hc-hero">
+        <div style="font-size:48px;margin-bottom:8px;">🎯</div>
+        <div style="font-family:var(--fh);font-size:20px;font-weight:800;">How to Play DiNGo</div>
+        <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">A 2-player strategy game where your board layout is your secret weapon.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="hc-step">
+          <div class="hc-num">1</div>
+          <div>
+            <div class="hc-step-title">Sign In</div>
+            <div class="hc-step-body">Open the app and sign in with your email or tap Google/Guest. Your coins, rank, and match history are tied to your account — so use the same account every time.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">2</div>
+          <div>
+            <div class="hc-step-title">Create or Join a Room</div>
+            <div class="hc-step-body">One player taps <strong>Create Room</strong> — a 6-letter code appears. Share it with your friend via the Copy Invite Link button. Your friend taps <strong>Join by Code</strong> and enters it. Both of you are now in the same game session.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">3</div>
+          <div>
+            <div class="hc-step-title">Arrange Your Board</div>
+            <div class="hc-step-body">You see a blank 5×5 grid. Tap any empty cell to place the next number — starting from 1, then 2, and so on up to 25. Place them in any order you like. This arrangement is your private strategy — your opponent never sees it. Tap a placed number to remove it and reposition.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">4</div>
+          <div>
+            <div class="hc-step-title">Set Power Cells ⚡</div>
+            <div class="hc-step-body">After placing all 25 numbers, choose 2 cells as secret traps. When the opponent calls a number that lands on your power cell, you trigger a power-up automatically. Place power cells on numbers you predict the opponent will call early.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">5</div>
+          <div>
+            <div class="hc-step-title">Call Numbers — Tap Your Board</div>
+            <div class="hc-step-body">On your turn, tap any uncrossed cell on <em>your own board</em> to call that number. It gets crossed on <strong>both</strong> boards at once — red ✕ on yours, blue ✕ on the opponent's. Then it's their turn.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">6</div>
+          <div>
+            <div class="hc-step-title">20-Second Timer ⏱</div>
+            <div class="hc-step-body">The ring around the clock shrinks each second. It turns gold when 8 seconds are left and red when 6 seconds remain. If you let it hit zero, the turn is skipped and logged as a missed turn. <strong>Miss 3 turns in a row and you automatically lose.</strong></div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">7</div>
+          <div>
+            <div class="hc-step-title">Win by Completing 5 Lines 🏆</div>
+            <div class="hc-step-body">A line is any full row, column, or diagonal of 5 crossed cells. There are 12 possible lines on a 5×5 board. The first player to complete 5 lines wins — even if both players complete their 5th line on the same move, the player who <em>called</em> that number wins.</div>
+          </div>
+        </div>
+        <div class="hc-step">
+          <div class="hc-num">8</div>
+          <div>
+            <div class="hc-step-title">Emoji Reactions 🔥😤🎯</div>
+            <div class="hc-step-body">Tap any of the three reaction buttons during the match to send a floating emoji animation to the screen. It's a fun way to communicate without chat — celebrate a smart move, taunt after a block, or signal precision. You have 3 uses per match.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hc-tip">
+        <div style="font-size:20px;">💡</div>
+        <div><strong style="color:#f0f0f8;">Core Strategy</strong><br>Think about both boards at once. On your board, build rows. On your opponent's board, avoid calling numbers that complete their lines. Your board arrangement determines which calls you can even make — so layout planning is the deepest skill in DiNGo.</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: POWER-UPS ── -->
+    <div id="hpanel-power" style="display:none;">
+      <div class="hc-hero">
+        <div style="font-size:48px;margin-bottom:8px;">⚡</div>
+        <div style="font-family:var(--fh);font-size:20px;font-weight:800;">Power-Ups</div>
+        <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">Secret traps you set before the match — triggered automatically when the opponent calls the right number.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card card-glow-r" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="font-size:32px;">🚫</div>
+            <div><div style="font-family:var(--fh);font-size:16px;font-weight:800;color:var(--r);">Block</div><div class="dim" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;">Best for offense</div></div>
+          </div>
+          <div style="font-size:13px;color:rgba(240,240,248,.7);line-height:1.8;">Skips the opponent's next turn entirely. They lose a move with no recourse. This is especially powerful when the opponent is one call away from completing their 5th line — that delay can be the difference between winning and losing.</div>
+          <div class="hc-tip" style="margin-top:10px;margin-bottom:0;">
+            <div>💡</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Placement tip:</strong> Put your Block cell on a number like 1, 7, or 13 — numbers that commonly appear in the first 5 calls of any match.</div>
+          </div>
+        </div>
+
+        <div class="card card-glow-b" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="font-size:32px;">🛡</div>
+            <div><div style="font-family:var(--fh);font-size:16px;font-weight:800;color:var(--b);">Shield</div><div class="dim" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;">Best for defense</div></div>
+          </div>
+          <div style="font-size:13px;color:rgba(240,240,248,.7);line-height:1.8;">Protects your most advanced line for one turn. The opponent's next call will not cross your board for one specific row or column — buying you time to complete it on your next turn. Excellent when you've built 4 lines and need just one more.</div>
+          <div class="hc-tip" style="margin-top:10px;margin-bottom:0;">
+            <div>💡</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Placement tip:</strong> Place on mid-range numbers (10–18) that tend to be called in the middle phase of the game — when lines are nearly complete.</div>
+          </div>
+        </div>
+
+        <div class="card card-glow-v" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="font-size:32px;">🔀</div>
+            <div><div style="font-family:var(--fh);font-size:16px;font-weight:800;color:var(--v);">Swap</div><div class="dim" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;">Best for recovery</div></div>
+          </div>
+          <div style="font-size:13px;color:rgba(240,240,248,.7);line-height:1.8;">Automatically swaps two uncrossed numbers on your board. The game picks the swap that creates the best new line opportunity. Use this when your initial board layout isn't working out — a mid-game reshuffle can completely change your line strategy.</div>
+          <div class="hc-tip" style="margin-top:10px;margin-bottom:0;">
+            <div>💡</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Placement tip:</strong> Place on high numbers (20–25) that tend to be called late — by then you know if your layout needs saving.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hc-tip" style="margin-top:4px;">
+        <div>⚠️</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Each power cell is single-use.</strong> Once triggered, it disappears from your board. You set 2 power cells before the match — the opponent can't see where they are, only that you might have them.</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: ECONOMY ── -->
+    <div id="hpanel-eco" style="display:none;">
+      <div class="hc-hero">
+        <div style="font-size:48px;margin-bottom:8px;">💰</div>
+        <div style="font-family:var(--fh);font-size:20px;font-weight:800;">Coins, Ranks & Economy</div>
+        <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">Everything you do in DiNGo affects your coins and rank. Here's the full breakdown.</div>
+      </div>
+
+      <div class="sec-title">Coin Earnings</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div class="hc-eco-row"><span>🏆 Win a match</span><span style="color:var(--g);font-family:var(--fm);">+50 coins</span></div>
+        <div class="hc-eco-row"><span>💔 Lose a match</span><span style="color:var(--r);font-family:var(--fm);">-10 coins</span></div>
+        <div class="hc-eco-row"><span>🎰 Daily spin (max)</span><span style="color:var(--gold);font-family:var(--fm);">+200 coins</span></div>
+        <div class="hc-eco-row"><span>🎰 Daily spin (min)</span><span style="color:var(--v);font-family:var(--fm);">+10 coins</span></div>
+        <div class="hc-eco-row"><span>📅 Daily mission</span><span style="color:var(--b);font-family:var(--fm);">+15–30 coins</span></div>
+        <div class="hc-eco-row"><span>💰 Bet win (100 stake)</span><span style="color:var(--g);font-family:var(--fm);">+190 coins</span></div>
+      </div>
+
+      <div class="sec-title">Rank Progression</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+        <div class="hc-rank-row" style="background:rgba(150,75,0,.12);border-color:rgba(150,75,0,.3);">
+          <span style="font-size:20px;">🥉</span>
+          <div><div style="font-family:var(--fh);font-size:13px;font-weight:700;color:#cd7f32;">Bronze</div><div class="dim" style="font-size:11px;">0–7 wins · Starting rank</div></div>
+        </div>
+        <div class="hc-rank-row" style="background:rgba(180,180,180,.1);border-color:rgba(180,180,180,.3);">
+          <span style="font-size:20px;">🥈</span>
+          <div><div style="font-family:var(--fh);font-size:13px;font-weight:700;color:#aaaaaa;">Silver</div><div class="dim" style="font-size:11px;">8–19 wins</div></div>
+        </div>
+        <div class="hc-rank-row" style="background:rgba(255,201,60,.08);border-color:rgba(255,201,60,.3);">
+          <span style="font-size:20px;">🥇</span>
+          <div><div style="font-family:var(--fh);font-size:13px;font-weight:700;color:var(--gold);">Gold</div><div class="dim" style="font-size:11px;">20–49 wins</div></div>
+        </div>
+        <div class="hc-rank-row" style="background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.3);">
+          <span style="font-size:20px;">💎</span>
+          <div><div style="font-family:var(--fh);font-size:13px;font-weight:700;color:var(--b);">Diamond</div><div class="dim" style="font-size:11px;">50+ wins · Top tier</div></div>
+        </div>
+      </div>
+
+      <div class="sec-title">Spending Coins</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div class="hc-eco-row"><span>🎨 Theme unlock</span><span style="color:var(--r);font-family:var(--fm);">200 coins</span></div>
+        <div class="hc-eco-row"><span>💰 Bet entry (min)</span><span style="color:var(--r);font-family:var(--fm);">25 coins</span></div>
+        <div class="hc-eco-row"><span>🏆 Tournament entry</span><span style="color:var(--r);font-family:var(--fm);">50 coins</span></div>
+      </div>
+
+      <div class="hc-tip">
+        <div>💡</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Your balance never drops below 0.</strong> If you'd lose coins but have none, the loss is ignored. So you can always keep playing even after a losing streak.</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: FEATURES ── -->
+    <div id="hpanel-feat" style="display:none;">
+      <div class="hc-hero">
+        <div style="font-size:48px;margin-bottom:8px;">🌟</div>
+        <div style="font-family:var(--fh);font-size:20px;font-weight:800;">All Features</div>
+        <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">Everything DiNGo v3 includes — tap any card to learn more.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🎮</div><div class="hc-feat-title">Board-Click Selection</div><div class="hc-feat-body">Tap your own board cell to call that number — no separate picker.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">⚡</div><div class="hc-feat-title">Power Cells</div><div class="hc-feat-body">3 types: Block, Shield, Swap. Set 2 secret traps before each match.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🏆</div><div class="hc-feat-title">Rank System</div><div class="hc-feat-body">Bronze → Silver → Gold → Diamond. Advances automatically with wins.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">📅</div><div class="hc-feat-title">Daily Missions</div><div class="hc-feat-body">3 objectives each day. Complete them for bonus coins.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🎰</div><div class="hc-feat-title">Daily Spin</div><div class="hc-feat-body">One free spin per day on the lucky wheel. Win 10–200 coins.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">💰</div><div class="hc-feat-title">Bet Mode</div><div class="hc-feat-body">Stake 25–200 coins. Winner takes all (5% platform fee).</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🎨</div><div class="hc-feat-title">5 Themes</div><div class="hc-feat-body">Dark Classic, Neon Arcade, Galaxy, Diwali, Minimal Ink.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">📼</div><div class="hc-feat-title">Match Replay</div><div class="hc-feat-body">Watch any match back turn-by-turn with play/pause controls.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">😤</div><div class="hc-feat-title">Emoji Reactions</div><div class="hc-feat-body">Send 🔥😤🎯 as floating animations during the match.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">📋</div><div class="hc-feat-title">Invite Links</div><div class="hc-feat-body">One tap creates a shareable URL that drops your friend straight into your room.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🔢</div><div class="hc-feat-title">Number Heatmap</div><div class="hc-feat-body">See your most-called numbers on your profile — a strategic insight over time.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">📊</div><div class="hc-feat-title">Activity Graph</div><div class="hc-feat-body">28-day play heatmap. The darker the square, the more you played that day.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🪪</div><div class="hc-feat-title">Player Card</div><div class="hc-feat-body">A shareable profile card with your rank, wins, win rate, and favourite number.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">⚔️</div><div class="hc-feat-title">Clans</div><div class="hc-feat-body">Join or create a clan. Compete on the clan leaderboard with your squad.</div></div>
+        <div class="hc-feat-card"><div style="font-size:28px;margin-bottom:6px;">🤖</div><div class="hc-feat-title">AI Practice</div><div class="hc-feat-body">Play against a strategic AI opponent on the same device. No friend needed.</div></div>
+        <div class="hc-feat-card" style="background:rgba(0,214,143,.06);border-color:rgba(0,214,143,.2);"><div style="font-size:28px;margin-bottom:6px;">🗄️</div><div class="hc-feat-title">Auto Room Cleanup</div><div class="hc-feat-body">Old game rooms are deleted after 3 days to keep the database clean.</div></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: DATA & STORAGE ── -->
+    <div id="hpanel-data" style="display:none;">
+      <div class="hc-hero">
+        <div style="font-size:48px;margin-bottom:8px;">🗄️</div>
+        <div style="font-family:var(--fh);font-size:20px;font-weight:800;">Data & Room Storage</div>
+        <div class="dim" style="font-size:13px;margin-top:6px;line-height:1.6;">How DiNGo manages game rooms and keeps the database clean.</div>
+      </div>
+
+      <div class="card card-glow-v" style="padding:18px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="font-size:28px;">⏳</div>
+          <div style="font-family:var(--fh);font-size:15px;font-weight:800;color:var(--v);">3-Day Room Expiry</div>
+        </div>
+        <div style="font-size:13px;color:rgba(240,240,248,.7);line-height:1.8;">Every game room is automatically deleted 3 days after it was created. This applies to all rooms — whether the game finished, was abandoned, or is still in progress. This keeps the database lean and prevents storage from filling up over time.</div>
+      </div>
+
+      <div class="card" style="padding:18px;margin-bottom:12px;">
+        <div style="font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:10px;color:#f0f0f8;">What happens after 3 days?</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:10px;font-size:13px;color:rgba(240,240,248,.7);"><span style="color:var(--g);font-size:16px;">✓</span><span>Your player profile (coins, rank, match history) is <strong style="color:#f0f0f8;">never deleted</strong> — it lives in a separate database permanently.</span></div>
+          <div style="display:flex;gap:10px;font-size:13px;color:rgba(240,240,248,.7);"><span style="color:var(--g);font-size:16px;">✓</span><span>Match results are saved to your profile history before the room is removed.</span></div>
+          <div style="display:flex;gap:10px;font-size:13px;color:rgba(240,240,248,.7);"><span style="color:var(--r);font-size:16px;">✗</span><span>The replay of that specific match will no longer be accessible after 3 days.</span></div>
+          <div style="display:flex;gap:10px;font-size:13px;color:rgba(240,240,248,.7);"><span style="color:var(--r);font-size:16px;">✗</span><span>Any room where both players disconnected before finishing will also be removed.</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:18px;margin-bottom:12px;">
+        <div style="font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:10px;color:#f0f0f8;">How cleanup works</div>
+        <div style="font-size:13px;color:rgba(240,240,248,.7);line-height:1.8;">When any player opens DiNGo and logs in, the app silently checks all existing rooms in the database, compares each room's creation timestamp to today's date, and removes any room older than 3 days. This runs invisibly in the background and has no effect on your gameplay experience.</div>
+      </div>
+
+      <div class="hc-tip">
+        <div>💡</div><div style="font-size:12px;"><strong style="color:#f0f0f8;">Why 3 days?</strong> Firebase Realtime Database on the free (Spark) plan has a 1GB storage limit. Each game room uses about 3–5KB. Three days gives you time to watch your replay and share results, while still keeping old abandoned rooms from accumulating and using up storage over weeks and months.</div>
+      </div>
+    </div>
+
+  </div><!-- end tab panels wrapper -->
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT — FULL ENGINE
+═══════════════════════════════════════════ -->
+<script>
+/* ──────────────────────────────────────────────
+   SCREEN MANAGEMENT
+────────────────────────────────────────────── */
+function show(id){
+  document.querySelectorAll('.scr').forEach(s=>{
+    s.classList.toggle('gone', s.id !== id);
+  });
+  const el = document.getElementById(id);
+  if(el) el.scrollTop = 0;
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ──────────────────────────────────────────────
+   TOAST NOTIFICATIONS
+────────────────────────────────────────────── */
+function toast(msg, duration=2500){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+/* ──────────────────────────────────────────────
+   PLAYER DATA MODEL
+   In production: read/write from Firebase Firestore
+────────────────────────────────────────────── */
+let P = null; // Current player object
+
+const DEMO_DB = {
+  'test@dingo.com': {
+    pass:'123456', username:'NinjaGrid',
+    coins:1340, wins:47, losses:18, streak:3, rank:'Gold',
+    spinUsed: false,
+    clan: 'GridWarriors',
+    equippedTheme: 'default',
+    numHistory: {5:12,13:9,7:8,19:7,3:6,21:5,1:4},
+    powerUsed: 0,
+    matches:[
+      {opp:'StormPlayer',result:'win', pts:+50,lines:5,time:'2h ago'},
+      {opp:'QuickFive',  result:'win', pts:+50,lines:5,time:'5h ago'},
+      {opp:'GridMaster', result:'loss',pts:-10,lines:3,time:'Yesterday'},
+      {opp:'ZeroX',      result:'win', pts:+50,lines:5,time:'2d ago'},
+    ],
+    activity: Array.from({length:28},()=>Math.floor(Math.random()*5)),
+    missions:[
+      {title:'Win 2 games today',  reward:30, progress:1, target:2},
+      {title:'Call number 7',      reward:15, progress:0, target:1},
+      {title:'Complete 3 matches', reward:20, progress:2, target:3},
+    ]
+  }
+};
+
+/* ──────────────────────────────────────────────
+   AUTH
+────────────────────────────────────────────── */
+function switchTab(t){
+  ['in','up'].forEach(id=>{
+    document.getElementById('form'+id.charAt(0).toUpperCase()+id.slice(1)) ||
+    document.getElementById('form'+id.toUpperCase());
+  });
+  document.getElementById('formIn').style.display  = t==='in'?'flex':'none';
+  document.getElementById('formUp').style.display  = t==='up'?'flex':'none';
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('on',i===(t==='in'?0:1)));
+}
+
+/* ── Helper: build a brand-new player profile object ── */
+function newPlayer(email, username){
+  return {
+    email, username,
+    coins:100, wins:0, losses:0, streak:0, rank:'Bronze',
+    spinUsed:false, spinDate:'', clan:null, equippedTheme:'default',
+    numHistory:{}, powerUsed:0,
+    matches:[], activity:Array.from({length:28},()=>0),
+    missions:[
+      {title:'Win 1 game today',   reward:30, progress:0, target:1},
+      {title:'Complete 3 matches', reward:20, progress:0, target:3},
+      {title:'Call number 13',     reward:15, progress:0, target:1},
+    ]
+  };
+}
+
+/* ── Save the current player profile to Firestore ──
+   Called after login (to create), and after every match (to update).
+   setDoc with merge:true means it only overwrites the fields we send —
+   it will never delete fields we didn't include, which is safe. ── */
+async function saveProfile(){
+  if(!P || !P.uid || !window._FB) return;
+  const { db, doc, setDoc } = window._FB;
+  try {
+    await setDoc(doc(db, 'users', P.uid), {
+      username:      P.username,
+      email:         P.email,
+      coins:         P.coins,
+      wins:          P.wins,
+      losses:        P.losses,
+      streak:        P.streak,
+      rank:          P.rank,
+      clan:          P.clan      || null,
+      numHistory:    P.numHistory|| {},
+      activity:      P.activity  || [],
+      spinUsed:      P.spinUsed  || false,
+      spinDate:      P.spinDate  || '',
+      matches:       (P.matches  || []).slice(0, 10), // keep last 10
+      missions:      P.missions  || [],
+      equippedTheme: P.equippedTheme || 'default',
+    }, { merge: true });
+  } catch(e){
+    console.warn('[DiNGo] saveProfile failed:', e);
+  }
+}
+
+/* ── Sign In / Register ── */
+function doAuth(e, mode){
+  e.preventDefault();
+  const errEl = document.getElementById(mode==='in'?'inErr':'upErr');
+  errEl.textContent = '';
+
+  if(mode==='in'){
+    const email = document.getElementById('inEmail').value.trim();
+    const pass  = document.getElementById('inPass').value;
+
+    if(!email){ errEl.textContent='Enter your email'; return; }
+    if(pass.length<6){ errEl.textContent='Password must be 6+ characters'; return; }
+
+    if(window._FB){
+      // ── Real Firebase login ──
+      errEl.textContent = 'Signing in…';
+      const { auth, signInWithEmailAndPassword, db, doc, getDoc } = window._FB;
+      signInWithEmailAndPassword(auth, email, pass)
+        .then(async cred => {
+          const uid  = cred.user.uid;
+          const snap = await getDoc(doc(db, 'users', uid));
+          if(snap.exists()){
+            P = { uid, email: cred.user.email, ...snap.data() };
+          } else {
+            // Profile missing in Firestore — create it now
+            P = newPlayer(cred.user.email, cred.user.email.split('@')[0]);
+            P.uid = uid;
+            await saveProfile();
+          }
+          goDash();
+        })
+        .catch(err => {
+          // Translate Firebase error codes into friendly messages
+          const msgs = {
+            'auth/user-not-found':  'No account found with this email.',
+            'auth/wrong-password':  'Incorrect password.',
+            'auth/invalid-email':   'Please enter a valid email address.',
+            'auth/too-many-requests':'Too many attempts. Try again in a few minutes.',
+            'auth/invalid-credential':'Email or password is incorrect.',
+          };
+          errEl.textContent = msgs[err.code] || err.message;
+        });
+    } else {
+      // ── Offline demo fallback (no Firebase config) ──
+      if(DEMO_DB[email.toLowerCase()] && DEMO_DB[email.toLowerCase()].pass===pass){
+        P = {...DEMO_DB[email.toLowerCase()], email};
+      } else if(email && pass.length>=6){
+        P = newPlayer(email, email.split('@')[0]);
+      } else {
+        errEl.textContent='Try: test@dingo.com / 123456'; return;
+      }
+      goDash();
+    }
+
+  } else {
+    // ── Register new account ──
+    const name  = document.getElementById('upName').value.trim();
+    const email = document.getElementById('upEmail').value.trim();
+    const pass  = document.getElementById('upPass').value;
+
+    if(!name)         { errEl.textContent='Username required'; return; }
+    if(!email)        { errEl.textContent='Email required'; return; }
+    if(pass.length<6) { errEl.textContent='Password must be 6+ characters'; return; }
+
+    if(window._FB){
+      errEl.textContent = 'Creating account…';
+      const { auth, createUserWithEmailAndPassword, db, doc, setDoc } = window._FB;
+      createUserWithEmailAndPassword(auth, email, pass)
+        .then(async cred => {
+          const uid = cred.user.uid;
+          P = newPlayer(email, name);
+          P.uid = uid;
+          await saveProfile(); // Write fresh profile to Firestore
+          goDash();
+        })
+        .catch(err => {
+          const msgs = {
+            'auth/email-already-in-use': 'An account with this email already exists. Sign in instead.',
+            'auth/weak-password':        'Password is too weak — use at least 6 characters.',
+            'auth/invalid-email':        'Please enter a valid email address.',
+          };
+          errEl.textContent = msgs[err.code] || err.message;
+        });
+    } else {
+      P = newPlayer(email, name);
+      goDash();
+    }
+  }
+}
+
+/* ── Google OAuth login ── */
+function oauthLogin(provider){
+  if(provider==='Google' && window._FB){
+    const { auth, GoogleAuthProvider, signInWithPopup, db, doc, getDoc } = window._FB;
+    const prov = new GoogleAuthProvider();
+    signInWithPopup(auth, prov)
+      .then(async cred => {
+        const uid  = cred.user.uid;
+        const snap = await getDoc(doc(db, 'users', uid));
+        if(snap.exists()){
+          P = { uid, email: cred.user.email, ...snap.data() };
+        } else {
+          // First Google login — build a fresh profile
+          const displayName = cred.user.displayName || cred.user.email.split('@')[0];
+          P = newPlayer(cred.user.email, displayName);
+          P.uid = uid;
+          await saveProfile();
+        }
+        goDash();
+      })
+      .catch(err => {
+        // 'auth/popup-blocked' is common on mobile — show helpful hint
+        if(err.code==='auth/popup-blocked'){
+          toast('⚠ Popup blocked — please allow popups and try again.');
+        } else {
+          toast('Google login failed: ' + err.message);
+        }
+      });
+  } else {
+    // Guest mode — a temporary local-only profile, no Firebase
+    P = newPlayer('guest@dingo.com', 'GuestPlayer');
+    P.coins = 100; P.wins = 0;
+    goDash();
+  }
+}
+
+/* ── Sign out ── */
+function logout(){
+  if(window._FB){ window._FB.signOut(window._FB.auth).catch(()=>{}); }
+  P = null;
+  window._sessionRestored = false;
+  show('loginScr');
+}
+
+/* ──────────────────────────────────────────────
+   DASHBOARD
+────────────────────────────────────────────── */
+function goDash(){
+  refreshDash();
+  show('dashScr');
+  // Silently run 3-day room cleanup in the background on every login
+  // This is the Spark-plan alternative to a scheduled Cloud Function
+  setTimeout(runRoomCleanup, 2000); // 2s delay so login UI settles first
+}
+
+function refreshDash(){
+  if(!P) return;
+  document.getElementById('avLetter').textContent = P.username[0].toUpperCase();
+  document.getElementById('dashName').textContent  = P.username;
+  document.getElementById('dashEmail').textContent = P.email;
+  document.getElementById('dCoins').textContent    = P.coins.toLocaleString();
+  document.getElementById('dWins').textContent     = P.wins;
+  const total = P.wins + P.losses;
+  document.getElementById('dWR').textContent = total ? Math.round(P.wins/total*100)+'%' : '0%';
+
+  const ranks = {Bronze:'🥉',Silver:'🥈',Gold:'🥇',Diamond:'💎'};
+  P.rank = P.wins>=50?'Diamond':P.wins>=20?'Gold':P.wins>=8?'Silver':'Bronze';
+  document.getElementById('rankPill').textContent  = (ranks[P.rank]||'🥉') + ' ' + P.rank;
+  document.getElementById('streakPill').textContent= '🔥 ' + P.streak;
+  document.getElementById('clanPill').textContent  = P.clan ? '⚔️ '+P.clan : '⚔️ No Clan';
+
+  // Heatmap
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+  P.activity.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='hc h'+Math.min(v,4);d.title=v+' games';hm.appendChild(d);
+  });
+
+  // Number heatmap
+  const nh = document.getElementById('numHeatmap');
+  const sorted = Object.entries(P.numHistory||{}).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(sorted.length===0){
+    nh.innerHTML='<div class="dim" style="font-size:13px;text-align:center;">Play some games to see your most-called numbers!</div>';
+  } else {
+    nh.innerHTML = sorted.map(([n,c])=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div class="mono" style="width:24px;font-size:13px;color:var(--v);">${n}</div>
+        <div style="flex:1;height:6px;background:var(--ink3);border-radius:4px;overflow:hidden;">
+          <div style="width:${Math.min(100,c*8)}%;height:100%;background:linear-gradient(90deg,var(--v),var(--b));border-radius:4px;"></div>
+        </div>
+        <div class="mono dim" style="font-size:11px;width:20px;text-align:right;">${c}x</div>
+      </div>`).join('');
+  }
+
+  // Missions
+  const ml = document.getElementById('missionList');
+  ml.innerHTML = '';
+  (P.missions||[]).forEach(m=>{
+    const pct = Math.min(100, Math.round(m.progress/m.target*100));
+    const done = m.progress >= m.target;
+    const el = document.createElement('div');
+    el.className = 'mission-row';
+    el.innerHTML = `
+      <div style="font-size:20px;">${done?'✅':'🎯'}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:5px;">${m.title}</div>
+        <div class="mission-bar-wrap"><div class="mission-bar" style="width:${pct}%"></div></div>
+        <div class="dim" style="font-size:11px;margin-top:3px;">${m.progress}/${m.target}</div>
+      </div>
+      <div class="pill pill-gold">+${m.reward}</div>`;
+    ml.appendChild(el);
+  });
+
+  // Match list
+  const matchEl = document.getElementById('matchList');
+  matchEl.innerHTML = '';
+  if(!P.matches||P.matches.length===0){
+    matchEl.innerHTML='<div class="dim" style="font-size:13px;text-align:center;padding:16px;">No matches yet — play your first game!</div>';
+    return;
+  }
+  P.matches.forEach(m=>{
+    const row=document.createElement('div');
+    row.className='match-row';
+    row.innerHTML=`
+      <div class="match-badge ${m.result==='win'?'mb-w':'mb-l'}">${m.result.toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">vs ${m.opp}</div>
+        <div class="dim" style="font-size:11px;margin-top:2px;">${m.lines} lines · ${m.time}</div>
+      </div>
+      <div class="mono" style="font-size:13px;color:${m.pts>0?'var(--g)':'var(--r)'};">${m.pts>0?'+':''}${m.pts}</div>`;
+    matchEl.appendChild(row);
+  });
+}
+
+function goLobby(){ show('lobbyScr'); }
+
+/* ──────────────────────────────────────────────
+   THEMES
+────────────────────────────────────────────── */
+const THEMES = [
+  {id:'default', name:'Dark Classic',  preview:'⬛', bg:'#0d0d1c', accent:'#7c5cfc'},
+  {id:'neon',    name:'Neon Arcade',   preview:'🟣', bg:'#0a001a', accent:'#ff00ff'},
+  {id:'galaxy',  name:'Galaxy',        preview:'🌌', bg:'#000520', accent:'#4488ff'},
+  {id:'diwali',  name:'Diwali ✨',     preview:'🪔', bg:'#1a0800', accent:'#ff8800'},
+  {id:'minimal', name:'Minimal Ink',   preview:'⬜', bg:'#f8f8f0', accent:'#111111'},
+];
+
+function openThemeModal(){
+  const tg = document.getElementById('themeGrid');
+  tg.innerHTML = '';
+  THEMES.forEach(th=>{
+    const locked = th.id!=='default' && (P.coins < 200);
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (P.equippedTheme===th.id?' active':'');
+    card.style.background = `linear-gradient(135deg, ${th.bg}, rgba(0,0,0,.5))`;
+    card.innerHTML = `
+      <div class="tc-preview" style="background:${th.bg};border:2px solid ${th.accent};">${th.preview}</div>
+      <div style="font-family:var(--fh);font-size:13px;font-weight:700;">${th.name}</div>
+      <div class="dim" style="font-size:11px;margin-top:4px;">${locked?'🔒 200 coins':'✓ Unlocked'}</div>`;
+    card.onclick = ()=>{
+      if(locked){ toast('💰 You need 200 coins to unlock this theme!'); return; }
+      P.equippedTheme = th.id;
+      document.documentElement.style.setProperty('--v', th.accent);
+      openThemeModal(); // refresh
+      toast('🎨 Theme applied!');
+    };
+    tg.appendChild(card);
+  });
+  openModal('themeModal');
+}
+
+/* ──────────────────────────────────────────────
+   PLAYER CARD
+────────────────────────────────────────────── */
+function openCardModal(){
+  const el = document.getElementById('playerCardEl');
+  const ranks = {Bronze:'🥉',Silver:'🥈',Gold:'🥇',Diamond:'💎'};
+  const total = P.wins + P.losses;
+  const wr = total ? Math.round(P.wins/total*100) : 0;
+  const topNum = Object.entries(P.numHistory||{}).sort((a,b)=>b[1]-a[1])[0];
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--v),var(--r));display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:20px;font-weight:800;">${P.username[0].toUpperCase()}</div>
+      <div>
+        <div style="font-family:var(--fh);font-size:18px;font-weight:800;">${P.username}</div>
+        <div class="dim" style="font-size:11px;">DiNGo Player</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="text-align:center;"><div class="mono" style="font-size:22px;color:var(--gold);">${P.wins}</div><div class="dim" style="font-size:10px;letter-spacing:1px;">WINS</div></div>
+      <div style="text-align:center;"><div class="mono" style="font-size:22px;color:var(--b);">${wr}%</div><div class="dim" style="font-size:10px;letter-spacing:1px;">WIN RATE</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="pill pill-gold">${ranks[P.rank]||'🥉'} ${P.rank}</span>
+      <span class="pill pill-g">🔥 ${P.streak} streak</span>
+      ${topNum?`<span class="pill pill-v">Fav #${topNum[0]}</span>`:''}
+    </div>
+    <div class="dim" style="font-size:10px;text-align:right;margin-top:14px;letter-spacing:1px;">DiNGo — Strategic Grid</div>`;
+  openModal('cardModal');
+}
+
+function shareCard(){
+  if(navigator.share){
+    navigator.share({title:'My DiNGo Card',text:`${P.username} | ${P.rank} | ${P.wins} wins | Check out DiNGo!`});
+  } else {
+    navigator.clipboard?.writeText(`DiNGo Player Card: ${P.username} | ${P.rank} | ${P.wins} wins`);
+    toast('📋 Card info copied!');
+  }
+}
+
+/* ──────────────────────────────────────────────
+   DAILY SPIN
+────────────────────────────────────────────── */
+const SPIN_REWARDS = [50,100,10,200,25,75];
+const SPIN_COLORS  = ['#ff2d55','#7c5cfc','#00e5ff','#ffc93c','#00d68f','#ff6b35'];
+let spinDone = false;
+
+function openSpinModal(){
+  spinDone = false;
+  document.getElementById('spinResult').textContent = '';
+  const wh = document.getElementById('spinWheel');
+  wh.querySelector('.spin-center').textContent = P.spinUsed ? '✓ Done' : 'TAP!';
+  wh.style.transform = 'rotate(0deg)';
+  openModal('spinModal');
+}
+
+function doSpin(){
+  if(spinDone || P.spinUsed){ toast('🎰 Come back tomorrow for another spin!'); return; }
+  spinDone = true;
+  P.spinUsed = true;
+  const idx    = Math.floor(Math.random()*6);
+  const reward = SPIN_REWARDS[idx];
+  const deg    = 1440 + (idx * 60) + 30; // 4 full rotations + land on slot
+  const wh = document.getElementById('spinWheel');
+  wh.style.transform = `rotate(${deg}deg)`;
+  setTimeout(()=>{
+    P.coins += reward;
+    document.getElementById('spinResult').textContent = `🎉 You won ${reward} coins!`;
+    refreshDash();
+    toast(`💰 +${reward} coins earned!`);
+  }, 4200);
+}
+
+/* ──────────────────────────────────────────────
+   CLAN SYSTEM
+────────────────────────────────────────────── */
+const DEMO_CLANS = [
+  {name:'GridWarriors', members:8, rank:1, totalWins:340},
+  {name:'NumMasters',   members:6, rank:2, totalWins:280},
+  {name:'BoardKings',   members:5, rank:3, totalWins:210},
+];
+
+function openClanModal(){
+  const title = document.getElementById('clanModalTitle');
+  const body  = document.getElementById('clanModalBody');
+
+  if(P.clan){
+    title.textContent = '⚔️ Your Clan — ' + P.clan;
+    body.innerHTML = `
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-size:13px;color:rgba(240,240,248,.6);line-height:2.2;">
+          Members: <strong>8</strong><br>Rank: <strong style="color:var(--gold);">#1 on Leaderboard</strong><br>Total Wins: <strong>340</strong>
+        </div>
+      </div>
+      <div class="sec-title">Clan Members</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${['NinjaGrid','StormPlayer','QuickFive','ZeroX','GridBot','NumHawk','RushFive','LineKing'].map((m,i)=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--ink3);border-radius:var(--sm);">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--v10);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;">${m[0]}</div>
+            <div style="flex:1;font-size:13px;">${m}</div>
+            <div class="dim" style="font-size:11px;">${Math.floor(Math.random()*50)+5} wins</div>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-ghost btn-full" style="margin-top:12px;color:var(--r);" onclick="P.clan=null;closeModal('clanModal');refreshDash();toast('Left clan');">Leave Clan</button>`;
+  } else {
+    title.textContent = '⚔️ Clans';
+    body.innerHTML = `
+      <div class="sec-title">Top Clans</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        ${DEMO_CLANS.map(cl=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--ink3);border-radius:var(--md);">
+            <div style="font-family:var(--fm);font-size:18px;color:var(--gold);width:28px;">#${cl.rank}</div>
+            <div style="flex:1;"><div style="font-weight:700;">${cl.name}</div><div class="dim" style="font-size:11px;">${cl.members} members · ${cl.totalWins} wins</div></div>
+            <button class="btn btn-sm btn-v" onclick="joinClan('${cl.name}')">Join</button>
+          </div>`).join('')}
+      </div>
+      <div class="sep"></div>
+      <div class="sec-title" style="margin-top:10px;">Create New Clan</div>
+      <div style="display:flex;gap:8px;">
+        <input class="inp bare" id="newClanName" placeholder="Clan name" style="flex:1;">
+        <button class="btn btn-v" onclick="createClan()">Create</button>
+      </div>`;
+  }
+  openModal('clanModal');
+}
+
+function joinClan(name){
+  P.clan = name;
+  closeModal('clanModal');
+  refreshDash();
+  toast('⚔️ Joined '+name+'!');
+}
+
+function createClan(){
+  const name = document.getElementById('newClanName')?.value.trim();
+  if(!name){ toast('Enter a clan name'); return; }
+  P.clan = name;
+  closeModal('clanModal');
+  refreshDash();
+  toast('⚔️ Clan created: '+name+'!');
+}
+
+/* ──────────────────────────────────────────────
+   TOURNAMENT INFO
+────────────────────────────────────────────── */
+function openTournamentInfo(){
+  toast('🏆 Sunday Tournament starts in 2d 14h — Register costs 50 coins, prize pool: 1000 coins!');
+}
+
+/* ──────────────────────────────────────────────
+   BET MODE
+────────────────────────────────────────────── */
+let G_betAmount = 0;
+
+function openBetModal(){
+  const opts = document.getElementById('betOptions');
+  const stakes = [25, 50, 100, 200];
+  opts.innerHTML = stakes.map(s=>`
+    <button class="btn ${P.coins>=s?'btn-gold':'btn-ghost'} btn-full"
+      ${P.coins<s?'disabled':''} onclick="setBet(${s})">
+      💰 Stake ${s} coins each ${P.coins<s?'(insufficient)':'— Win '+(s*2-Math.round(s*.1))+' total'}
+    </button>`).join('');
+  openModal('betModal');
+}
+
+function setBet(amount){
+  G_betAmount = amount;
+  P.coins -= amount;
+  closeModal('betModal');
+  toast(`💰 Staked ${amount} coins — now create or join a room!`);
+  refreshDash();
+  show('lobbyScr');
+}
+
+/* ──────────────────────────────────────────────
+   ROOM MANAGEMENT
+   (doCreateRoom is defined lower in the file,
+   near the cleanup logic, so it can stamp
+   the createdAt timestamp on every new room)
+────────────────────────────────────────────── */
+
+function copyInviteLink(){
+  const code = document.getElementById('roomCodeVal').textContent;
+  const url  = `${location.href.split('?')[0]}?room=${code}`;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url);
+    toast('📋 Invite link copied!');
+  } else {
+    prompt('Share this link:', url);
+  }
+}
+
+function doJoin(){
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if(code.length<4){ toast('Enter a valid room code'); return; }
+
+  if(window._FB){
+    // ── Online join: verify the room exists in Firebase first ──
+    const { rtdb, ref, get } = window._FB;
+    toast('🔗 Finding room ' + code + '…');
+    get(ref(rtdb, 'rooms/' + code))
+      .then(snapshot => {
+        if(!snapshot.exists()){
+          toast('❌ Room not found. Check the code and try again.'); return;
+        }
+        const data = snapshot.val();
+        if(data.status === 'finished'){
+          toast('⚠ This room's game has already finished.'); return;
+        }
+        // Room is valid — store the code and start setup as Player 2
+        G.roomCode    = code;
+        G.isLocalDemo = false;
+        G.p1name      = 'Opponent';
+        G.p2name      = P?.username || 'You';
+        resetG();
+        // Mark yourself as player 2 in the room
+        const { update } = window._FB;
+        update(ref(rtdb, 'rooms/' + code), {
+          player2uid: P?.uid || 'guest',
+          status: 'setup'
+        });
+        startSetup(0); // Player 2 arranges their board
+      })
+      .catch(e => toast('Connection error: ' + e.message));
+  } else {
+    // Offline demo fallback
+    toast('🔗 Joining demo game…');
+    startDemo();
+  }
+}
+
+/* ──────────────────────────────────────────────
+   GAME STATE
+────────────────────────────────────────────── */
+const G = {
+  boards:[[],[]], // flat 25-element arrays
+  setupCount:[0,0],
+  powerCells:[[],[]], // indices of power cells for each player
+  powerTypes:[[],[]], // what power each cell gives
+  pendingPower:null, // queued power-up to activate
+  crossed: new Set(),
+  turn:0,
+  lines:[0,0],
+  missedTurns:[0,0],
+  totalMoves:0,
+  timerSec:20,
+  timerInterval:null,
+  gameOver:false,
+  p1name:'You',
+  p2name:'Opponent',
+  roomCode:'',
+  betAmount:0,
+  setupPhase:0, // which player is setting up (local demo)
+  moveHistory:[], // for replay: [{num, callerIdx}]
+  boardHistory:[], // snapshots for replay
+  isLocalDemo:true,
+  _roomListener:null, // holds the Firebase onValue unsubscribe function
+};
+
+function resetG(){
+  G.boards = [[],[]];
+  G.setupCount = [0,0];
+  G.powerCells = [[],[]];
+  G.powerTypes  = [[],[]];
+  G.pendingPower = null;
+  G.crossed = new Set();
+  G.turn = 0;
+  G.lines = [0,0];
+  G.missedTurns = [0,0];
+  G.totalMoves = 0;
+  G.timerSec = 20;
+  G.gameOver = false;
+  G.moveHistory = [];
+  G.betAmount = G_betAmount;
+  G_betAmount = 0;
+  if(G.timerInterval) clearInterval(G.timerInterval);
+  G.timerInterval = null;
+  // Detach any live Firebase room listener from a previous match
+  if(G._roomListener){ G._roomListener(); G._roomListener = null; }
+}
+
+/* ──────────────────────────────────────────────
+   DEMO GAME START
+────────────────────────────────────────────── */
+function startDemo(){
+  resetG();
+  G.p1name = P?.username || 'You';
+  G.p2name = 'AI Opponent';
+  G.isLocalDemo = true;
+  startSetup(0);
+}
+
+/* ──────────────────────────────────────────────
+   SETUP PHASE
+────────────────────────────────────────────── */
+function startSetup(pIdx){
+  G.setupPhase = pIdx;
+  G.boards[pIdx] = new Array(25).fill(0);
+  G.setupCount[pIdx] = 0;
+  document.getElementById('setupTitle').textContent = pIdx===0 ? 'Arrange Your Board' : 'Player 2 — Set Board';
+  document.getElementById('setupSub').textContent   = 'Tap empty cells to place 1–25 in any order';
+  document.getElementById('setupProg').style.width  = '0%';
+  document.getElementById('confirmBtn').disabled    = true;
+  document.getElementById('powerHint').style.display = pIdx===0 ? '' : 'none';
+  buildSetupGrid(pIdx);
+  show('setupScr');
+}
+
+function buildSetupGrid(pIdx){
+  const g = document.getElementById('setupGrid');
+  g.innerHTML = '';
+  for(let i=0;i<25;i++){
+    const c=document.createElement('div');
+    c.className='cell empty';
+    c.innerHTML='<span class="cell-n"></span><span class="cx-mark">✕</span>';
+    c.onclick=()=>setupClick(pIdx,i);
+    g.appendChild(c);
+  }
+}
+
+function setupClick(pIdx, idx){
+  const board = G.boards[pIdx];
+  if(board[idx]!==0){
+    // Un-place and shift
+    const removed = board[idx];
+    for(let i=0;i<25;i++) if(board[i]>removed) board[i]--;
+    board[idx]=0;
+    G.setupCount[pIdx] = board.filter(x=>x>0).length;
+    renderSetupGrid(pIdx); return;
+  }
+  const next = G.setupCount[pIdx]+1;
+  if(next>25) return;
+  board[idx]=next;
+  G.setupCount[pIdx]=next;
+  renderSetupGrid(pIdx);
+}
+
+function renderSetupGrid(pIdx){
+  const cells = document.querySelectorAll('#setupGrid .cell');
+  const board = G.boards[pIdx];
+  const count = G.setupCount[pIdx];
+  cells.forEach((c,i)=>{
+    const n=board[i];
+    c.querySelector('.cell-n').textContent = n>0?n:'';
+    c.className='cell '+(n>0?'placed':'empty');
+    c.onclick=()=>setupClick(pIdx,i);
+  });
+  const pct=(count/25*100);
+  document.getElementById('setupProg').style.width=pct+'%';
+  document.getElementById('setupSub').textContent=count<25?`Place number ${count+1}`:'✓ All placed — confirm!';
+  document.getElementById('confirmBtn').disabled=count<25;
+}
+
+function clearSetup(){
+  G.boards[G.setupPhase]=new Array(25).fill(0);
+  G.setupCount[G.setupPhase]=0;
+  renderSetupGrid(G.setupPhase);
+}
+
+function autoFill(){
+  const nums=shuffle([...Array(25)].map((_,i)=>i+1));
+  G.boards[G.setupPhase]=nums;
+  G.setupCount[G.setupPhase]=25;
+  renderSetupGrid(G.setupPhase);
+}
+
+function confirmSetup(){
+  const pIdx=G.setupPhase;
+  if(G.setupCount[pIdx]<25) return;
+  // Go to power cell selection
+  startPowerSetup(pIdx);
+}
+
+/* ──────────────────────────────────────────────
+   POWER CELL SETUP
+────────────────────────────────────────────── */
+const POWER_TYPES = [
+  {id:'block', name:'🚫 Block', desc:'Skip opponent\'s next turn'},
+  {id:'shield',name:'🛡 Shield',desc:'Protect your best line for 1 turn'},
+  {id:'swap',  name:'🔀 Swap',  desc:'Swap a number on your board'},
+];
+
+let selectedPowerCells = [];
+let selectedPowerType  = 'block';
+
+function startPowerSetup(pIdx){
+  selectedPowerCells = [];
+  selectedPowerType  = 'block';
+
+  // Power type selector
+  const list = document.getElementById('powerTypeList');
+  list.innerHTML = POWER_TYPES.map((pt,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;
+      background:${i===0?'var(--v10)':'var(--ink2)'};
+      border:1px solid ${i===0?'var(--v25)':'var(--rim)'};
+      border-radius:var(--md);cursor:pointer;" id="ptCard_${pt.id}" onclick="selectPowerType('${pt.id}')">
+      <div style="font-size:24px;">${pt.name.split(' ')[0]}</div>
+      <div><div style="font-family:var(--fh);font-size:13px;font-weight:700;">${pt.name}</div>
+        <div class="dim" style="font-size:12px;">${pt.desc}</div></div>
+    </div>`).join('');
+
+  // Power grid (copy of setup board)
+  const pg = document.getElementById('powerGrid');
+  pg.innerHTML='';
+  G.boards[pIdx].forEach((num,i)=>{
+    const c=document.createElement('div');
+    c.className='cell placed';
+    c.innerHTML=`<span class="cell-n">${num}</span><span class="cx-mark">✕</span>`;
+    c.onclick=()=>powerCellClick(pIdx,i,num,c);
+    pg.appendChild(c);
+  });
+
+  document.getElementById('powerSelCount').textContent='Selected: 0 / 2';
+  document.getElementById('powerConfirmBtn').disabled=true;
+  show('powerSetupScr');
+}
+
+function selectPowerType(id){
+  selectedPowerType=id;
+  POWER_TYPES.forEach(pt=>{
+    const el=document.getElementById('ptCard_'+pt.id);
+    if(!el) return;
+    el.style.background = pt.id===id?'var(--v10)':'var(--ink2)';
+    el.style.borderColor = pt.id===id?'var(--v25)':'var(--rim)';
+  });
+}
+
+function powerCellClick(pIdx, idx, num, cellEl){
+  if(selectedPowerCells.includes(idx)){
+    selectedPowerCells=selectedPowerCells.filter(x=>x!==idx);
+    cellEl.classList.remove('sel');
+    cellEl.querySelector('.cell-n').textContent=num;
+  } else if(selectedPowerCells.length<2){
+    selectedPowerCells.push(idx);
+    cellEl.classList.add('sel');
+    cellEl.querySelector('.cell-n').textContent='⚡';
+  }
+  document.getElementById('powerSelCount').textContent=`Selected: ${selectedPowerCells.length} / 2`;
+  document.getElementById('powerConfirmBtn').disabled=selectedPowerCells.length===0;
+}
+
+function confirmPowerCells(){
+  const pIdx=G.setupPhase;
+  G.powerCells[pIdx]=[...selectedPowerCells];
+  G.powerTypes[pIdx]=selectedPowerCells.map(()=>selectedPowerType);
+  proceedAfterPowerSetup(pIdx);
+}
+
+function skipPowerCells(){
+  G.powerCells[G.setupPhase]=[];
+  G.powerTypes[G.setupPhase]=[];
+  proceedAfterPowerSetup(G.setupPhase);
+}
+
+function proceedAfterPowerSetup(pIdx){
+  if(G.isLocalDemo && pIdx===0){
+    // P2 setup (AI auto-fills)
+    G.boards[1]=shuffle([...Array(25)].map((_,i)=>i+1));
+    G.powerCells[1]=[Math.floor(Math.random()*25),Math.floor(Math.random()*25)];
+    G.powerTypes[1]=['block','shield'];
+    startMatch();
+  } else {
+    startMatch();
+  }
+}
+
+/* ──────────────────────────────────────────────
+   MATCH PHASE
+────────────────────────────────────────────── */
+function startMatch(){
+  buildGameGrids();
+  buildLineDots();
+  updateHUD();
+  document.getElementById('betBar').classList.toggle('hidden', G.betAmount===0);
+  if(G.betAmount>0) document.getElementById('betLabel').textContent=G.betAmount+' coins each';
+  show('gameScr');
+  startTimer();
+
+  // ── Firebase Realtime Database listener ──
+  // This is the heartbeat of online multiplayer. Both players' phones
+  // attach this listener to the same room path in Firebase. The moment
+  // either player writes a move, Firebase pushes the change to every
+  // device listening — usually in under 100ms. This is how Player 2
+  // sees Player 1's move appear instantly without polling or refreshing.
+  if(window._FB && G.roomCode && !G.isLocalDemo){
+    const { rtdb, ref, onValue } = window._FB;
+    G._roomListener = onValue(ref(rtdb, 'rooms/' + G.roomCode), (snapshot) => {
+      if(G.gameOver) return; // stop processing after game ends
+      const data = snapshot.val();
+      if(!data) return;
+
+      // The database is the single source of truth.
+      // We overwrite our local state with whatever Firebase says.
+      const newCrossed = new Set(data.crossed || []);
+
+      // Only process if something actually changed (avoid re-rendering on our own writes)
+      const sameSize = newCrossed.size === G.crossed.size;
+      const sameContent = sameSize && [...newCrossed].every(n => G.crossed.has(n));
+      if(!sameContent){
+        G.crossed     = newCrossed;
+        G.turn        = data.currentTurn   || 0;
+        G.missedTurns = data.missedTurns   || [0,0];
+
+        // Re-render both boards to reflect the new crossed numbers
+        refreshGrid('myGrid',  G.boards[0], 0);
+        refreshGrid('oppGrid', G.boards[1], 1);
+        G.lines[0] = countLines(G.boards[0]);
+        G.lines[1] = countLines(G.boards[1]);
+        highlightWins('myGrid',  G.boards[0]);
+        highlightWins('oppGrid', G.boards[1]);
+        updateHUD();
+
+        // Restart timer for whichever player's turn it now is
+        stopTimer();
+        startTimer();
+        if(G.isLocalDemo && G.turn===1) setTimeout(aiTurn, 900+Math.random()*900);
+      }
+
+      // If the database says someone won and we haven't ended locally yet
+      if(data.winner !== null && data.winner !== undefined && !G.gameOver){
+        endGame(data.winner);
+      }
+    });
+  }
+}
+
+function buildGameGrids(){
+  buildGrid('myGrid',  G.boards[0], 0);
+  buildGrid('oppGrid', G.boards[1], 1);
+}
+
+function buildGrid(gridId, board, pIdx){
+  const g=document.getElementById(gridId);
+  g.innerHTML='';
+  board.forEach((num,i)=>{
+    const c=document.createElement('div');
+    c.className='cell';
+    c.id=gridId+'_'+i;
+    c.dataset.num=num;
+    c.innerHTML=`<span class="cell-n">${num}</span><span class="cx-mark">✕</span>`;
+    // Power cell indicator
+    if(G.powerCells[pIdx].includes(i)) c.classList.add('power');
+    if(pIdx===0) c.onclick=()=>onCellClick(num);
+    g.appendChild(c);
+  });
+  refreshGrid(gridId, board, pIdx);
+}
+
+function refreshGrid(gridId, board, pIdx){
+  board.forEach((num,i)=>{
+    const c=document.getElementById(gridId+'_'+i);
+    if(!c) return;
+    const isCrossed=G.crossed.has(num);
+    c.classList.remove('cx-r','cx-b','sel');
+    if(isCrossed){
+      c.classList.add(pIdx===0?'cx-r':'cx-b');
+    } else if(pIdx===0 && G.turn===0 && !G.gameOver){
+      c.classList.add('sel');
+    }
+  });
+}
+
+/* ── Click: my board cell ── */
+function onCellClick(num){
+  if(G.gameOver) return;
+  if(G.turn!==0) { toast('⏳ Wait for your turn!'); return; }
+  if(G.crossed.has(num)) return;
+  callNumber(num);
+}
+
+/* ── Core: call a number ── */
+function callNumber(num){
+  if(G.crossed.has(num)||G.gameOver) return;
+
+  G.crossed.add(num);
+  G.totalMoves++;
+  G.missedTurns[G.turn]=0;
+
+  // Track number history
+  if(G.turn===0 && P){
+    P.numHistory = P.numHistory||{};
+    P.numHistory[num] = (P.numHistory[num]||0)+1;
+  }
+
+  // Save move for replay
+  G.moveHistory.push({num, callerIdx:G.turn, crossedSet:[...G.crossed]});
+
+  // Flash animation
+  const myIdx  = G.boards[0].indexOf(num);
+  const oppIdx = G.boards[1].indexOf(num);
+  if(myIdx >=0){ const c=document.getElementById('myGrid_'+myIdx); if(c){c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),300);}}
+  if(oppIdx>=0){ const c=document.getElementById('oppGrid_'+oppIdx);if(c){c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),300);}}
+
+  // Check power cell activation (opponent calling one of your power numbers)
+  checkPowerActivation(num, G.turn);
+
+  // Refresh grids
+  refreshGrid('myGrid',  G.boards[0], 0);
+  refreshGrid('oppGrid', G.boards[1], 1);
+
+  // Count lines
+  G.lines[0] = countLines(G.boards[0]);
+  G.lines[1] = countLines(G.boards[1]);
+  highlightWins('myGrid',  G.boards[0]);
+  highlightWins('oppGrid', G.boards[1]);
+
+  // Check win
+  if(G.lines[0]>=5||G.lines[1]>=5){
+    endGame(G.turn); return;
+  }
+
+  // Activate pending power if any
+  if(G.pendingPower){
+    activatePower(G.pendingPower);
+    G.pendingPower=null;
+    return;
+  }
+
+  stopTimer();
+  G.turn=1-G.turn;
+  updateHUD();
+  startTimer();
+
+  // AI turn (only runs in local demo mode)
+  if(G.isLocalDemo && G.turn===1) setTimeout(aiTurn, 900+Math.random()*900);
+
+  // ── Write the new game state to Firebase ──
+  // In online mode, the opponent's phone is watching this same room path.
+  // When we write here, Firebase instantly notifies their onValue listener,
+  // which re-renders their screen. We only write from the player whose turn
+  // it WAS (G.turn was already flipped above, so we write G.turn ^ 1).
+  if(window._FB && G.roomCode && !G.isLocalDemo){
+    const { rtdb, ref, update } = window._FB;
+    update(ref(rtdb, 'rooms/' + G.roomCode), {
+      crossed:     [...G.crossed],      // full set of called numbers so far
+      currentTurn: G.turn,              // whose turn it is NOW (already flipped)
+      missedTurns: G.missedTurns,
+      winner:      null,                // still null — game not over yet
+    }).catch(e => console.warn('[DiNGo] move write failed:', e));
+  }
+}
+
+/* ── Power cell logic ── */
+function checkPowerActivation(num, callerIdx){
+  // The opponent of callerIdx — if callerIdx=0, opponent is P1's power is on P1's board (callerIdx=0 calls, P2's powers affect if P2's power cells contain that number)
+  // Power cells: G.powerCells[victimIdx] — when opponent (callerIdx) calls a number that lands on victim's power cell index on victim's board
+  const victimIdx = 1 - callerIdx; // the one whose board has the power cell
+  // Actually: power cells are on YOUR OWN board. When OPPONENT calls a number, if that number's index on YOUR board is a power cell, YOU get the power-up
+  const victimBoard = G.boards[victimIdx];
+  const numIdxOnVictim = victimBoard.indexOf(num);
+  if(numIdxOnVictim>=0 && G.powerCells[victimIdx].includes(numIdxOnVictim)){
+    // Victim gets power-up!
+    const pcIdx = G.powerCells[victimIdx].indexOf(numIdxOnVictim);
+    const powerType = G.powerTypes[victimIdx][pcIdx];
+    G.powerCells[victimIdx].splice(pcIdx,1); // remove used power
+    G.powerTypes[victimIdx].splice(pcIdx,1);
+    G.pendingPower = {type:powerType, ownerIdx:victimIdx};
+    const name = POWER_TYPES.find(p=>p.id===powerType)?.name||powerType;
+    toast(`⚡ ${victimIdx===0?G.p1name:G.p2name} triggered ${name}!`);
+  }
+}
+
+function activatePower(power){
+  const body = document.getElementById('powerModalBody');
+  if(power.type==='block'){
+    body.innerHTML=`<div style="font-size:48px;margin-bottom:12px;">🚫</div><strong>${power.ownerIdx===0?G.p1name:G.p2name}</strong> blocked the opponent's turn!<br><br>Opponent skips their next move.`;
+    openModal('powerModal');
+    stopTimer();
+    G.turn = power.ownerIdx; // power owner gets to go again
+    updateHUD();
+    startTimer();
+    if(G.isLocalDemo && G.turn===1) setTimeout(aiTurn, 1800);
+  } else if(power.type==='shield'){
+    body.innerHTML=`<div style="font-size:48px;margin-bottom:12px;">🛡</div><strong>${power.ownerIdx===0?G.p1name:G.p2name}</strong> activated Shield!<br><br>Their best line is protected this turn.`;
+    openModal('powerModal');
+    G.turn = 1 - power.ownerIdx;
+    stopTimer();
+    updateHUD();
+    startTimer();
+    if(G.isLocalDemo && G.turn===1) setTimeout(aiTurn, 900);
+  } else if(power.type==='swap'){
+    body.innerHTML=`<div style="font-size:48px;margin-bottom:12px;">🔀</div><strong>${power.ownerIdx===0?G.p1name:G.p2name}</strong> activated Swap!<br><br>Two numbers on their board will be swapped automatically.`;
+    openModal('powerModal');
+    // Auto-swap two uncrossed cells on power owner's board
+    const b = G.boards[power.ownerIdx];
+    const avail = b.map((n,i)=>({n,i})).filter(x=>!G.crossed.has(x.n));
+    if(avail.length>=2){
+      const [a,c2] = [avail[0],avail[Math.floor(avail.length/2)]];
+      [b[a.i],b[c2.i]]=[b[c2.i],b[a.i]];
+      buildGrid(power.ownerIdx===0?'myGrid':'oppGrid', b, power.ownerIdx);
+    }
+    G.turn = 1 - power.ownerIdx;
+    stopTimer();
+    updateHUD();
+    startTimer();
+    if(G.isLocalDemo && G.turn===1) setTimeout(aiTurn, 900);
+  }
+}
+
+/* ── AI opponent logic ── */
+function aiTurn(){
+  if(G.gameOver||G.turn!==1) return;
+  const best = aiBestPick(G.boards[1]);
+  callNumber(best);
+}
+
+function aiBestPick(board){
+  const avail = board.filter(n=>!G.crossed.has(n));
+  if(!avail.length) return board[0];
+  let bestNum=avail[0], bestScore=-1;
+  avail.forEach(num=>{
+    const idx=board.indexOf(num);
+    const r=Math.floor(idx/5), col=idx%5;
+    let score=0;
+    score+=[0,1,2,3,4].filter(j=>G.crossed.has(board[r*5+j])||board[r*5+j]===num).length;
+    score+=[0,1,2,3,4].filter(j=>G.crossed.has(board[j*5+col])||board[j*5+col]===num).length;
+    if(r===col) score+=[0,1,2,3,4].filter(j=>G.crossed.has(board[j*5+j])||board[j*5+j]===num).length;
+    if(r+col===4) score+=[0,1,2,3,4].filter(j=>G.crossed.has(board[j*5+(4-j)])||board[j*5+(4-j)]===num).length;
+    if(score>bestScore){bestScore=score;bestNum=num;}
+  });
+  return bestNum;
+}
+
+/* ──────────────────────────────────────────────
+   WIN LOGIC
+────────────────────────────────────────────── */
+function countLines(board){
+  let c=0;
+  for(let r=0;r<5;r++) if([0,1,2,3,4].every(j=>G.crossed.has(board[r*5+j]))) c++;
+  for(let col=0;col<5;col++) if([0,1,2,3,4].every(j=>G.crossed.has(board[j*5+col]))) c++;
+  if([0,6,12,18,24].every(i=>G.crossed.has(board[i]))) c++;
+  if([4,8,12,16,20].every(i=>G.crossed.has(board[i]))) c++;
+  return c;
+}
+
+function getWinCells(board){
+  const ws=new Set();
+  for(let r=0;r<5;r++){const row=[0,1,2,3,4].map(j=>r*5+j);if(row.every(i=>G.crossed.has(board[i])))row.forEach(i=>ws.add(i));}
+  for(let col=0;col<5;col++){const c=[0,1,2,3,4].map(j=>j*5+col);if(c.every(i=>G.crossed.has(board[i])))c.forEach(i=>ws.add(i));}
+  const d1=[0,6,12,18,24];if(d1.every(i=>G.crossed.has(board[i])))d1.forEach(i=>ws.add(i));
+  const d2=[4,8,12,16,20];if(d2.every(i=>G.crossed.has(board[i])))d2.forEach(i=>ws.add(i));
+  return ws;
+}
+
+function highlightWins(gridId, board){
+  const wc=getWinCells(board);
+  board.forEach((_,i)=>{
+    const c=document.getElementById(gridId+'_'+i);
+    if(c) c.classList.toggle('win-glow',wc.has(i));
+  });
+}
+
+/* ──────────────────────────────────────────────
+   HUD UPDATE
+────────────────────────────────────────────── */
+function buildLineDots(){
+  ['ldP1','ldP2'].forEach((id,pi)=>{
+    const el=document.getElementById(id);
+    el.innerHTML='';
+    for(let i=0;i<5;i++){
+      const d=document.createElement('div');
+      d.className='ld';
+      d.id=id+'_'+i;
+      el.appendChild(d);
+    }
+  });
+}
+
+function updateHUD(){
+  const t=G.turn;
+  document.getElementById('hudP1').textContent=G.p1name;
+  document.getElementById('hudP2').textContent=G.p2name;
+  document.getElementById('lcP1').textContent=G.lines[0];
+  document.getElementById('lcP2').textContent=G.lines[1];
+  for(let i=0;i<5;i++){
+    const d1=document.getElementById('ldP1_'+i);
+    const d2=document.getElementById('ldP2_'+i);
+    if(d1) d1.className='ld'+(i<G.lines[0]?' on-r':'');
+    if(d2) d2.className='ld'+(i<G.lines[1]?' on-b':'');
+  }
+
+  const tb=document.getElementById('turnBanner');
+  if(t===0){
+    tb.className='turn-banner tb-r';
+    tb.textContent='⚔ YOUR TURN — Tap a number on your board';
+    document.getElementById('boardHint').textContent='Tap any uncrossed cell to call that number';
+    document.getElementById('myLbl').textContent='YOUR BOARD — TAP TO CALL';
+    refreshGrid('myGrid',G.boards[0],0);
+    refreshGrid('oppGrid',G.boards[1],1);
+  } else {
+    tb.className='turn-banner tb-b';
+    tb.textContent='⏳ '+G.p2name+' is thinking…';
+    document.getElementById('boardHint').textContent='Opponent is selecting a number…';
+    document.getElementById('myLbl').textContent='YOUR BOARD';
+    document.querySelectorAll('#myGrid .cell').forEach(c=>c.classList.remove('sel'));
+    refreshGrid('oppGrid',G.boards[1],1);
+  }
+
+  const miss=G.missedTurns[t];
+  const mb=document.getElementById('missedBar');
+  if(miss>0){mb.classList.remove('hidden');document.getElementById('missedN').textContent=miss;}
+  else mb.classList.add('hidden');
+}
+
+/* ──────────────────────────────────────────────
+   TIMER
+────────────────────────────────────────────── */
+const CIRC=144;
+function startTimer(){
+  G.timerSec=20;
+  updateTimerUI();
+  G.timerInterval=setInterval(()=>{
+    G.timerSec--;
+    updateTimerUI();
+    if(G.timerSec<=0){clearInterval(G.timerInterval);handleMiss();}
+  },1000);
+}
+function stopTimer(){ clearInterval(G.timerInterval); G.timerInterval=null; }
+function updateTimerUI(){
+  const t=G.timerSec;
+  const arc=document.getElementById('tArc');
+  const ne=document.getElementById('tNum');
+  arc.style.strokeDashoffset=CIRC*(1-t/20);
+  const col=t>12?'var(--b)':t>6?'var(--gold)':'var(--r)';
+  arc.style.stroke=col;
+  ne.style.color=col;
+  ne.textContent=t;
+}
+function handleMiss(){
+  G.missedTurns[G.turn]++;
+  if(G.missedTurns[G.turn]>=3){endGame(1-G.turn);return;}
+  toast(`⚠ ${G.turn===0?G.p1name:G.p2name} missed a turn!`);
+  G.turn=1-G.turn;
+  updateHUD();
+  startTimer();
+  if(G.isLocalDemo&&G.turn===1) setTimeout(aiTurn,1400);
+}
+
+/* ──────────────────────────────────────────────
+   EMOJI REACTIONS
+────────────────────────────────────────────── */
+function sendReact(emoji){
+  const el=document.createElement('div');
+  el.className='floating-react';
+  el.textContent=emoji;
+  el.style.left=Math.random()*60+20+'%';
+  el.style.bottom='120px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1600);
+}
+
+/* ──────────────────────────────────────────────
+   END GAME
+────────────────────────────────────────────── */
+function endGame(winnerIdx){
+  if(G.gameOver) return; // Guard: prevent running twice if both phones detect win simultaneously
+  G.gameOver=true;
+  stopTimer();
+
+  // ── Detach the Firebase room listener ──
+  // Without this, the listener would keep firing even after the game ends,
+  // wasting data and potentially causing state conflicts. Firebase's
+  // onValue returns an "unsubscribe" function — we stored it as G._roomListener.
+  if(G._roomListener){ G._roomListener(); G._roomListener = null; }
+
+  if(P){
+    const won = winnerIdx===0;
+
+    // Update all player stats locally first
+    if(won){ P.wins++; P.streak++; P.coins += 50; }
+    else    { P.losses++; P.streak = 0; P.coins = Math.max(0, P.coins - 10); }
+
+    // Bet resolution — winner earns both stakes minus 5% platform fee
+    if(G.betAmount > 0){
+      const winnings = Math.round(G.betAmount * 2 * 0.95);
+      if(won){ P.coins += winnings; toast(`💰 Won bet! +${winnings} coins!`); }
+    }
+
+    // Increment today's activity square on the 28-day heatmap
+    P.activity[27] = Math.min(4, (P.activity[27]||0) + 1);
+
+    // Progress relevant daily missions
+    (P.missions||[]).forEach(m=>{
+      if(m.title.includes('Complete')) m.progress = Math.min(m.target, m.progress+1);
+      if(m.title.includes('Win') && won) m.progress = Math.min(m.target, m.progress+1);
+    });
+
+    // Add this match to the top of the match history
+    P.matches.unshift({ opp:G.p2name, result:won?'win':'loss', pts:won?50:-10, lines:G.lines[0], time:'Just now' });
+    if(P.matches.length > 10) P.matches.pop();
+
+    // ── Save updated profile to Firestore ──
+    // This is what makes stats persistent across sessions. Without this call,
+    // everything above only lives in memory and disappears on page refresh.
+    saveProfile();
+
+    // ── Write winner to Realtime Database ──
+    // This tells the opponent's phone who won. Their onValue listener sees
+    // the winner field change from null to 0 or 1, and calls endGame on
+    // their side too — showing them the win/lose screen.
+    if(window._FB && G.roomCode && !G.isLocalDemo){
+      const { rtdb, ref, update } = window._FB;
+      update(ref(rtdb, 'rooms/' + G.roomCode), {
+        winner:  winnerIdx,
+        status:  'finished',
+        crossed: [...G.crossed],
+      }).catch(e => console.warn('[DiNGo] endGame write failed:', e));
+    }
+  }
+
+  // Show the win/lose screen after a short dramatic pause
+  setTimeout(()=>{
+    const won = winnerIdx===0;
+    document.getElementById('winEmoji').textContent = won ? '🎉' : '😤';
+    document.getElementById('winTitle').textContent = won ? 'YOU WIN!' : 'YOU LOSE';
+    document.getElementById('winTitle').className   = 'win-title ' + (won ? 'wn' : 'ls');
+    document.getElementById('winSub').textContent   = won ? 'Outstanding! Coins earned' : 'Good try — rematch?';
+    document.getElementById('wMoves').textContent   = G.totalMoves;
+    document.getElementById('wLines').textContent   = G.lines[winnerIdx];
+    document.getElementById('wCoins').textContent   = won ? '+50' : '-10';
+    show('winScr');
+    if(won) spawnConfetti();
+  }, 500);
+}
+
+function playAgain(){ stopTimer(); resetG(); startDemo(); }
+
+/* ──────────────────────────────────────────────
+   REPLAY SYSTEM
+────────────────────────────────────────────── */
+let replayIdx=0, replayTimer=null;
+
+function openReplay(){
+  replayIdx=0;
+  renderReplayFrame(0);
+  openModal('replayModal');
+}
+
+function renderReplayFrame(idx){
+  const boards=document.getElementById('replayBoards');
+  const move=G.moveHistory[idx];
+  const crossedSoFar=move?new Set(move.crossedSet):new Set();
+  boards.innerHTML='';
+  [G.boards[0],G.boards[1]].forEach((board,pi)=>{
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;';
+    const lbl=document.createElement('div');
+    lbl.className='blbl '+(pi===0?'r':'b');
+    lbl.style.fontSize='10px';
+    lbl.textContent=pi===0?G.p1name:G.p2name;
+    const grid=document.createElement('div');
+    grid.className='replay-grid';
+    board.forEach((num,i)=>{
+      const c=document.createElement('div');
+      c.className='rp-cell';
+      c.textContent=num;
+      if(crossedSoFar.has(num)){
+        c.classList.add(pi===0?'rp-r':'rp-b');
+      }
+      // highlight just-called number
+      if(move&&move.num===num&&move.callerIdx!==undefined){
+        c.classList.add('rp-win');
+      }
+      grid.appendChild(c);
+    });
+    wrap.appendChild(lbl);
+    wrap.appendChild(grid);
+    boards.appendChild(wrap);
+  });
+  const stepEl=document.getElementById('replayStep');
+  if(G.moveHistory.length===0){
+    stepEl.textContent='No moves recorded';
+  } else {
+    const m=G.moveHistory[idx];
+    stepEl.textContent=`Move ${idx+1} of ${G.moveHistory.length} — ${m.callerIdx===0?G.p1name:G.p2name} called ${m.num}`;
+  }
+}
+
+function replayPrev(){ if(replayIdx>0){replayIdx--;renderReplayFrame(replayIdx);} }
+function replayNext(){ if(replayIdx<G.moveHistory.length-1){replayIdx++;renderReplayFrame(replayIdx);} }
+function replayPlay(){
+  if(replayTimer){clearInterval(replayTimer);replayTimer=null;document.getElementById('replayPlayBtn').textContent='▶ Play';return;}
+  document.getElementById('replayPlayBtn').textContent='⏸ Pause';
+  replayTimer=setInterval(()=>{
+    if(replayIdx>=G.moveHistory.length-1){
+      clearInterval(replayTimer);replayTimer=null;
+      document.getElementById('replayPlayBtn').textContent='▶ Play';return;
+    }
+    replayIdx++;renderReplayFrame(replayIdx);
+  },800);
+}
+
+/* ──────────────────────────────────────────────
+   CONFETTI
+────────────────────────────────────────────── */
+function spawnConfetti(){
+  const wrap=document.getElementById('cfWrap');
+  wrap.innerHTML='';
+  const colors=['#ff2d55','#00e5ff','#7c5cfc','#ffc93c','#00d68f','#ff6b35','#ffffff'];
+  for(let i=0;i<80;i++){
+    const cf=document.createElement('div');
+    cf.className='cf';
+    const sz=5+Math.random()*10;
+    cf.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;
+      background:${colors[i%colors.length]};border-radius:${Math.random()>.5?'50%':'2px'};
+      animation-name:cffall;animation-duration:${2+Math.random()*2.5}s;
+      animation-delay:${Math.random()*.8}s;`;
+    wrap.appendChild(cf);
+  }
+  setTimeout(()=>{wrap.innerHTML='';},5000);
+}
+
+/* ──────────────────────────────────────────────
+   UTILITIES
+────────────────────────────────────────────── */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* ──────────────────────────────────────────────
+   HELP CENTER — TAB SWITCHER
+────────────────────────────────────────────── */
+function switchHelp(tab){
+  // Hide all panels and deactivate all tabs
+  ['play','power','eco','feat','data'].forEach(t=>{
+    document.getElementById('hpanel-'+t).style.display = t===tab ? '' : 'none';
+    const btn = document.getElementById('htab-'+t);
+    if(btn) btn.classList.toggle('on', t===tab);
+  });
+}
+
+/* ──────────────────────────────────────────────
+   ROOM CLEANUP — 3-DAY AUTO-DELETE
+   
+   HOW IT WORKS (Spark plan, no Cloud Functions):
+   When any authenticated user opens the game,
+   this function silently scans all rooms in
+   Firebase Realtime Database and deletes any
+   room whose createdAt timestamp is older than
+   3 days. It runs once per login session,
+   in the background, with no UI impact.
+
+   WHEN YOU UPGRADE TO BLAZE PLAN:
+   Replace this entire function with a Firebase
+   Cloud Function scheduled to run daily:
+     exports.cleanOldRooms = functions.pubsub
+       .schedule('every 24 hours').onRun(cleanupRooms);
+   The cleanup logic inside stays the same.
+────────────────────────────────────────────── */
+const ROOM_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
+
+function runRoomCleanup(){
+  // Only runs if Firebase is connected (config pasted in)
+  if(!window._FB) return;
+
+  const { rtdb, ref, onValue, remove } = window._FB;
+  const roomsRef = ref(rtdb, 'rooms');
+  const now = Date.now();
+
+  // Read all rooms once — not a persistent listener, so no performance cost
+  onValue(roomsRef, (snapshot)=>{
+    if(!snapshot.exists()) return;
+    const rooms = snapshot.val();
+
+    Object.entries(rooms).forEach(([code, room])=>{
+      // Skip rooms with no timestamp (safety guard)
+      if(!room.createdAt) return;
+
+      const ageMs = now - room.createdAt;
+      if(ageMs > ROOM_TTL_MS){
+        // Room is older than 3 days — delete it silently
+        remove(ref(rtdb, 'rooms/'+code))
+          .then(()=> console.log(`[DiNGo Cleanup] Deleted expired room: ${code}`))
+          .catch(e => console.warn(`[DiNGo Cleanup] Could not delete room ${code}:`, e));
+      }
+    });
+  }, { onlyOnce: true }); // onlyOnce: true means this fires once and detaches — no memory leak
+}
+
+/* ──────────────────────────────────────────────
+   ROOM CREATION — stamp createdAt timestamp
+   This replaces the old doCreateRoom() so every
+   new room gets a creation timestamp written to
+   Firebase, enabling the cleanup logic above.
+────────────────────────────────────────────── */
+function doCreateRoom(){
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  document.getElementById('roomCodeVal').textContent = code;
+  G.roomCode = code;
+
+  // Write room skeleton to Firebase Realtime DB with creation timestamp
+  // (Only runs if Firebase is configured)
+  if(window._FB){
+    const { rtdb, ref, set } = window._FB;
+    set(ref(rtdb, 'rooms/'+code), {
+      createdAt:   Date.now(),       // ← used by cleanup to check 3-day expiry
+      status:      'waiting',
+      player1uid:  null,
+      player2uid:  null,
+      board1:      null,
+      board2:      null,
+      crossed:     [],
+      currentTurn: 0,
+      missedTurns: [0,0],
+      winner:      null,
+      betAmount:   G_betAmount || 0,
+    }).catch(e=>console.warn('Room write failed:',e));
+  }
+
+  show('createScr');
+}
+
+/* ──────────────────────────────────────────────
+   AUTO-CHECK URL FOR ROOM CODE (Deep Link)
+────────────────────────────────────────────── */
+window.addEventListener('load',()=>{
+  const params=new URLSearchParams(location.search);
+  const roomCode=params.get('room');
+  if(roomCode){
+    document.getElementById('joinCode').value=roomCode.toUpperCase();
+  }
+  show('loginScr');
+});
+</script>
+</body>
+</html>

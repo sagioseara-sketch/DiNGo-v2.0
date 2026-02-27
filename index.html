@@ -2163,15 +2163,22 @@ onValue(ref(db, '.info/connected'), snap => {
 });
 
 /* ═══════════════════════════════════════════════
-   REAL-TIME ONLINE COUNTER
-   ── Free-tier safe: stores ONE number at
-      presence/count — increments on connect,
-      decrements via onDisconnect automatically.
-   ── Zero bloat: no user lists, no IDs stored.
+   REAL-TIME ONLINE COUNTER  v2
+   ── Each browser tab gets its own node:
+        presence/sessions/<sessionId>  = true
+   ── Firebase onDisconnect removes it automatically
+      even on refresh, tab-close, or lost internet.
+   ── Count = number of nodes under sessions/.
+   ── Free-tier safe: tiny nodes, auto-cleaned.
 ═══════════════════════════════════════════════ */
 (function initOnlineCounter() {
-  const countRef     = db.ref('presence/count');
-  const connectedRef = db.ref('.info/connected');
+
+  /* Unique ID for THIS tab/session — regenerated on every page load
+     so a refresh is always treated as a fresh session */
+  const sessionId  = Math.random().toString(36).slice(2, 10);
+  const sessionRef = db.ref('presence/sessions/' + sessionId);
+  const allRef     = db.ref('presence/sessions');
+  const connRef    = db.ref('.info/connected');
 
   function updateUI(n) {
     const num  = Math.max(0, n || 0);
@@ -2183,17 +2190,20 @@ onValue(ref(db, '.info/connected'), snap => {
     if (btnEl) btnEl.textContent = num > 1 ? `· ${num} online` : '';
   }
 
-  // Listen for count changes — single lightweight listener
-  countRef.on('value', snap => updateUI(snap.val()));
-
-  // On connect: increment count and register auto-decrement on disconnect
-  connectedRef.on('value', snap => {
-    if (!snap.val()) return; // offline — nothing to do
-    // Use a transaction to safely increment
-    countRef.transaction(current => Math.max(0, (current || 0) + 1));
-    // Firebase will auto-decrement when this client disconnects
-    countRef.onDisconnect().transaction(current => Math.max(0, (current || 0) - 1));
+  /* Count child nodes = number of active sessions */
+  allRef.on('value', snap => {
+    const count = snap.exists() ? Object.keys(snap.val() || {}).length : 0;
+    updateUI(count);
   });
+
+  /* When connected: register this session and schedule auto-remove on disconnect */
+  connRef.on('value', snap => {
+    if (!snap.val()) return;
+    /* onDisconnect must be set BEFORE the write — Firebase guarantee */
+    sessionRef.onDisconnect().remove();
+    sessionRef.set(true);
+  });
+
 })();
 
 /* ── Game state ───────────────────────────────── */

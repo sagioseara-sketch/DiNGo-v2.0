@@ -12,10 +12,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="DiNGo"/>
   <meta name="description" content="5-in-a-row live multiplayer bingo. Challenge friends or battle the AI bot."/>
-  <!-- Manifest injected via JS below (single-file PWA) -->
-  <link id="pwa-manifest" rel="manifest" href=""/>
-  <!-- Apple touch icons (generated from inline SVG → data URI via JS) -->
-  <link id="apple-icon" rel="apple-touch-icon" href=""/>
+  <!-- Real manifest file — NOT a blob URL -->
+  <link rel="manifest" href="manifest.json"/>
+  <!-- Apple touch icons — real PNG files -->
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png"/>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1667,17 +1671,9 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.getElementById('theme-icon').textContent  = isLight ? '☀️' : '🌙';
 });
 
-/* ── Hard Refresh — forces full reload, bypasses service worker cache ── */
+/* ── Hard Refresh — forces full reload bypassing cache ── */
 document.getElementById('hard-refresh-btn').addEventListener('click', () => {
-  if ('serviceWorker' in navigator) {
-    // Unregister SW first so the cache is fully busted on reload
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => reg.unregister());
-      window.location.reload(true);
-    }).catch(() => window.location.reload(true));
-  } else {
-    window.location.reload(true);
-  }
+  window.location.reload(true);
 });
 
 /* ── Global home pill ─────────────────────────────────────────── */
@@ -3618,197 +3614,85 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
 </script>
 
 <!-- ═══════════════════════════════════════════════
-     PWA — Manifest · Service Worker · Install Prompt
-     Single-file approach: generate manifest + SW as Blob URLs
+     PWA — Service Worker registration + Install Prompt
+     Uses real sw.js and manifest.json files (NOT blobs)
 ═══════════════════════════════════════════════ -->
 <script>
 (function initPWA() {
-  /* ── 1. Beautiful DiNGo SVG App Icon ──────────── */
-  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#0f0f14"/>
-        <stop offset="100%" stop-color="#1a1a22"/>
-      </linearGradient>
-      <linearGradient id="topbar" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%"   stop-color="#00ffcc"/>
-        <stop offset="50%"  stop-color="#ff2d55"/>
-        <stop offset="100%" stop-color="#ffcc00"/>
-      </linearGradient>
-      <linearGradient id="glow1" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#00ffcc" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="#00ffcc" stop-opacity="0"/>
-      </linearGradient>
-      <filter id="softglow" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="6" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>
 
-    <!-- Rounded app background -->
-    <rect width="512" height="512" rx="108" fill="url(#bg)"/>
-
-    <!-- Subtle inner glow at top -->
-    <rect width="512" height="220" rx="108" fill="url(#glow1)"/>
-
-    <!-- 5×5 Bingo grid — subtle background cells -->
-    <g opacity="0.10" fill="#00ffcc">
-      ${Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>
-        `<rect x="${56+c*82}" y="${56+r*82}" width="50" height="50" rx="9"/>`
-      ).join('')).join('')}
-    </g>
-
-    <!-- Diagonal win line — glowing gold cells (TL→BR) -->
-    <g filter="url(#softglow)">
-      <rect x="56"  y="56"  width="50" height="50" rx="9" fill="#ffcc00" opacity="0.92"/>
-      <rect x="138" y="138" width="50" height="50" rx="9" fill="#ffcc00" opacity="0.88"/>
-      <rect x="220" y="220" width="50" height="50" rx="9" fill="#ffcc00" opacity="0.95"/>
-      <rect x="302" y="302" width="50" height="50" rx="9" fill="#ffcc00" opacity="0.88"/>
-      <rect x="384" y="384" width="50" height="50" rx="9" fill="#ffcc00" opacity="0.82"/>
-    </g>
-
-    <!-- Outer border glow ring -->
-    <rect x="6" y="6" width="500" height="500" rx="104"
-      fill="none" stroke="#00ffcc" stroke-width="3" opacity="0.18"/>
-
-    <!-- "Di" — neon mint, sharp and large -->
-    <text x="256" y="215"
-      text-anchor="middle"
-      font-family="Arial Black, Impact, sans-serif"
-      font-size="160" font-weight="900"
-      letter-spacing="-6"
-      fill="#00ffcc"
-      filter="url(#softglow)">Di</text>
-
-    <!-- "NGo" — hot red -->
-    <text x="256" y="385"
-      text-anchor="middle"
-      font-family="Arial Black, Impact, sans-serif"
-      font-size="160" font-weight="900"
-      letter-spacing="-6"
-      fill="#ff2d55">NGo</text>
-
-    <!-- Small lightning bolt in the middle gap -->
-    <text x="256" y="300"
-      text-anchor="middle"
-      font-family="Arial, sans-serif"
-      font-size="58"
-      fill="#ffcc00"
-      filter="url(#softglow)">⚡</text>
-
-    <!-- Neon top accent bar -->
-    <rect x="0" y="0" width="512" height="10" rx="5" fill="url(#topbar)" opacity="0.95"/>
-
-    <!-- Bottom micro label -->
-    <text x="256" y="494"
-      text-anchor="middle"
-      font-family="Arial, sans-serif"
-      font-size="22" font-weight="700"
-      letter-spacing="5"
-      fill="#ffffff" opacity="0.22">BINGO</text>
-  </svg>`;
-
-  /* Convert SVG to a data URL for use in manifest icons */
-  const iconDataURL = 'data:image/svg+xml;base64,' + btoa(ICON_SVG);
-
-  /* Patch the apple-touch-icon link */
-  document.getElementById('apple-icon').href = iconDataURL;
-
-  /* ── 2. Create the Web App Manifest as a Blob ─────────────── */
-  const manifest = {
-    name: 'DiNGo — Live Multiplayer Bingo',
-    short_name: 'DiNGo',
-    description: '5-in-a-row live multiplayer bingo. Challenge friends or battle the AI.',
-    start_url: './',
-    display: 'standalone',
-    background_color: '#0d0d0f',
-    theme_color: '#00ffcc',
-    orientation: 'portrait',
-    icons: [
-      { src: iconDataURL, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: iconDataURL, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
-    ]
-  };
-  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-  const manifestURL  = URL.createObjectURL(manifestBlob);
-  document.getElementById('pwa-manifest').href = manifestURL;
-
-  /* ── 3. Register a minimal Service Worker via Blob ────────── */
-  const SW_CODE = `
-const CACHE = 'dingo-v1';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(['./', location.href]))
-  );
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./')))
-  );
-});`;
-
+  /* ── 1. Register the real Service Worker ── */
   if ('serviceWorker' in navigator) {
-    const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
-    const swURL  = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swURL).catch(() => {/* blob SW may not work in all browsers */});
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          console.log('[DiNGo SW] Registered, scope:', reg.scope);
+          /* If a new SW is waiting, prompt user to refresh */
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                newSW.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        })
+        .catch(err => console.warn('[DiNGo SW] Registration failed:', err));
+    });
   }
 
-  /* ── 4. Install prompt banner logic ───────────────────────── */
-  const banner  = document.getElementById('pwa-install-banner');
+  /* ── 2. Install prompt banner logic ── */
+  const banner     = document.getElementById('pwa-install-banner');
   const installBtn = document.getElementById('pwa-install-btn');
   const dismissBtn = document.getElementById('pwa-dismiss-btn');
   let deferredPrompt = null;
 
-  /* Don't show again if user dismissed within 7 days */
-  const lastDismiss = parseInt(localStorage.getItem('pwa_dismiss') || '0', 10);
-  const dismissed   = (Date.now() - lastDismiss) < 7 * 24 * 3600 * 1000;
-
-  /* Also hide if already installed (display-mode: standalone) */
+  /* Don't show if dismissed within last 7 days */
+  const lastDismiss    = parseInt(localStorage.getItem('pwa_dismiss') || '0', 10);
+  const wasDismissed   = (Date.now() - lastDismiss) < 7 * 24 * 3600 * 1000;
+  /* Don't show if already running as installed PWA */
   const alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches
                         || window.navigator.standalone === true;
 
-  if (!dismissed && !alreadyInstalled) {
+  if (!wasDismissed && !alreadyInstalled) {
     window.addEventListener('beforeinstallprompt', e => {
       e.preventDefault();
       deferredPrompt = e;
-      /* Delay banner so it doesn't clash with the splash screen */
-      setTimeout(() => banner.classList.add('show'), 3500);
+      /* Delay banner slightly so it doesn't clash with the splash */
+      setTimeout(() => banner && banner.classList.add('show'), 3500);
     });
   }
 
-  installBtn.addEventListener('click', async () => {
+  installBtn && installBtn.addEventListener('click', async () => {
     banner.classList.remove('show');
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       deferredPrompt = null;
-      if (outcome === 'accepted') {
-        console.log('[PWA] User installed DiNGo ✅');
-      }
+      console.log('[DiNGo PWA] Install outcome:', outcome);
     } else {
-      /* Fallback: iOS / browsers that don't expose beforeinstallprompt */
-      alert('To install: tap the Share button → "Add to Home Screen" 📲');
+      /* iOS Safari fallback */
+      alert('📲 To install on iPhone/iPad:\nTap the Share button → "Add to Home Screen"');
     }
   });
 
-  dismissBtn.addEventListener('click', () => {
+  dismissBtn && dismissBtn.addEventListener('click', () => {
     banner.classList.remove('show');
     localStorage.setItem('pwa_dismiss', String(Date.now()));
   });
 
-  /* Also hide banner when the game starts (so it doesn't block gameplay) */
+  /* Hide banner once gameplay starts */
   const _origShow = window.showScreen;
   window.showScreen = function(name) {
     if (_origShow) _origShow(name);
-    if (name !== 'splash' && name !== 'name') banner.classList.remove('show');
+    if (name !== 'splash' && name !== 'name') {
+      banner && banner.classList.remove('show');
+    }
   };
+
+  /* ── 3. Show "installed" toast when launched as PWA ── */
+  if (alreadyInstalled) {
+    console.log('[DiNGo] Running as installed PWA ✅');
+  }
 
 })();
 </script>

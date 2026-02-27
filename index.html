@@ -2736,6 +2736,7 @@ function leaveRoomCleanup() {
   winShown = false;
   lastLineCount = 0;
   cleanupScheduled = false;
+  readyListenerActive = false;
   scores = { p1: 0, p2: 0 };
   lifelineState = { p1: 3, p2: 3 };
   botMode = false;
@@ -3035,15 +3036,24 @@ document.getElementById('shuffle-btn').addEventListener('click',()=>{
 document.getElementById('clear-btn').addEventListener('click',()=>{sfx.click();initSetupBoard()});
 
 /* ─── Ready ───────────────────────────────────── */
+let readyListenerActive = false;
 document.getElementById('ready-btn').addEventListener('click',async()=>{
   sfx.click();
   const btn=document.getElementById('ready-btn');
   btn.disabled=true; btn.textContent='⏳ Waiting…';
   await update(ref(db,`rooms/${roomId}/boards`),{[playerRole]:myBoard});
-  onRoomValue(ref(db,`rooms/${roomId}/boards`),snap=>{
-    const b=snap.val();
-    if(b&&b.p1&&b.p2){update(ref(db,`rooms/${roomId}/gameState`),{status:'playing'});startGame()}
-  });
+  // Guard: only register one boards listener per round
+  if(!readyListenerActive){
+    readyListenerActive=true;
+    onRoomValue(ref(db,`rooms/${roomId}/boards`),snap=>{
+      const b=snap.val();
+      if(b&&b.p1&&b.p2){
+        readyListenerActive=false;
+        update(ref(db,`rooms/${roomId}/gameState`),{status:'playing'});
+        startGame();
+      }
+    });
+  }
 });
 
 /* ═══════════════════════════════════════════════
@@ -3216,7 +3226,7 @@ function showAnnouncement(num,callerName,isMe){
    START GAME
 ═══════════════════════════════════════════════ */
 function startGame(){
-  if(winShown)return; winShown=false;
+  winShown=false; // always clear on fresh start
   showScreen('game');
   const boardDiv=document.getElementById('game-board');
   boardDiv.innerHTML='';
@@ -3224,20 +3234,30 @@ function startGame(){
   stopMoveTimer();
   resetLifelines();
   activateMoveTimerUI();
+  // Re-register opponent presence watcher (detached on rematch cleanup)
+  if(!botMode) watchOpponentPresence();
 
   onRoomValue(ref(db,`rooms/${roomId}/playerInfo`),snap=>{
     const info=snap.val()||{};
     if(info.p1){
       document.getElementById('p1-name').textContent=info.p1.name;
       document.getElementById('p1-avatar').textContent=info.p1.avatar;
-      document.getElementById('score-lbl-p1').textContent=info.p1.name; // score bar label
+      document.getElementById('score-lbl-p1').textContent=info.p1.name;
     }
     if(info.p2){
       document.getElementById('p2-name').textContent=info.p2.name;
       document.getElementById('p2-avatar').textContent=info.p2.avatar;
-      document.getElementById('score-lbl-p2').textContent=info.p2.name; // score bar label
+      document.getElementById('score-lbl-p2').textContent=info.p2.name;
     }
   });
+
+  // Re-register scores listener (needed after rematch listener detach)
+  if(!botMode){
+    onRoomValue(ref(db,`rooms/${roomId}/scores`),snap=>{
+      const s=snap.val();
+      if(s){scores.p1=s.p1||0;scores.p2=s.p2||0;updateScoreDisplay();}
+    });
+  }
 
   myBoard.forEach(num=>{
     const cell=document.createElement('div');
@@ -3430,16 +3450,30 @@ function launchConfetti(){
 /* ─── Restart / reset ─────────────────────────── */
 async function doRestart(){
   if(countdownInterval)clearInterval(countdownInterval);
-  winShown=false; lastLineCount=0; cleanupScheduled=false;
+  winShown=false; lastLineCount=0; cleanupScheduled=false; botWinShown=false;
   stopMoveTimer();
-  resetLifelines();
   stopAbandonCountdown(false);
   document.getElementById('win-overlay').classList.remove('show');
   document.querySelectorAll('.cell.win-line').forEach(c=>c.classList.remove('win-line'));
-  await update(ref(db,`rooms/${roomId}/gameState`),{status:'waiting',currentTurn:'p1',selectedNumbers:[0],winner:''});
+  document.querySelectorAll('.cell.crossed').forEach(c=>c.classList.remove('crossed'));
+
+  // Detach ALL old room listeners — new ones will be registered fresh when ready-btn is clicked
+  detachRoomListeners();
+
+  // Reset Firebase room state for new round
+  await update(ref(db,`rooms/${roomId}/gameState`),{
+    status:'waiting', currentTurn:'p1', selectedNumbers:[0], winner:'',
+    lifelines_p1:3, lifelines_p2:3
+  });
   await set(ref(db,`rooms/${roomId}/boards`),null);
+
+  // Reset local lifeline state (without writing to Firebase since we just did above)
+  lifelineState = { p1:3, p2:3 };
+  renderLifelines();
+
   initSetupBoard(); showScreen('setup');
-  const rb=document.getElementById('ready-btn');rb.disabled=true;rb.textContent="✓ I'm Ready!";
+  const rb=document.getElementById('ready-btn');
+  rb.disabled=false; rb.textContent="✓ I'm Ready!";
   sfx.click();
 }
 function doReset(){

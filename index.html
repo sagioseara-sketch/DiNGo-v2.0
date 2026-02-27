@@ -1,363 +1,453 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DiNGo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiNGo - Multiplayer Bingo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f1220;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
-<style>
-body{
-margin:0;
-font-family:Arial;
-background:#0f1220;
-color:white;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-.card{
-width:95%;
-max-width:420px;
-background:#161a2f;
-padding:18px;
-border-radius:16px;
-}
-button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-background:#7c5cff;
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
-.board{
-display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:6px;
-margin-top:12px;
-}
-.cell{
-background:#1f2545;
-padding:14px;
-text-align:center;
-border-radius:8px;
-cursor:pointer;
-}
-.cell.marked{
-background:#00e5ff;
-color:black;
-}
-.winner-overlay{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.8);
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-font-size:28px;
-z-index:999;
-animation:fadeIn .3s ease;
-}
-@keyframes fadeIn{
-from{opacity:0}
-to{opacity:1}
-}
-</style>
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .bingo-cell {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1f2545;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.25rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+
+        .bingo-cell:hover:not(.marked) {
+            background: #2a325a;
+            transform: translateY(-2px);
+        }
+
+        .bingo-cell.marked {
+            background: linear-gradient(135deg, #00e5ff 0%, #0099ff 100%);
+            color: #0f1220;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        .bingo-cell.last-called {
+            border-color: #ffffff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { border-color: rgba(255,255,255,1); }
+            50% { border-color: rgba(255,255,255,0.2); }
+            100% { border-color: rgba(255,255,255,1); }
+        }
+
+        .bingo-letter {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #161a2f;
+            border-radius: 8px;
+            font-weight: 800;
+            color: #3f4a7a;
+            transition: all 0.5s;
+        }
+
+        .bingo-letter.active {
+            background: #7c5cff;
+            color: white;
+            box-shadow: 0 0 20px rgba(124, 92, 255, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(22, 26, 47, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
 <body>
 
-<div id="app"></div>
+<div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Loading State -->
+    <div id="loading" class="flex flex-col items-center">
+        <div class="w-12 h-12 border-4 border-t-blue-500 border-gray-700 rounded-full animate-spin"></div>
+        <p class="mt-4 text-gray-400">Connecting to DiNGo Arena...</p>
+    </div>
+
+    <!-- Main Screens -->
+    <div id="screen-home" class="hidden w-full max-w-md space-y-6">
+        <div class="text-center">
+            <h1 class="text-6xl font-extrabold tracking-tighter mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                DiNGo
+            </h1>
+            <p id="user-display" class="text-gray-400 font-medium"></p>
+        </div>
+
+        <div class="glass-panel p-6 rounded-3xl space-y-4">
+            <button onclick="findMatch()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 p-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+                Play Multiplayer
+            </button>
+            <div class="relative py-2">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-800"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#161a2f] px-2 text-gray-500">Or Private</span></div>
+            </div>
+            <button onclick="createPrivateRoom()" class="w-full bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl font-bold text-gray-200 transition-all">
+                Host Private Game
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-lobby" class="hidden w-full max-w-md glass-panel p-8 rounded-3xl text-center space-y-6">
+        <div class="animate-bounce inline-block p-4 bg-blue-900/30 rounded-full text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold">Waiting for Opponent</h2>
+        <p class="text-gray-400">The arena is being prepared...</p>
+        <div id="room-id-display" class="text-xs text-gray-600 font-mono"></div>
+        <button onclick="leaveGame()" class="text-sm text-gray-500 hover:text-red-400 underline mt-4">Cancel Search</button>
+    </div>
+
+    <div id="screen-game" class="hidden w-full max-w-md flex flex-col items-center">
+        <!-- Header Status -->
+        <div class="w-full flex justify-between items-end mb-4 px-2">
+            <div>
+                <p id="opponent-name" class="text-xs text-gray-500 uppercase tracking-widest mb-1">vs Opponent</p>
+                <div id="turn-indicator" class="text-xl font-bold">Waiting...</div>
+            </div>
+            <div class="flex gap-2" id="bingo-progress">
+                <div class="bingo-letter" data-letter="D">D</div>
+                <div class="bingo-letter" data-letter="I">I</div>
+                <div class="bingo-letter" data-letter="N">N</div>
+                <div class="bingo-letter" data-letter="G">G</div>
+                <div class="bingo-letter" data-letter="O">O</div>
+            </div>
+        </div>
+
+        <!-- The Board -->
+        <div id="game-board" class="bingo-grid w-full glass-panel p-4 rounded-3xl">
+            <!-- Cells injected here -->
+        </div>
+
+        <div class="w-full mt-6 text-center">
+            <p id="game-message" class="text-gray-400 text-sm italic">Tap a number when it's your turn</p>
+            <button onclick="leaveGame()" class="mt-8 text-gray-600 hover:text-gray-400 text-sm font-medium">Exit Arena</button>
+        </div>
+    </div>
+
+    <!-- Win Overlay -->
+    <div id="overlay-win" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[1000] flex items-center justify-center p-6 text-center">
+        <div class="space-y-8 max-w-xs w-full">
+            <h2 id="win-title" class="text-6xl font-extrabold italic bg-clip-text text-transparent bg-gradient-to-b from-yellow-300 to-orange-500">VICTORY</h2>
+            <p id="win-subtitle" class="text-gray-300 text-xl font-medium">You completed the DiNGo!</p>
+            <div class="space-y-3 pt-4">
+                <button onclick="requestRematch()" id="rematch-btn" class="w-full bg-blue-600 p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">Play Again</button>
+                <button onclick="leaveGame()" class="w-full bg-white/10 p-4 rounded-2xl font-bold hover:bg-white/20 transition-all">Back to Home</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, onSnapshot, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getDatabase, ref, set, push, onValue, update, remove, onDisconnect, get } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    /* --- CONFIG & INIT --- */
+    const firebaseConfig = JSON.parse(__firebase_config);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'dingo-v2';
 
-/* ================= FIREBASE ================= */
+    let currentUser = null;
+    let currentGame = null;
+    let unsubscribeGame = null;
+    let myBoard = [];
+    let myMarks = [];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAhhGzyMUJrfzYsOw4Uy-qu6F_IOqrh3PA",
-  authDomain: "dingo-v2-0.firebaseapp.com",
-  databaseURL: "https://dingo-v2-0-default-rtdb.firebaseio.com",
-  projectId: "dingo-v2-0",
-  storageBucket: "dingo-v2-0.firebasestorage.app",
-  messagingSenderId: "908358383631",
-  appId: "1:908358383631:web:09473d12f079a230134b7a"
-};
+    // Utils
+    const $ = id => document.getElementById(id);
+    const show = id => $(id).classList.remove('hidden');
+    const hide = id => $(id).classList.add('hidden');
+    const generateName = () => "Player_" + Math.random().toString(36).substring(7).toUpperCase();
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-let user, roomId, myBoard, myMarks, myScore;
-const appDiv = document.getElementById("app");
-
-/* ================= INIT ================= */
-
-async function init(){
-  const res = await signInAnonymously(auth);
-  user = { uid:res.user.uid, name:"Guest_"+Math.floor(Math.random()*9999) };
-  renderHome();
-}
-init();
-
-/* ================= HOME ================= */
-
-function renderHome(){
-  appDiv.innerHTML=`
-  <div class="card">
-    <h2>DiNGo</h2>
-    <p>${user.name}</p>
-    <button onclick="createPrivate()">Private Room</button>
-    <button onclick="findPublic()">Public Match</button>
-  </div>`;
-}
-
-/* ================= BOARD ================= */
-
-function generateBoard(){
-  return Array.from({length:25},(_,i)=>i+1)
-  .sort(()=>Math.random()-0.5);
-}
-
-/* ================= PRIVATE ================= */
-
-window.createPrivate = async ()=>{
-  const roomRef = push(ref(db,"rooms"));
-  roomId=roomRef.key;
-
-  await set(roomRef,{
-    turn:user.uid,
-    players:{
-      [user.uid]:{name:user.name,score:0}
-    },
-    called:[],
-    status:"playing"
-  });
-
-  joinRoom();
-};
-
-/* ================= PUBLIC ================= */
-
-window.findPublic = async ()=>{
-  const queueRef = ref(db,"queue");
-  await push(queueRef,{uid:user.uid,name:user.name});
-
-  onValue(queueRef,async snap=>{
-    const players=snap.val();
-    if(players && Object.keys(players).length>=2){
-      const ids=Object.keys(players);
-      const roomRef=push(ref(db,"rooms"));
-      roomId=roomRef.key;
-
-      const p1=players[ids[0]];
-      const p2=players[ids[1]];
-
-      await set(roomRef,{
-        turn:p1.uid,
-        players:{
-          [p1.uid]:{name:p1.name,score:0},
-          [p2.uid]:{name:p2.name,score:0}
-        },
-        called:[],
-        status:"playing"
-      });
-
-      remove(queueRef);
-      joinRoom();
-    }
-  });
-};
-
-/* ================= JOIN ================= */
-
-function joinRoom(){
-  myBoard=generateBoard();
-  myMarks=[];
-  myScore=0;
-
-  const playerRef=ref(db,`rooms/${roomId}/players/${user.uid}`);
-  onDisconnect(playerRef).remove();
-
-  renderRoom();
-  monitorRoomCleanup();
-}
-
-/* ================= ROOM ================= */
-
-function renderRoom(){
-  appDiv.innerHTML=`
-  <div class="card">
-    <h3>Room: ${roomId}</h3>
-    <div id="turn"></div>
-    <div id="board" class="board"></div>
-    <button onclick="exitRoom()">Exit</button>
-  </div>`;
-
-  const roomRef=ref(db,`rooms/${roomId}`);
-  onValue(roomRef,snap=>{
-    const data=snap.val();
-    if(!data) return;
-
-    if(data.status==="finished"){
-      showWinner(data.winner);
-      return;
+    /* --- AUTHENTICATION --- */
+    async function initAuth() {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
     }
 
-    document.getElementById("turn").innerHTML=
-      data.turn===user.uid?"Your Turn":"Opponent Turn";
-
-    updateBoard(data.called);
-  });
-}
-
-/* ================= MOVE ================= */
-
-async function makeMove(index){
-  const roomRef=ref(db,`rooms/${roomId}`);
-  const snap=await get(roomRef);
-  const data=snap.val();
-  if(data.turn!==user.uid) return;
-
-  const number=myBoard[index];
-  if(data.called.includes(number)) return;
-
-  const newCalled=[...data.called,number];
-  const nextTurn=Object.keys(data.players)
-  .find(id=>id!==user.uid);
-
-  await update(roomRef,{
-    called:newCalled,
-    turn:nextTurn
-  });
-}
-
-/* ================= BOARD UPDATE ================= */
-
-function updateBoard(called){
-  const boardDiv=document.getElementById("board");
-  boardDiv.innerHTML="";
-  myBoard.forEach((num,index)=>{
-    const marked=called.includes(num);
-    if(marked && !myMarks.includes(index)){
-      myMarks.push(index);
-    }
-    const cell=document.createElement("div");
-    cell.className="cell"+(marked?" marked":"");
-    cell.innerText=num;
-    cell.onclick=()=>makeMove(index);
-    boardDiv.appendChild(cell);
-  });
-  calculateScore();
-}
-
-/* ================= SCORE + WIN ================= */
-
-function calculateScore(){
-  const wins=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
-  [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
-  [0,6,12,18,24],[4,8,12,16,20]];
-
-  let count=0;
-  wins.forEach(combo=>{
-    if(combo.every(i=>myMarks.includes(i))) count++;
-  });
-
-  if(count>=5){
-    update(ref(db,`rooms/${roomId}`),{
-      status:"finished",
-      winner:user.uid
-    });
-  }
-}
-
-/* ================= WINNER UI ================= */
-
-function showWinner(winnerId){
-  const overlay=document.createElement("div");
-  overlay.className="winner-overlay";
-  overlay.innerHTML=`
-    <div>${winnerId===user.uid?"YOU WIN!":"YOU LOSE!"}</div>
-    <button onclick="requestRematch()">Rematch</button>
-    <button onclick="exitRoom()">Leave</button>
-  `;
-  document.body.appendChild(overlay);
-}
-
-/* ================= REMATCH ================= */
-
-async function requestRematch(){
-  await update(ref(db,`rooms/${roomId}/players/${user.uid}`),{
-    rematch:true
-  });
-
-  const snap=await get(ref(db,`rooms/${roomId}`));
-  const players=snap.val().players;
-
-  const allReady=Object.values(players).length===2 &&
-  Object.values(players).every(p=>p.rematch);
-
-  if(allReady){
-    await update(ref(db,`rooms/${roomId}`),{
-      status:"playing",
-      called:[],
-      winner:null
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = {
+                uid: user.uid,
+                name: generateName()
+            };
+            $('user-display').innerText = currentUser.name;
+            hide('loading');
+            show('screen-home');
+        }
     });
 
-    Object.keys(players).forEach(uid=>{
-      update(ref(db,`rooms/${roomId}/players/${uid}`),{
-        rematch:false,
-        score:0
-      });
-    });
+    initAuth();
 
-    document.querySelector(".winner-overlay").remove();
-    joinRoom();
-  }
-}
+    /* --- GAME LOGIC --- */
 
-/* ================= AUTO CLEANUP ================= */
-
-function monitorRoomCleanup(){
-  const playersRef = ref(db,`rooms/${roomId}/players`);
-  let timer=null;
-
-  onValue(playersRef,snap=>{
-    const players=snap.val();
-    const count=players?Object.keys(players).length:0;
-
-    if(count===0){
-      remove(ref(db,`rooms/${roomId}`));
+    function createBoard() {
+        const numbers = Array.from({length: 25}, (_, i) => i + 1);
+        return numbers.sort(() => Math.random() - 0.5);
     }
 
-    if(count===1){
-      if(!timer){
-        timer=setTimeout(async()=>{
-          const latest=await get(playersRef);
-          if(!latest.exists()||Object.keys(latest.val()).length<=1){
-            await remove(ref(db,`rooms/${roomId}`));
-          }
-        },60000);
-      }
+    async function findMatch() {
+        if (!currentUser) return;
+        hide('screen-home');
+        show('screen-lobby');
+
+        // Simple matchmaking: Look for an existing open room
+        const roomsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
+        const querySnap = await getDocs(roomsRef);
+        
+        let foundRoom = null;
+        querySnap.forEach(doc => {
+            const data = doc.data();
+            if (data.status === 'waiting' && data.player1 && data.player1.uid !== currentUser.uid) {
+                foundRoom = { id: doc.id, ...data };
+            }
+        });
+
+        if (foundRoom) {
+            joinRoom(foundRoom.id);
+        } else {
+            createPrivateRoom();
+        }
     }
-  });
-}
 
-/* ================= EXIT ================= */
+    async function createPrivateRoom() {
+        if (!currentUser) return;
+        hide('screen-home');
+        show('screen-lobby');
 
-window.exitRoom=()=>{
-  remove(ref(db,`rooms/${roomId}/players/${user.uid}`));
-  location.reload();
-};
+        const roomsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
+        const roomDoc = doc(roomsRef);
+        const roomId = roomDoc.id;
+        $('room-id-display').innerText = `ID: ${roomId}`;
+
+        await setDoc(roomDoc, {
+            status: 'waiting',
+            player1: currentUser,
+            player2: null,
+            called: [],
+            turn: currentUser.uid,
+            createdAt: Date.now(),
+            rematch: {}
+        });
+
+        watchRoom(roomId);
+    }
+
+    async function joinRoom(roomId) {
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+        await updateDoc(roomRef, {
+            player2: currentUser,
+            status: 'playing'
+        });
+        watchRoom(roomId);
+    }
+
+    function watchRoom(roomId) {
+        if (unsubscribeGame) unsubscribeGame();
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+        unsubscribeGame = onSnapshot(roomRef, (snap) => {
+            if (!snap.exists()) {
+                leaveGame();
+                return;
+            }
+            
+            const data = snap.val ? snap.val() : snap.data(); // Standardizing data access
+            currentGame = { id: snap.id, ...data };
+
+            if (data.status === 'playing') {
+                renderGameScreen();
+            } else if (data.status === 'finished') {
+                handleGameOver(data);
+            }
+        }, (error) => {
+            console.error("Room watch error:", error);
+            leaveGame();
+        });
+    }
+
+    function renderGameScreen() {
+        hide('screen-lobby');
+        hide('screen-home');
+        show('screen-game');
+
+        if (myBoard.length === 0) {
+            myBoard = createBoard();
+            myMarks = [];
+        }
+
+        const isMyTurn = currentGame.turn === currentUser.uid;
+        const opponent = currentGame.player1.uid === currentUser.uid ? currentGame.player2 : currentGame.player1;
+
+        $('opponent-name').innerText = `vs ${opponent?.name || 'Searching...'}`;
+        $('turn-indicator').innerText = isMyTurn ? "Your Turn!" : "Waiting for Move...";
+        $('turn-indicator').className = `text-xl font-bold ${isMyTurn ? 'text-blue-400' : 'text-gray-600'}`;
+
+        const boardEl = $('game-board');
+        boardEl.innerHTML = '';
+
+        myBoard.forEach((num, index) => {
+            const isMarked = currentGame.called.includes(num);
+            const cell = document.createElement('div');
+            cell.className = `bingo-cell ${isMarked ? 'marked' : ''}`;
+            
+            if (currentGame.called.length > 0 && num === currentGame.called[currentGame.called.length - 1]) {
+                cell.classList.add('last-called');
+            }
+
+            cell.innerText = num;
+            cell.onclick = () => handleCellClick(num, isMarked);
+            boardEl.appendChild(cell);
+        });
+
+        updateProgress();
+    }
+
+    async function handleCellClick(num, isMarked) {
+        if (currentGame.turn !== currentUser.uid || isMarked) return;
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
+        const nextTurn = currentGame.player1.uid === currentUser.uid ? currentGame.player2.uid : currentGame.player1.uid;
+        
+        const newCalled = [...currentGame.called, num];
+        
+        await updateDoc(roomRef, {
+            called: newCalled,
+            turn: nextTurn
+        });
+    }
+
+    function updateProgress() {
+        const winningLines = [
+            [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24], // Rows
+            [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24], // Cols
+            [0,6,12,18,24], [4,8,12,16,20] // Diagonals
+        ];
+
+        let lineCount = 0;
+        winningLines.forEach(line => {
+            if (line.every(idx => currentGame.called.includes(myBoard[idx]))) {
+                lineCount++;
+            }
+        });
+
+        const letters = ['D','I','N','G','O'];
+        letters.forEach((letter, i) => {
+            const el = document.querySelector(`[data-letter="${letter}"]`);
+            if (i < lineCount) el.classList.add('active');
+            else el.classList.remove('active');
+        });
+
+        if (lineCount >= 5 && currentGame.status !== 'finished') {
+            finishGame();
+        }
+    }
+
+    async function finishGame() {
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
+        await updateDoc(roomRef, {
+            status: 'finished',
+            winner: currentUser.uid
+        });
+    }
+
+    function handleGameOver(data) {
+        const isWinner = data.winner === currentUser.uid;
+        show('overlay-win');
+        $('win-title').innerText = isWinner ? "VICTORY" : "DEFEAT";
+        $('win-subtitle').innerText = isWinner ? "You mastered the DiNGo Arena!" : "Better luck next time, challenger.";
+        
+        const rematchBtn = $('rematch-btn');
+        const myRematch = data.rematch?.[currentUser.uid];
+        rematchBtn.innerText = myRematch ? "Waiting for Opponent..." : "Request Rematch";
+        rematchBtn.className = myRematch ? 
+            "w-full bg-gray-700 p-4 rounded-2xl font-bold opacity-50 cursor-not-allowed" : 
+            "w-full bg-blue-600 p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all";
+    }
+
+    async function requestRematch() {
+        if (!currentGame || currentGame.rematch?.[currentUser.uid]) return;
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
+        const updatedRematch = { ...(currentGame.rematch || {}), [currentUser.uid]: true };
+
+        if (Object.keys(updatedRematch).length === 2) {
+            // Both agreed, reset room
+            await updateDoc(roomRef, {
+                status: 'playing',
+                called: [],
+                winner: null,
+                rematch: {},
+                turn: currentGame.winner // Loser starts? Actually let's keep it winner starts or random
+            });
+            myBoard = []; // Force re-generate board
+            hide('overlay-win');
+        } else {
+            await updateDoc(roomRef, {
+                rematch: updatedRematch
+            });
+        }
+    }
+
+    async function leaveGame() {
+        if (currentGame) {
+            // Clean up if we were host and room is empty or logic to handle abandonment
+            // For now, just reset local state
+            if (unsubscribeGame) unsubscribeGame();
+        }
+
+        myBoard = [];
+        myMarks = [];
+        currentGame = null;
+
+        hide('screen-lobby');
+        hide('screen-game');
+        hide('overlay-win');
+        show('screen-home');
+    }
+
+    // Expose to window for onclick handlers
+    window.findMatch = findMatch;
+    window.createPrivateRoom = createPrivateRoom;
+    window.leaveGame = leaveGame;
+    window.requestRematch = requestRematch;
 
 </script>
 </body>
 </html>
+

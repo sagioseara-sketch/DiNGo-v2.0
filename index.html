@@ -514,6 +514,25 @@
   .lobby-chat-label{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--c5);font-weight:700;display:flex;align-items:center;gap:5px}
   .lobby-live-dot{width:5px;height:5px;border-radius:50%;background:var(--c1);animation:blink2 1.4s infinite}
   .lobby-chat-count{font-size:10px;color:var(--ink2)}
+
+  /* ── Online counter pill ── */
+  .online-pill{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(0,255,204,0.08);
+    border:1px solid rgba(0,255,204,0.25);
+    border-radius:20px;padding:3px 10px;
+    font-size:10px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--c1);
+  }
+  .online-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--c1);
+    box-shadow:0 0 6px var(--c1);
+    animation:blink2 1.4s infinite;
+    flex-shrink:0;
+  }
+  .online-pill.zero{ color:var(--ink3);border-color:var(--edge);background:transparent; }
+  .online-pill.zero .online-dot{ background:var(--ink3);box-shadow:none;animation:none; }
   .lobby-messages{display:flex;flex-direction:column;gap:3px}
   .lobby-msg{display:flex;align-items:center;gap:6px;font-size:12px}
   .lobby-msg-avatar{font-size:12px;flex-shrink:0}
@@ -1316,7 +1335,10 @@
             <span class="lobby-live-dot"></span>
             Global Lobby
           </span>
-          <span class="lobby-chat-count" id="lobby-chat-count">Live chat</span>
+          <span id="online-count-pill" class="online-pill zero">
+            <span class="online-dot"></span>
+            <span id="online-count-num">—</span> Online
+          </span>
         </div>
         <div class="lobby-messages" id="lobby-messages">
           <div class="lobby-msg">
@@ -1342,7 +1364,8 @@
         <!-- PLAY NOW mega button (auto-match) -->
         <button class="btn-play-now" id="play-now-btn">
           <span class="play-now-icon">⚡</span>
-          PLAY NOW
+          <span>PLAY NOW</span>
+          <span id="play-now-online" style="font-size:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:1px;opacity:0.7;margin-left:4px"></span>
         </button>
 
         <!-- VS BOT button -->
@@ -2002,7 +2025,7 @@ function rotateLobbyMessages() {
     div.innerHTML = `<span class="lobby-msg-avatar">${a}</span><span class="lobby-msg-name">${n}:</span><span class="lobby-msg-text">${t}</span>`;
     container.appendChild(div);
   });
-  document.getElementById('lobby-chat-count').textContent = `${Math.floor(Math.random()*12)+3} online`;
+  document.getElementById('lobby-chat-count') && (document.getElementById('lobby-chat-count').textContent = '');
 }
 
 const AVATARS = ['👹','😘','🦊','🐉','👾','🤖','🦋','🔥','⚡','🌙','💎','🎯'];
@@ -2138,6 +2161,40 @@ onValue(ref(db, '.info/connected'), snap => {
     setFirebaseStatus(false, '⚠️ Not connected — check your internet');
   }
 });
+
+/* ═══════════════════════════════════════════════
+   REAL-TIME ONLINE COUNTER
+   ── Free-tier safe: stores ONE number at
+      presence/count — increments on connect,
+      decrements via onDisconnect automatically.
+   ── Zero bloat: no user lists, no IDs stored.
+═══════════════════════════════════════════════ */
+(function initOnlineCounter() {
+  const countRef     = db.ref('presence/count');
+  const connectedRef = db.ref('.info/connected');
+
+  function updateUI(n) {
+    const num  = Math.max(0, n || 0);
+    const pill = document.getElementById('online-count-pill');
+    const numEl= document.getElementById('online-count-num');
+    const btnEl= document.getElementById('play-now-online');
+    if (numEl) numEl.textContent = num;
+    if (pill)  pill.classList.toggle('zero', num === 0);
+    if (btnEl) btnEl.textContent = num > 1 ? `· ${num} online` : '';
+  }
+
+  // Listen for count changes — single lightweight listener
+  countRef.on('value', snap => updateUI(snap.val()));
+
+  // On connect: increment count and register auto-decrement on disconnect
+  connectedRef.on('value', snap => {
+    if (!snap.val()) return; // offline — nothing to do
+    // Use a transaction to safely increment
+    countRef.transaction(current => Math.max(0, (current || 0) + 1));
+    // Firebase will auto-decrement when this client disconnects
+    countRef.onDisconnect().transaction(current => Math.max(0, (current || 0) - 1));
+  });
+})();
 
 /* ── Game state ───────────────────────────────── */
 let myPlayerId   = Math.random().toString(36).substring(2,9);

@@ -442,29 +442,7 @@
 
   .home-action-zone{position:relative}
 
-  /* PLAY NOW — biggest energy button on screen */
-  .btn-play-now{
-    width:100%;padding:18px 24px;font-size:16px;letter-spacing:2.5px;text-transform:uppercase;
-    font-family:'Black Han Sans',sans-serif;
-    background:var(--c1);color:#000;
-    border:2px solid var(--c1);border-radius:var(--r);cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;
-    box-shadow:4px 4px 0 rgba(0,255,204,0.3);
-    transition:transform .1s,box-shadow .1s;
-    position:relative;overflow:hidden;
-  }
-  /* Color band behind text */
-  .btn-play-now::after{
-    content:'';position:absolute;inset:0;
-    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.12) 50%,transparent 100%);
-    transform:skewX(-20deg);
-  }
-  .btn-play-now::before{display:none}
-  .btn-play-now:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(0,255,204,0.35)}
-  .btn-play-now:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(0,255,204,0.15)}
-  .play-now-icon{font-size:18px;position:relative;z-index:1}
-  .btn-play-now span:last-child{position:relative;z-index:1}
-  @keyframes playIconBounce{}@keyframes playNowShimmer{}@keyframes playNowPulse{}
+  /* PLAY NOW button removed — using Create Room / Join with Code only */
 
   /* VS Bot */
   .btn-vs-bot{
@@ -586,13 +564,32 @@
   .htp-tag.gold{background:rgba(255,204,0,.1);color:var(--c3);border:1px solid rgba(255,204,0,.25)}
   .htp-tag.red{background:rgba(255,45,85,.1);color:var(--c2);border:1px solid rgba(255,45,85,.25)}
 
-  /* ── Abandon countdown banner ── */
+  /* ── Opponent Left Popup ── */
+  #opponent-left-popup{
+    position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-20px);
+    z-index:950;opacity:0;pointer-events:none;
+    transition:opacity .3s,transform .3s;
+    background:var(--panel);border:2px solid var(--c2);border-radius:var(--r-lg);
+    padding:14px 18px;display:flex;align-items:center;gap:12px;
+    box-shadow:5px 5px 0 rgba(255,45,85,.3);
+    white-space:nowrap;min-width:280px;
+  }
+  #opponent-left-popup.show{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+  .opp-left-icon{font-size:22px;flex-shrink:0}
+  .opp-left-body{flex:1}
+  .opp-left-title{font-family:'Black Han Sans',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--c2)}
+  .opp-left-sub{font-size:10px;color:var(--ink2);letter-spacing:.5px;margin-top:2px}
+  .opp-left-close-wrap{flex-shrink:0}
+  .opp-left-timer-ring{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+  .opp-left-ring-svg{position:absolute;inset:0;width:36px;height:36px;transform:rotate(-90deg)}
+  #opp-left-secs{font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--c2);position:relative;z-index:1}
+
+  /* ── Abandon countdown banner (hidden — kept for legacy win logic) ── */
   #abandon-banner{
     position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-20px);
     z-index:900;opacity:0;pointer-events:none;
-    transition:opacity .3s,transform .3s;
     background:var(--panel);border:2px solid var(--c2);border-radius:var(--r);
-    padding:9px 16px;display:flex;align-items:center;gap:10px;
+    padding:9px 16px;display:none;align-items:center;gap:10px;
     box-shadow:4px 4px 0 rgba(255,45,85,.25);
     white-space:nowrap;
   }
@@ -604,6 +601,41 @@
     font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--c2);
     min-width:28px;text-align:center;line-height:1;
   }
+
+  /* ── Move Timer Bar ── */
+  #move-timer-wrap{
+    display:none;align-items:center;gap:7px;
+    margin-bottom:6px;
+  }
+  #move-timer-wrap.active{display:flex}
+  #move-timer-bar-track{
+    flex:1;height:6px;background:var(--edge);border-radius:999px;overflow:hidden;
+  }
+  #move-timer-bar-fill{
+    height:100%;width:100%;background:var(--c1);border-radius:999px;
+    transition:width 1s linear, background .3s;
+  }
+  #move-timer-bar-fill.warning{background:var(--c3)}
+  #move-timer-bar-fill.danger{background:var(--c2)}
+  #move-timer-secs{
+    font-family:'Black Han Sans',sans-serif;font-size:15px;color:var(--ink2);
+    min-width:22px;text-align:right;line-height:1;
+    transition:color .3s;
+  }
+  #move-timer-secs.warning{color:var(--c3)}
+  #move-timer-secs.danger{color:var(--c2)}
+
+  /* ── Lifelines Row ── */
+  #lifelines-row{
+    display:none;align-items:center;justify-content:center;gap:6px;
+    margin-bottom:6px;font-size:11px;
+  }
+  #lifelines-row.active{display:flex}
+  .lifeline-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink2);font-weight:700;margin-right:2px}
+  .lifelines-chips{display:flex;gap:4px}
+  .lifeline-chip{font-size:14px;transition:opacity .2s,transform .2s;display:inline-block}
+  .lifeline-chip.used{opacity:.18;transform:scale(.75)}
+  .lifelines-vs{color:var(--ink3);font-size:10px;margin:0 2px}
 
   /* AI thinking */
   #ai-thinking-bar{display:none;align-items:center;gap:6px;justify-content:center;font-size:10px;color:var(--c4);letter-spacing:2.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px}
@@ -1195,12 +1227,6 @@
 
       <!-- ⑤ ACTION ZONE -->
       <div class="home-action-zone">
-        <!-- PLAY NOW mega button -->
-        <button class="btn-play-now" id="play-now-btn">
-          <span class="play-now-icon">⚡</span>
-          PLAY NOW
-        </button>
-
         <!-- VS BOT button -->
         <button class="btn-vs-bot" id="vs-bot-btn">
           <span class="bot-icon">🤖</span>
@@ -1219,10 +1245,25 @@
           <button id="join-btn" class="btn btn-primary">Join</button>
         </div>
 
-        <!-- How to play link -->
+        <!-- How to play link — highlighted so players notice it -->
         <div style="text-align:center;margin-top:10px">
-          <button id="htp-btn" style="background:none;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:4px;transition:color .12s">
-            <span style="font-size:13px">❓</span> How to Play
+          <button id="htp-btn" style="
+            background:rgba(0,255,204,0.07);
+            border:2px solid rgba(0,255,204,0.4);
+            cursor:pointer;
+            font-family:'Space Grotesk',sans-serif;
+            font-size:11px;font-weight:800;
+            letter-spacing:1.5px;text-transform:uppercase;
+            color:var(--c1);
+            display:inline-flex;align-items:center;gap:7px;
+            padding:8px 18px;border-radius:var(--r);
+            transition:background .12s,border-color .12s,transform .1s,box-shadow .1s;
+            box-shadow:2px 2px 0 rgba(0,255,204,0.2);
+          "
+          onmouseover="this.style.background='rgba(0,255,204,0.14)';this.style.borderColor='var(--c1)';this.style.transform='translate(-1px,-1px)';this.style.boxShadow='4px 4px 0 rgba(0,255,204,0.25)'"
+          onmouseout="this.style.background='rgba(0,255,204,0.07)';this.style.borderColor='rgba(0,255,204,0.4)';this.style.transform='';this.style.boxShadow='2px 2px 0 rgba(0,255,204,0.2)'"
+          >
+            <span style="font-size:14px">❓</span> How to Play
           </button>
         </div>
       </div>
@@ -1316,6 +1357,30 @@
       </div>
 
       <div id="turn-indicator">Loading…</div>
+
+      <!-- ── MOVE TIMER BAR ── -->
+      <div id="move-timer-wrap">
+        <div id="move-timer-bar-track">
+          <div id="move-timer-bar-fill"></div>
+        </div>
+        <div id="move-timer-secs">25</div>
+      </div>
+
+      <!-- ── LIFELINES ── -->
+      <div id="lifelines-row">
+        <div class="lifeline-label">Lifelines:</div>
+        <div id="lifelines-p1" class="lifelines-chips">
+          <span class="lifeline-chip" data-n="1">❤️</span>
+          <span class="lifeline-chip" data-n="2">❤️</span>
+          <span class="lifeline-chip" data-n="3">❤️</span>
+        </div>
+        <div class="lifelines-vs">·</div>
+        <div id="lifelines-p2" class="lifelines-chips">
+          <span class="lifeline-chip" data-n="1">❤️</span>
+          <span class="lifeline-chip" data-n="2">❤️</span>
+          <span class="lifeline-chip" data-n="3">❤️</span>
+        </div>
+      </div>
       <div id="ai-thinking-bar">
         <span class="think-dot"></span><span class="think-dot"></span><span class="think-dot"></span>
         AI is thinking…
@@ -1388,8 +1453,28 @@
   </div>
 </div>
 
-<!-- ── ABANDON COUNTDOWN BANNER ── -->
-<div id="abandon-banner">
+<!-- ── OPPONENT LEFT POPUP — shows only when opponent clicks Exit, only in game screen, auto-closes 5s ── -->
+<div id="opponent-left-popup">
+  <div class="opp-left-icon">🏃</div>
+  <div class="opp-left-body">
+    <div class="opp-left-title">Opponent Left!</div>
+    <div class="opp-left-sub">Your opponent has exited the game.</div>
+  </div>
+  <div class="opp-left-close-wrap">
+    <div class="opp-left-timer-ring">
+      <svg viewBox="0 0 36 36" class="opp-left-ring-svg">
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--edge2)" stroke-width="2.5"/>
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--c2)" stroke-width="2.5"
+          stroke-dasharray="100 100" stroke-dashoffset="0"
+          id="opp-ring-progress" stroke-linecap="round"/>
+      </svg>
+      <span id="opp-left-secs">5</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── ABANDON BANNER (kept for legacy graceful-leave win logic, but now hidden visually) ── -->
+<div id="abandon-banner" style="display:none">
   <span class="abandon-icon">🏃</span>
   <div class="abandon-text">Opponent left! You win in <strong id="abandon-timer">60</strong>s</div>
 </div>
@@ -2187,12 +2272,22 @@ function botCrossCell(num) {
   }
 }
 
-/* Show turn indicator */
+/* Show turn indicator + start/stop move timer for bot game */
 function botUpdateTurnUI(isPlayerTurn) {
   document.getElementById('turn-indicator').textContent = isPlayerTurn ? 'Your Turn!' : "Bot's Turn…";
   document.getElementById('p1-box').classList.toggle('active-turn', isPlayerTurn);
   document.getElementById('p2-box').classList.toggle('active-turn', !isPlayerTurn);
   document.getElementById('ai-thinking-bar').classList.toggle('show', !isPlayerTurn);
+  if (isPlayerTurn) {
+    startMoveTimer(true, handleBotTimerExpiry);
+  } else {
+    stopMoveTimer(); // no timer for bot's turn
+  }
+}
+
+/* triggerBotTurn — called by timer expiry to auto-pass player's turn in bot mode */
+function triggerBotTurn() {
+  if (!botWinShown) executeBotTurn();
 }
 
 /* Check and handle win condition for bot game */
@@ -2234,6 +2329,7 @@ function handleBotGameClick(num) {
   if (botSelected.includes(num)) return;
   // Only allow on player's turn (ai-thinking-bar hidden = player's turn)
   if (document.getElementById('ai-thinking-bar').classList.contains('show')) return;
+  stopMoveTimer(); // cancel the turn timer — player acted in time
   botSelected.push(num);
   botCrossCell(num);
   if (!botCheckWin()) executeBotTurn();
@@ -2273,6 +2369,8 @@ function restartBotGame() {
   if (botCountdownInterval) clearInterval(botCountdownInterval);
   botWinShown = false; botLastLineCount = 0;
   cleanupScheduled = false;
+  stopMoveTimer();
+  resetLifelines();
   document.getElementById('win-overlay').classList.remove('show');
   document.getElementById('rematch-countdown').style.display = 'none';
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
@@ -2320,6 +2418,8 @@ document.addEventListener('startBotGame', (e) => {
   // Render board and go to game screen
   showScreen('game');
   renderBotGameBoard();
+  resetLifelines();
+  activateMoveTimerUI();
   botUpdateTurnUI(true);
 
   // Hide chat FAB (bot game has no chat)
@@ -2370,100 +2470,109 @@ function readDINGO() {
 }
 
 /* ═══════════════════════════════════════════════
-   PRESENCE & ABANDONMENT SYSTEM
-   ─ Each player writes true to rooms/{id}/presence/{role}
-   ─ onDisconnect().remove() auto-clears it if tab closes
-   ─ When opponent presence disappears a 60-second countdown
-     starts; if they don't return the remaining player wins
-   ─ When a player deliberately clicks Home we remove their
-     presence ourselves so the opponent is notified instantly
+   OPPONENT EXIT DETECTION (v2)
+   ─ The old presence/countdown system is replaced.
+   ─ Now we ONLY show "Opponent Left" when the opponent
+     explicitly clicks an exit/home button — not on
+     accidental disconnect or tab close.
+   ─ Exit writes `p1Exited` or `p2Exited: true` to gameState.
+   ─ The other player picks it up, shows a 5-second popup,
+     then auto-wins. Popup only shows on game-screen.
 ═══════════════════════════════════════════════ */
-let opponentWasPresent   = false;   // guard: only start countdown if opponent WAS here
-let abandonInterval      = null;
-let abandonSecondsLeft   = 60;
-let presenceRef          = null;    // keep reference so we can remove on leave
+let presenceRef        = null; // kept for API compat — not actively used now
+let opponentWasPresent = false;
 
 function setupPresence() {
-  if (!roomId || !playerRole) return;
+  // No-op now — we no longer use Firebase presence for abandonment
   opponentWasPresent = false;
-  presenceRef = ref(db, `rooms/${roomId}/presence/${playerRole}`);
-  // Write true AND register auto-delete if the connection drops
-  presenceRef.set(true);
-  presenceRef.onDisconnect().remove();
+}
+
+let oppLeftPopupTimeout  = null;
+let oppLeftSecsInterval  = null;
+
+function showOppLeftPopup() {
+  // Only show if we are currently in the game screen
+  const gameScreen = document.getElementById('game-screen');
+  if (!gameScreen || !gameScreen.classList.contains('active')) return;
+
+  const popup  = document.getElementById('opponent-left-popup');
+  const secsEl = document.getElementById('opp-left-secs');
+  const ring   = document.getElementById('opp-ring-progress');
+
+  popup.classList.add('show');
+  sfx.ping && sfx.ping();
+
+  // Reset ring + counter
+  ring.style.transition = 'none';
+  ring.style.strokeDashoffset = '0';
+  void ring.offsetWidth;
+
+  let secsLeft = 5;
+  secsEl.textContent = secsLeft;
+
+  // Animate ring draining over 5 seconds
+  ring.style.transition = 'stroke-dashoffset 5s linear';
+  ring.style.strokeDashoffset = '100';
+
+  if (oppLeftSecsInterval) clearInterval(oppLeftSecsInterval);
+  oppLeftSecsInterval = setInterval(() => {
+    secsLeft--;
+    secsEl.textContent = Math.max(0, secsLeft);
+  }, 1000);
+
+  if (oppLeftPopupTimeout) clearTimeout(oppLeftPopupTimeout);
+  oppLeftPopupTimeout = setTimeout(() => {
+    clearInterval(oppLeftSecsInterval);
+    popup.classList.remove('show');
+    declareAbandonWin(); // remaining player wins after popup closes
+  }, 5200);
 }
 
 function watchOpponentPresence() {
-  if (!roomId || !playerRole) return;
+  if (!roomId || !playerRole || botMode) return;
   const opponentRole = playerRole === 'p1' ? 'p2' : 'p1';
+  const exitKey      = opponentRole + 'Exited'; // e.g. 'p2Exited'
 
-  onValue(ref(db, `rooms/${roomId}/presence/${opponentRole}`), snap => {
-    const present = snap.val();
-
-    if (present === true) {
-      opponentWasPresent = true;          // they arrived — note it
-      stopAbandonCountdown(false);        // cancel any running countdown
-    } else if (present === null && opponentWasPresent) {
-      // They were here and are now gone
-      startAbandonCountdown();
+  // Listen for the exit flag the opponent writes when they click exit
+  onValue(ref(db, `rooms/${roomId}/gameState`), snap => {
+    const state = snap.val();
+    if (!state) return;
+    if (state[exitKey] === true && !winShown) {
+      showOppLeftPopup();
     }
   });
 }
 
-function startAbandonCountdown() {
-  if (abandonInterval) return;            // already running
-  // Only count down while we're in an active multiplayer screen
-  if (!roomId || botMode) return;
-
-  abandonSecondsLeft = 60;
-  const banner = document.getElementById('abandon-banner');
-  const timerEl = document.getElementById('abandon-timer');
-  timerEl.textContent = abandonSecondsLeft;
-  banner.classList.add('show');
-  sfx.ping && sfx.ping();
-
-  abandonInterval = setInterval(() => {
-    abandonSecondsLeft--;
-    timerEl.textContent = abandonSecondsLeft;
-    if (abandonSecondsLeft <= 0) {
-      stopAbandonCountdown(false);
-      // Declare current player the winner
-      declareAbandonWin();
-    }
-  }, 1000);
-}
-
+/* ─── stopAbandonCountdown — kept so existing call sites don't break ─── */
 function stopAbandonCountdown(hideOnly = true) {
-  if (abandonInterval) { clearInterval(abandonInterval); abandonInterval = null; }
-  if (!hideOnly) return;
-  document.getElementById('abandon-banner').classList.remove('show');
+  // No-op — countdown removed, but we keep this so other call sites compile
 }
 
 async function declareAbandonWin() {
-  document.getElementById('abandon-banner').classList.remove('show');
+  document.getElementById('opponent-left-popup').classList.remove('show');
   if (!roomId) return;
-  // Write winner + a special 'abandoned' status so the win overlay
-  // can show the right message
   await update(ref(db, `rooms/${roomId}/gameState`), {
     winner: playerRole,
     status: 'abandoned'
   });
 }
 
-/* ─── Graceful leave: remove own presence so opponent is notified ─── */
+/* ─── Graceful leave: write exit flag so opponent is notified instantly ─── */
 function leaveRoomCleanup() {
   stopAbandonCountdown(false);
   opponentWasPresent = false;
-  if (presenceRef) {
-    presenceRef.onDisconnect().cancel();  // cancel the auto-remove (we'll do it now)
-    presenceRef.remove();
-    presenceRef = null;
+
+  // Write the exit flag to Firebase so the opponent sees it
+  if (roomId && playerRole) {
+    const exitKey = playerRole + 'Exited'; // e.g. 'p1Exited'
+    update(ref(db, `rooms/${roomId}/gameState`), { [exitKey]: true }).catch(() => {});
   }
+
   // If we created a room but nobody ever joined (we're p1, no p2), just delete it now
   if (roomId && playerRole === 'p1') {
     ref(db, `rooms/${roomId}/players`).get().then(snap => {
       const players = snap.val();
       if (players && !players.p2) {
-        // Nobody else joined — safe to delete the whole room immediately
         set(ref(db, `rooms/${roomId}`), null).catch(() => {});
       }
     }).catch(() => {});
@@ -2537,95 +2646,7 @@ function showBingoToast() {
   }, 900);
 }
 
-/* ── PLAY NOW — instant matchmaking ───────────── */
-document.getElementById('play-now-btn').addEventListener('click', async () => {
-  readDINGO();
-  if (navigator.vibrate) navigator.vibrate([40, 15, 40]);
-  const btn = document.getElementById('play-now-btn');
-  const msg = document.getElementById('home-msg');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="play-now-icon">⏳</span> FINDING MATCH…';
-  msg.textContent = '';
-  try {
-    // Look for an open room (status: waiting, only p1 present)
-    const { get: _get, ref: _ref, set: _set, update: _update, onValue: _onValue } = { get, ref, set, update, onValue };
-    const roomsSnap = await get(ref(db, 'rooms'));
-    const rooms = roomsSnap.val() || {};
-    let foundRoom = null;
-    for (const [id, room] of Object.entries(rooms)) {
-      if (
-        room.gameState?.status === 'waiting' &&
-        room.players?.p1 &&
-        !room.players?.p2
-      ) {
-        foundRoom = id;
-        break;
-      }
-    }
-    if (foundRoom) {
-      // Join existing open room
-      roomId = foundRoom; playerRole = 'p2';
-      await update(ref(db, `rooms/${roomId}/players`), { p2: myPlayerId });
-      await update(ref(db, `rooms/${roomId}/playerInfo`), {
-        p2: { name: playerName, avatar: playerAvatar, color: playerColor }
-      });
-      document.getElementById('display-room-code').innerText = roomId;
-      document.getElementById('waiting-label').innerText = 'Connected!';
-      initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence();
-      onValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
-        const info = snap.val();
-        if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; document.getElementById('p1-avatar').textContent = info.p1.avatar; }
-        if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; document.getElementById('p2-avatar').textContent = info.p2.avatar; }
-      });
-      onValue(ref(db, `rooms/${roomId}/scores`), snap => {
-        const s = snap.val();
-        if (s) { scores.p1 = s.p1||0; scores.p2 = s.p2||0; updateScoreDisplay(); }
-      });
-    } else {
-      // No open room — create one and wait
-      roomId = genRoomId(); playerRole = 'p1';
-      await set(ref(db, `rooms/${roomId}`), {
-        players: { p1: myPlayerId },
-        playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor } },
-        gameState: { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
-        scores: { p1: 0, p2: 0 }
-      });
-      document.getElementById('display-room-code').innerText = roomId;
-      document.getElementById('waiting-label').innerText = 'Waiting for an opponent…';
-      initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence();
-      onValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
-        const info = snap.val();
-        if (info?.p2) {
-          document.getElementById('p2-name').textContent = info.p2.name;
-          document.getElementById('p2-avatar').textContent = info.p2.avatar;
-          document.getElementById('waiting-label').textContent = `${info.p2.name} joined!`;
-        }
-        if (info?.p1) {
-          document.getElementById('p1-name').textContent = info.p1.name;
-          document.getElementById('p1-avatar').textContent = info.p1.avatar;
-        }
-      });
-      onValue(ref(db, `rooms/${roomId}/scores`), snap => {
-        const s = snap.val();
-        if (s) { scores.p1 = s.p1||0; scores.p2 = s.p2||0; updateScoreDisplay(); }
-      });
-      msg.textContent = '🔎 Room created — waiting for someone to join!';
-      msg.style.color = 'var(--cyan)';
-    }
-  } catch(err) {
-    let errMsg = `❌ ${err.message}`;
-    if (err.message.includes('permission') || err.message.includes('PERMISSION')) {
-      errMsg = '❌ Firebase rules blocking writes. Set rules to allow read/write.';
-    }
-    document.getElementById('home-msg').textContent = errMsg;
-    setFirebaseStatus(false, errMsg);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span class="play-now-icon">⚡</span> PLAY NOW';
-  }
-});
+/* ── PLAY NOW removed — players use Create Room or Join with Code ── */
 
 /* ── Create Room ──────────────────────────────── */
 document.getElementById('create-btn').addEventListener('click', async () => {
@@ -2782,8 +2803,147 @@ document.getElementById('ready-btn').addEventListener('click',async()=>{
 });
 
 /* ═══════════════════════════════════════════════
-   NUMBER ANNOUNCEMENT
+   MOVE TIMER + LIFELINES
+   ─ 25-second countdown starts whenever it becomes
+     a player's turn (both multiplayer and bot mode).
+   ─ Each player has 3 lifelines. When the timer expires
+     on your turn:  one lifeline is consumed and the
+     turn automatically passes to your opponent.
+   ─ If all 3 lifelines are gone the opponent wins
+     immediately.
+   ─ Timer resets every time the turn changes.
 ═══════════════════════════════════════════════ */
+const MOVE_TIME   = 25;   // seconds per move
+let moveTimerInt  = null; // setInterval handle
+let moveTimerSecs = MOVE_TIME;
+let lifelineState = { p1: 3, p2: 3 }; // remaining lifelines per player
+
+/* ─── Show/hide the timer UI ─── */
+function activateMoveTimerUI() {
+  document.getElementById('move-timer-wrap').classList.add('active');
+  document.getElementById('lifelines-row').classList.add('active');
+}
+
+/* ─── Render lifeline chips for both players ─── */
+function renderLifelines() {
+  ['p1','p2'].forEach(role => {
+    const container = document.getElementById('lifelines-' + role);
+    if (!container) return;
+    container.querySelectorAll('.lifeline-chip').forEach(chip => {
+      const n = parseInt(chip.dataset.n, 10); // chip 1,2,3
+      // A chip is "used" if the player has fewer lifelines than that chip's slot
+      const remaining = lifelineState[role];
+      chip.classList.toggle('used', n > remaining);
+    });
+  });
+}
+
+/* ─── Update the timer bar fill and colour based on seconds left ─── */
+function updateTimerBarUI(secsLeft) {
+  const fill    = document.getElementById('move-timer-bar-fill');
+  const secsEl  = document.getElementById('move-timer-secs');
+  const pct     = (secsLeft / MOVE_TIME) * 100;
+  fill.style.width = pct + '%';
+  secsEl.textContent = secsLeft;
+
+  // Colour: green → yellow → red
+  const warn = secsLeft <= 10;
+  const dang = secsLeft <= 5;
+  fill.classList.toggle('warning', warn && !dang);
+  fill.classList.toggle('danger', dang);
+  secsEl.classList.toggle('warning', warn && !dang);
+  secsEl.classList.toggle('danger', dang);
+}
+
+/* ─── Stop any running timer ─── */
+function stopMoveTimer() {
+  if (moveTimerInt) { clearInterval(moveTimerInt); moveTimerInt = null; }
+  // Reset bar to full without animation so next start is clean
+  const fill = document.getElementById('move-timer-bar-fill');
+  if (fill) {
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    fill.classList.remove('warning','danger');
+    void fill.offsetWidth;
+    fill.style.transition = 'width 1s linear, background .3s';
+  }
+  const secsEl = document.getElementById('move-timer-secs');
+  if (secsEl) { secsEl.textContent = MOVE_TIME; secsEl.classList.remove('warning','danger'); }
+}
+
+/* ─── Start the 25-second move timer.
+       isMyTurn: true when the local player must act.
+       onExpire: callback called when the timer hits 0. ─── */
+function startMoveTimer(isMyTurn, onExpire) {
+  stopMoveTimer();
+  moveTimerSecs = MOVE_TIME;
+  updateTimerBarUI(moveTimerSecs);
+
+  moveTimerInt = setInterval(() => {
+    moveTimerSecs--;
+    updateTimerBarUI(moveTimerSecs);
+    if (moveTimerSecs <= 0) {
+      stopMoveTimer();
+      if (isMyTurn && typeof onExpire === 'function') onExpire();
+    }
+  }, 1000);
+}
+
+/* ─── Handle timer expiry for MULTIPLAYER ─── */
+async function handleMultiplayerTimerExpiry() {
+  if (!roomId || !playerRole) return;
+  const myLifelines = lifelineState[playerRole];
+
+  if (myLifelines <= 1) {
+    // Last lifeline gone — opponent wins
+    lifelineState[playerRole] = 0;
+    renderLifelines();
+    // Write to Firebase: opponent wins due to timeout
+    await update(ref(db, `rooms/${roomId}/gameState`), {
+      winner: playerRole === 'p1' ? 'p2' : 'p1',
+      status: 'timeout'
+    });
+  } else {
+    // Consume a lifeline and pass the turn
+    lifelineState[playerRole] = myLifelines - 1;
+    renderLifelines();
+    // Pass turn without selecting a number
+    const stateRef = ref(db, `rooms/${roomId}/gameState`);
+    const snap = await get(stateRef);
+    const state = snap.val();
+    if (state && state.currentTurn === playerRole && !state.winner) {
+      await update(stateRef, { currentTurn: playerRole === 'p1' ? 'p2' : 'p1' });
+    }
+  }
+}
+
+/* ─── Handle timer expiry for BOT MODE ─── */
+function handleBotTimerExpiry() {
+  const myLifelines = lifelineState.p1; // player is always p1 in bot mode
+
+  if (myLifelines <= 1) {
+    lifelineState.p1 = 0;
+    renderLifelines();
+    // Bot wins by timeout
+    botWinShown = true;
+    stopMoveTimer();
+    document.getElementById('win-title-text').textContent = '⏰ TIME OUT';
+    document.getElementById('win-subtitle-text').textContent = 'All lifelines used — bot wins!';
+    document.getElementById('win-overlay').classList.add('show');
+    sfx.lose && sfx.lose();
+  } else {
+    lifelineState.p1 = myLifelines - 1;
+    renderLifelines();
+    // Auto-pass: trigger bot's turn immediately
+    triggerBotTurn();
+  }
+}
+
+/* ─── Reset lifelines for a fresh game ─── */
+function resetLifelines() {
+  lifelineState = { p1: 3, p2: 3 };
+  renderLifelines();
+}
 let announceTimer=null;
 function showAnnouncement(num,callerName,isMe){
   sfx.announce();
@@ -2806,6 +2966,9 @@ function startGame(){
   const boardDiv=document.getElementById('game-board');
   boardDiv.innerHTML='';
   let lastLen=0;
+  stopMoveTimer();
+  resetLifelines();
+  activateMoveTimerUI();
 
   onValue(ref(db,`rooms/${roomId}/playerInfo`),snap=>{
     const info=snap.val()||{};
@@ -2828,6 +2991,7 @@ function startGame(){
 
     if(state.winner&&!winShown){
       winShown=true;
+      stopMoveTimer();
       stopAbandonCountdown(false);
       const iWon=state.winner===playerRole;
       const wasAbandoned = state.status === 'abandoned';
@@ -2842,6 +3006,9 @@ function startGame(){
       turnText.innerText=''; return;
     }
     turnText.innerText=state.currentTurn===playerRole?'Your Turn!':"Opponent's Turn…";
+    // ── Start 25-second move timer on every turn change ──
+    const isMyTurn = state.currentTurn === playerRole;
+    startMoveTimer(isMyTurn, handleMultiplayerTimerExpiry);
 
     if(state.selectedNumbers){
       if(state.selectedNumbers.length>lastLen){
@@ -2867,6 +3034,7 @@ async function handleNumberClick(num){
   const stateRef=ref(db,`rooms/${roomId}/gameState`);
   const snap=await get(stateRef); const state=snap.val();
   if(state.currentTurn===playerRole&&!state.winner&&!state.selectedNumbers.includes(num)){
+    stopMoveTimer(); // player acted in time — cancel the turn timer
     await update(stateRef,{selectedNumbers:[...state.selectedNumbers,num],currentTurn:playerRole==='p1'?'p2':'p1'});
   }
 }
@@ -3000,6 +3168,8 @@ function launchConfetti(){
 async function doRestart(){
   if(countdownInterval)clearInterval(countdownInterval);
   winShown=false; lastLineCount=0; cleanupScheduled=false;
+  stopMoveTimer();
+  resetLifelines();
   stopAbandonCountdown(false);
   document.getElementById('win-overlay').classList.remove('show');
   document.getElementById('rematch-countdown').style.display='none';

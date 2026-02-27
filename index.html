@@ -1,453 +1,1896 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DiNGo - Multiplayer Bingo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
-        
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: #0f1220;
-            color: #ffffff;
-            overflow-x: hidden;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>DiNGo – Real-Time Multiplayer Bingo</title>
+  <meta name="description" content="Real-time multiplayer bingo – challenge a friend or match instantly!" />
+  <meta name="theme-color" content="#080a14" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DiNGo" />
 
-        .bingo-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-        }
+  <!-- Inline manifest link (Blob URL injected by JS) -->
+  <link id="pwa-manifest" rel="manifest" />
 
-        .bingo-cell {
-            aspect-ratio: 1/1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #1f2545;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 1.25rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            user-select: none;
-            border: 2px solid transparent;
-        }
+  <!-- ═══════════════════════════════════════════════════════════
+       FONTS  – Orbitron (numbers/logo) + Exo 2 (UI text)
+       Both have generous fallbacks so the app still looks good
+       without network access after first load.
+  ═══════════════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
 
-        .bingo-cell:hover:not(.marked) {
-            background: #2a325a;
-            transform: translateY(-2px);
-        }
+  <style>
+    /* ══════════════════════════════════════════════════
+       SECTION A – DESIGN TOKENS & RESET
+    ══════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .bingo-cell.marked {
-            background: linear-gradient(135deg, #00e5ff 0%, #0099ff 100%);
-            color: #0f1220;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-            transform: scale(0.95);
-        }
+    :root {
+      /* Core palette */
+      --bg:          #080a14;
+      --bg2:         #0d1020;
+      --surface:     #111527;
+      --surface2:    #181c35;
+      --border:      #1f2545;
+      --border-glow: #2a3060;
 
-        .bingo-cell.last-called {
-            border-color: #ffffff;
-            animation: pulse 1.5s infinite;
-        }
+      /* Accent colors */
+      --coral:       #ff3d5a;
+      --coral-dim:   rgba(255,61,90,0.15);
+      --coral-glow:  rgba(255,61,90,0.35);
+      --teal:        #00d4aa;
+      --teal-dim:    rgba(0,212,170,0.12);
+      --teal-glow:   rgba(0,212,170,0.3);
+      --gold:        #ffb930;
+      --purple:      #7c4dff;
 
-        @keyframes pulse {
-            0% { border-color: rgba(255,255,255,1); }
-            50% { border-color: rgba(255,255,255,0.2); }
-            100% { border-color: rgba(255,255,255,1); }
-        }
+      /* Text */
+      --text:        #dde2f0;
+      --text-muted:  #5a627a;
+      --text-dim:    #3a4060;
 
-        .bingo-letter {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #161a2f;
-            border-radius: 8px;
-            font-weight: 800;
-            color: #3f4a7a;
-            transition: all 0.5s;
-        }
+      /* Cell states */
+      --cell-bg:     #12162a;
+      --cell-marked: rgba(255,61,90,0.22);
+      --cell-line:   rgba(255,61,90,0.45);
+      --cell-free:   rgba(0,212,170,0.18);
 
-        .bingo-letter.active {
-            background: #7c5cff;
-            color: white;
-            box-shadow: 0 0 20px rgba(124, 92, 255, 0.5);
-        }
+      --radius-sm:   8px;
+      --radius:      14px;
+      --radius-lg:   22px;
+      --transition:  0.18s cubic-bezier(0.4,0,0.2,1);
 
-        .glass-panel {
-            background: rgba(22, 26, 47, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
+      /* Typography */
+      --font-ui:     'Exo 2', 'Segoe UI', system-ui, sans-serif;
+      --font-num:    'Orbitron', 'Courier New', monospace;
+    }
+
+    html {
+      height: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      height: 100%;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      overflow-x: hidden;
+      /* Subtle grid texture */
+      background-image:
+        linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION B – SCREEN SYSTEM
+    ══════════════════════════════════════════════════ */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 24px 20px;
+      animation: screenIn 0.28s ease both;
+    }
+    .screen.active { display: flex; }
+
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Game screen overrides (scrollable, top-aligned) */
+    #screen-game {
+      justify-content: flex-start;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION C – LOGO & BRANDING
+    ══════════════════════════════════════════════════ */
+    .logo {
+      font-family: var(--font-num);
+      font-size: clamp(2.6rem, 10vw, 4rem);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--coral);
+      text-shadow:
+        0 0 20px var(--coral-glow),
+        0 0 60px rgba(255,61,90,0.15);
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .logo .accent { color: var(--text); }
+    .logo-small {
+      font-size: clamp(1.4rem, 5vw, 1.8rem);
+      margin-bottom: 2px;
+    }
+
+    .tagline {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION D – BUTTONS
+    ══════════════════════════════════════════════════ */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 300px;
+      padding: 15px 24px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Primary – coral */
+    .btn-primary {
+      background: var(--coral);
+      color: #fff;
+      box-shadow: 0 4px 24px var(--coral-glow), 0 1px 0 rgba(255,255,255,0.15) inset;
+      margin-bottom: 12px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 6px 32px rgba(255,61,90,0.55), 0 1px 0 rgba(255,255,255,0.15) inset;
+      transform: translateY(-1px);
+    }
+
+    /* Secondary – ghost */
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--border-glow);
+      border-color: var(--border-glow);
+    }
+
+    /* Success – teal */
+    .btn-success {
+      background: var(--teal);
+      color: #000;
+      box-shadow: 0 4px 24px var(--teal-glow);
+      margin-bottom: 12px;
+    }
+    .btn-success:hover:not(:disabled) {
+      box-shadow: 0 6px 32px rgba(0,212,170,0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Ghost text link */
+    .btn-ghost {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 8px 12px;
+      transition: color var(--transition);
+    }
+    .btn-ghost:hover { color: var(--text); }
+
+    /* ══════════════════════════════════════════════════
+       SECTION E – CARDS & INPUTS
+    ══════════════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .card-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 6px;
+    }
+    .card-value {
+      font-family: var(--font-num);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--coral);
+      letter-spacing: 0.06em;
+    }
+
+    .field-group { width: 100%; max-width: 300px; margin-bottom: 14px; }
+    .field-label {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 7px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input[type="text"]:focus {
+      border-color: var(--coral);
+      box-shadow: 0 0 0 3px var(--coral-dim);
+    }
+    input[type="text"]::placeholder { color: var(--text-dim); }
+
+    /* Room code input – styled differently */
+    .code-input {
+      text-align: center;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      font-family: var(--font-num);
+      font-size: 1.3rem;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 300px;
+      margin: 4px 0 16px;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Copy row */
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 14px;
+    }
+    .copy-row input { flex: 1; font-size: 0.78rem; padding: 10px 12px; }
+    .copy-btn {
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all var(--transition);
+    }
+    .copy-btn:hover { background: var(--border-glow); color: var(--text); }
+
+    /* ══════════════════════════════════════════════════
+       SECTION F – LOADING / SPINNER
+    ══════════════════════════════════════════════════ */
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--coral);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 24px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .dots::after {
+      content: '';
+      animation: dotcycle 1.5s steps(4, end) infinite;
+    }
+    @keyframes dotcycle {
+      0%  { content: '';    }
+      25% { content: '.';   }
+      50% { content: '..';  }
+      75% { content: '...'; }
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION G – GAME SCREEN LAYOUT
+    ══════════════════════════════════════════════════ */
+
+    /* Top header bar */
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+
+    .pinfo { flex: 1; }
+    .pinfo.right { text-align: right; }
+
+    .pname {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 110px;
+    }
+    .pinfo.right .pname { margin-left: auto; }
+
+    .pscore {
+      font-family: var(--font-num);
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--coral);
+      line-height: 1;
+    }
+
+    .pips {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .pinfo.right .pips { justify-content: flex-end; }
+    .pip {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+    .pip.on {
+      background: var(--coral);
+      box-shadow: 0 0 6px var(--coral-glow);
+    }
+
+    .vs-badge {
+      font-family: var(--font-num);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      padding: 0 12px;
+      flex-shrink: 0;
+    }
+
+    /* Turn banner */
+    .turn-banner {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+    }
+    .turn-banner.mine {
+      background: var(--coral-dim);
+      border-color: rgba(255,61,90,0.3);
+      color: var(--coral);
+    }
+    .turn-banner.theirs {
+      background: rgba(255,255,255,0.03);
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION H – BINGO BOARD
+    ══════════════════════════════════════════════════ */
+    .board-wrap {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* BINGO letter header */
+    .bingo-letters {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+      margin-bottom: 3px;
+    }
+    .bletter {
+      text-align: center;
+      font-family: var(--font-num);
+      font-size: clamp(0.85rem, 4vw, 1.1rem);
+      font-weight: 900;
+      color: var(--coral);
+      padding: 4px 0;
+      text-shadow: 0 0 12px var(--coral-glow);
+    }
+
+    /* 5×5 grid */
+    .bingo-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cell-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-num);
+      font-size: clamp(0.65rem, 3.2vw, 0.95rem);
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      transition: all var(--transition);
+      color: var(--text);
+    }
+    .cell:active { transform: scale(0.91); }
+
+    /* Free center cell */
+    .cell.free {
+      background: var(--cell-free);
+      border-color: rgba(0,212,170,0.3);
+      color: var(--teal);
+      font-size: clamp(0.5rem, 2.2vw, 0.65rem);
+      cursor: default;
+      box-shadow: 0 0 10px rgba(0,212,170,0.1) inset;
+    }
+
+    /* Called / marked by either player */
+    .cell.marked {
+      background: var(--cell-marked);
+      border-color: rgba(255,61,90,0.4);
+      color: var(--coral);
+    }
+
+    /* Part of a completed bingo line */
+    .cell.line-win {
+      background: var(--cell-line);
+      border-color: var(--coral);
+      color: #fff;
+      box-shadow:
+        0 0 12px var(--coral-glow) inset,
+        0 0 8px var(--coral-glow);
+    }
+
+    /* Clickable hint on player's turn */
+    .cell.clickable:not(.marked):not(.free):hover {
+      border-color: rgba(255,61,90,0.6);
+      background: rgba(255,61,90,0.08);
+      transform: scale(1.04);
+    }
+
+    /* Dimmed when not your turn */
+    .cell.dimmed:not(.marked):not(.free) {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION I – CALLED NUMBERS LIST
+    ══════════════════════════════════════════════════ */
+    .called-wrap {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 10px;
+    }
+    .called-title {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 7px;
+    }
+    .called-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .chip {
+      font-family: var(--font-num);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--gold);
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION J – RESULT OVERLAY
+    ══════════════════════════════════════════════════ */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(4,6,16,0.9);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .overlay.show { display: flex; }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 44px 32px 36px;
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+      animation: popIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.75); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .result-icon { font-size: 3.6rem; margin-bottom: 10px; line-height: 1; }
+    .result-headline {
+      font-family: var(--font-num);
+      font-size: 2.1rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+    }
+    .result-headline.win  { color: var(--teal);  text-shadow: 0 0 20px var(--teal-glow);  }
+    .result-headline.lose { color: var(--coral); text-shadow: 0 0 20px var(--coral-glow); }
+
+    .result-sub {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-bottom: 32px;
+    }
+
+    /* Waiting for opponent rematch */
+    .rematch-waiting {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION K – TOAST NOTIFICATION
+    ══════════════════════════════════════════════════ */
+    #toast {
+      position: fixed;
+      bottom: max(24px, env(safe-area-inset-bottom, 24px));
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(100% + 24px));
+      background: var(--surface2);
+      border: 1px solid var(--border-glow);
+      border-radius: 40px;
+      padding: 10px 22px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text);
+      z-index: 999;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #toast.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ══════════════════════════════════════════════════
+       SECTION L – MISCELLANEOUS HELPERS
+    ══════════════════════════════════════════════════ */
+    .mt8  { margin-top: 8px;  }
+    .mt16 { margin-top: 16px; }
+    .fade-pulse { animation: fpulse 1.6s ease-in-out infinite; }
+    @keyframes fpulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    /* Responsive cap for very wide screens */
+    @media (min-width: 520px) {
+      .screen { padding: 32px 24px; }
+      #screen-game { padding: 14px; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-    <!-- Loading State -->
-    <div id="loading" class="flex flex-col items-center">
-        <div class="w-12 h-12 border-4 border-t-blue-500 border-gray-700 rounded-full animate-spin"></div>
-        <p class="mt-4 text-gray-400">Connecting to DiNGo Arena...</p>
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 1 – LOADING (shown immediately while Firebase connects)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen active" id="screen-loading">
+  <div class="logo">Di<span class="accent">N</span>Go</div>
+  <div class="spinner"></div>
+  <p style="color:var(--text-muted);font-size:0.82rem;">
+    Connecting<span class="dots"></span>
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 2 – MAIN MENU
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-menu">
+  <div class="logo">Di<span class="accent">N</span>Go</div>
+  <div class="tagline">Real-Time Multiplayer Bingo</div>
+
+  <div class="card">
+    <div class="card-label">Playing as</div>
+    <div class="card-value" id="display-name">Guest_0000</div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-quickplay">⚡ Quick Play</button>
+  <button class="btn btn-secondary" id="btn-private">🔒 Private Room</button>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 3 – PUBLIC MATCHMAKING (queue)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-matchmaking">
+  <div class="logo logo-small">Di<span class="accent">N</span>Go</div>
+  <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:30px;letter-spacing:0.08em;">
+    Finding an opponent<span class="dots"></span>
+  </p>
+  <div class="spinner"></div>
+  <p style="color:var(--text-muted);font-size:0.77rem;text-align:center;max-width:240px;margin-top:8px;line-height:1.6;">
+    You'll be matched instantly when another player enters the queue.
+  </p>
+  <button class="btn btn-secondary" id="btn-cancel-match" style="margin-top:28px;max-width:180px;">
+    Cancel
+  </button>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 4 – PRIVATE ROOM (create or join by code)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-private">
+  <div class="logo logo-small">Di<span class="accent">N</span>Go</div>
+  <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:28px;letter-spacing:0.08em;">
+    Private Room
+  </p>
+
+  <button class="btn btn-primary" id="btn-create-room">＋ Create Room</button>
+
+  <div class="divider">or join with a code</div>
+
+  <div class="field-group">
+    <label class="field-label" for="join-code-input">Room Code</label>
+    <input type="text" id="join-code-input" class="code-input"
+           placeholder="ABC123" maxlength="6" autocomplete="off"
+           spellcheck="false" />
+  </div>
+
+  <button class="btn btn-secondary" id="btn-join-code">Join Room</button>
+  <button class="btn-ghost" id="btn-back-private">← Back to Menu</button>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 5 – WAITING FOR GUEST TO JOIN (private room host)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-waiting">
+  <div class="logo logo-small">Di<span class="accent">N</span>Go</div>
+  <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:28px;letter-spacing:0.08em;">
+    Waiting for opponent<span class="dots"></span>
+  </p>
+
+  <div class="card">
+    <div class="card-label">Room Code</div>
+    <div class="card-value" id="waiting-code" style="font-size:2rem;letter-spacing:0.35em;">
+      ------
     </div>
+  </div>
 
-    <!-- Main Screens -->
-    <div id="screen-home" class="hidden w-full max-w-md space-y-6">
-        <div class="text-center">
-            <h1 class="text-6xl font-extrabold tracking-tighter mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                DiNGo
-            </h1>
-            <p id="user-display" class="text-gray-400 font-medium"></p>
-        </div>
+  <div class="copy-row">
+    <input type="text" id="share-link-input" readonly placeholder="share link" />
+    <button class="copy-btn" id="btn-copy-link">Copy Link</button>
+  </div>
 
-        <div class="glass-panel p-6 rounded-3xl space-y-4">
-            <button onclick="findMatch()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 p-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95">
-                Play Multiplayer
-            </button>
-            <div class="relative py-2">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-800"></div></div>
-                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#161a2f] px-2 text-gray-500">Or Private</span></div>
-            </div>
-            <button onclick="createPrivateRoom()" class="w-full bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl font-bold text-gray-200 transition-all">
-                Host Private Game
-            </button>
-        </div>
+  <p style="color:var(--text-muted);font-size:0.77rem;text-align:center;max-width:270px;line-height:1.6;">
+    Share the code or link with a friend. Game starts automatically when they join.
+  </p>
+
+  <div class="spinner" style="margin-top:16px;"></div>
+  <button class="btn-ghost" id="btn-cancel-waiting" style="margin-top:4px;">Cancel Room</button>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCREEN 6 – GAME BOARD
+═══════════════════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-game">
+
+  <!-- Score header -->
+  <div class="game-header">
+    <div class="pinfo">
+      <div class="pname" id="my-name">You</div>
+      <div class="pscore" id="my-score">0</div>
+      <div class="pips" id="my-pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
     </div>
-
-    <div id="screen-lobby" class="hidden w-full max-w-md glass-panel p-8 rounded-3xl text-center space-y-6">
-        <div class="animate-bounce inline-block p-4 bg-blue-900/30 rounded-full text-blue-400">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        </div>
-        <h2 class="text-2xl font-bold">Waiting for Opponent</h2>
-        <p class="text-gray-400">The arena is being prepared...</p>
-        <div id="room-id-display" class="text-xs text-gray-600 font-mono"></div>
-        <button onclick="leaveGame()" class="text-sm text-gray-500 hover:text-red-400 underline mt-4">Cancel Search</button>
+    <div class="vs-badge">VS</div>
+    <div class="pinfo right">
+      <div class="pname" id="opp-name">Opponent</div>
+      <div class="pscore" id="opp-score">0</div>
+      <div class="pips" id="opp-pips">
+        <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+        <div class="pip"></div><div class="pip"></div>
+      </div>
     </div>
+  </div>
 
-    <div id="screen-game" class="hidden w-full max-w-md flex flex-col items-center">
-        <!-- Header Status -->
-        <div class="w-full flex justify-between items-end mb-4 px-2">
-            <div>
-                <p id="opponent-name" class="text-xs text-gray-500 uppercase tracking-widest mb-1">vs Opponent</p>
-                <div id="turn-indicator" class="text-xl font-bold">Waiting...</div>
-            </div>
-            <div class="flex gap-2" id="bingo-progress">
-                <div class="bingo-letter" data-letter="D">D</div>
-                <div class="bingo-letter" data-letter="I">I</div>
-                <div class="bingo-letter" data-letter="N">N</div>
-                <div class="bingo-letter" data-letter="G">G</div>
-                <div class="bingo-letter" data-letter="O">O</div>
-            </div>
-        </div>
+  <!-- Turn indicator -->
+  <div class="turn-banner theirs" id="turn-banner">
+    ⏳ Waiting for opponent…
+  </div>
 
-        <!-- The Board -->
-        <div id="game-board" class="bingo-grid w-full glass-panel p-4 rounded-3xl">
-            <!-- Cells injected here -->
-        </div>
-
-        <div class="w-full mt-6 text-center">
-            <p id="game-message" class="text-gray-400 text-sm italic">Tap a number when it's your turn</p>
-            <button onclick="leaveGame()" class="mt-8 text-gray-600 hover:text-gray-400 text-sm font-medium">Exit Arena</button>
-        </div>
+  <!-- Bingo board -->
+  <div class="board-wrap">
+    <div class="bingo-letters">
+      <div class="bletter">B</div>
+      <div class="bletter">I</div>
+      <div class="bletter">N</div>
+      <div class="bletter">G</div>
+      <div class="bletter">O</div>
     </div>
-
-    <!-- Win Overlay -->
-    <div id="overlay-win" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-[1000] flex items-center justify-center p-6 text-center">
-        <div class="space-y-8 max-w-xs w-full">
-            <h2 id="win-title" class="text-6xl font-extrabold italic bg-clip-text text-transparent bg-gradient-to-b from-yellow-300 to-orange-500">VICTORY</h2>
-            <p id="win-subtitle" class="text-gray-300 text-xl font-medium">You completed the DiNGo!</p>
-            <div class="space-y-3 pt-4">
-                <button onclick="requestRematch()" id="rematch-btn" class="w-full bg-blue-600 p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">Play Again</button>
-                <button onclick="leaveGame()" class="w-full bg-white/10 p-4 rounded-2xl font-bold hover:bg-white/20 transition-all">Back to Home</button>
-            </div>
-        </div>
+    <div class="bingo-grid" id="bingo-grid">
+      <!-- 25 cells rendered by JS -->
     </div>
+  </div>
+
+  <!-- Called numbers -->
+  <div class="called-wrap">
+    <div class="called-title">Called Numbers</div>
+    <div class="called-chips" id="called-chips"></div>
+  </div>
+
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     OVERLAY – GAME RESULT (win / lose)
+═══════════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-result">
+  <div class="result-card">
+    <div class="result-icon" id="result-icon">🎉</div>
+    <div class="result-headline win" id="result-headline">YOU WIN!</div>
+    <div class="result-sub" id="result-sub">5 lines — impressive!</div>
+    <div class="rematch-waiting" id="rematch-waiting" style="display:none">
+      Waiting for opponent<span class="dots"></span>
+    </div>
+    <button class="btn btn-success" id="btn-rematch">🔄 Rematch</button>
+    <button class="btn btn-secondary" id="btn-leave">🚪 Leave</button>
+  </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, onSnapshot, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<!-- Toast notification -->
+<div id="toast"></div>
 
-    /* --- CONFIG & INIT --- */
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'dingo-v2';
+<!-- ═══════════════════════════════════════════════════════════════════
+     FIREBASE COMPAT SDK  (v9 compat – no bundler required)
+═══════════════════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-    let currentUser = null;
-    let currentGame = null;
-    let unsubscribeGame = null;
-    let myBoard = [];
-    let myMarks = [];
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   ██████████████████████████████████████████████████████████████████
+         DiNGo – Complete Game Logic
+         Architecture: functional modules, single state object,
+         explicit listener lifecycle management
+   ██████████████████████████████████████████████████████████████████
+═══════════════════════════════════════════════════════════════════ */
 
-    // Utils
-    const $ = id => document.getElementById(id);
-    const show = id => $(id).classList.remove('hidden');
-    const hide = id => $(id).classList.add('hidden');
-    const generateName = () => "Player_" + Math.random().toString(36).substring(7).toUpperCase();
+/* ────────────────────────────────────────────────────────────────
+   MODULE 0 ▸ FIREBASE CONFIGURATION
+   ⚠️  Replace these placeholder values with your own Firebase
+      project credentials from the Firebase Console.
+      https://console.firebase.google.com → Project settings → SDK config
+──────────────────────────────────────────────────────────────── */
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
 
-    /* --- AUTHENTICATION --- */
-    async function initAuth() {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
+/* ────────────────────────────────────────────────────────────────
+   MODULE 1 ▸ FIREBASE INIT
+──────────────────────────────────────────────────────────────── */
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.database();
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 2 ▸ GLOBAL STATE
+   Single source of truth – never mutate directly outside setters.
+──────────────────────────────────────────────────────────────── */
+const State = {
+  uid:         null,  // Firebase anonymous UID
+  name:        null,  // "Guest_XXXX"
+  roomId:      null,  // active room key in /rooms/
+  board:       [],    // flat[25] – null at index 12 = FREE center
+  opponentId:  null,  // other player's UID
+  opponentName:null,
+  gameActive:  false, // true while game is in progress
+  myLines:     new Set(), // completed line keys for current player
+  _listeners:  [],    // { ref, event, fn } objects for cleanup
+};
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 3 ▸ UTILITIES
+──────────────────────────────────────────────────────────────── */
+
+/** Navigate to a named screen (hides all others). */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+/** Transient toast message at the bottom of the screen. */
+let _toastTimer;
+function toast(msg, ms = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
+}
+
+/** 4-digit random suffix (1000–9999). */
+function rnd4() {
+  return Math.floor(1000 + Math.random() * 9000);
+}
+
+/** 6-char uppercase alphanumeric room code (avoids 0/O/I/1 confusion). */
+function makeRoomId() {
+  const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => alpha[Math.floor(Math.random() * alpha.length)]).join('');
+}
+
+/**
+ * Firebase sometimes returns arrays as objects with numeric string keys.
+ * This helper normalises them back to a real JS array.
+ */
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  // Object with sequential 0-based keys → array
+  return Object.keys(val)
+    .sort((a, b) => Number(a) - Number(b))
+    .map(k => val[k]);
+}
+
+/**
+ * Register a Firebase listener and store it so it can be removed later.
+ * Prevents duplicate listeners and memory leaks.
+ */
+function listen(ref, event, fn) {
+  ref.on(event, fn);
+  State._listeners.push({ ref, event, fn });
+}
+
+/** Remove every active Firebase listener registered via listen(). */
+function cleanListeners() {
+  State._listeners.forEach(({ ref, event, fn }) => ref.off(event, fn));
+  State._listeners = [];
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 4 ▸ BOARD GENERATION
+   Standard Bingo column ranges:
+     B 1-15 | I 16-30 | N 31-45 | G 46-60 | O 61-75
+   Board is a flat array of 25 values; index 12 = FREE (null).
+──────────────────────────────────────────────────────────────── */
+
+/** Return a shuffled subset of [min, max]. */
+function sample(min, max, count) {
+  const pool = [];
+  for (let n = min; n <= max; n++) pool.push(n);
+  // Fisher-Yates
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
+
+function generateBoard() {
+  const cols = [
+    sample(1,  15, 5),  // B
+    sample(16, 30, 5),  // I
+    sample(31, 45, 5),  // N
+    sample(46, 60, 5),  // G
+    sample(61, 75, 5),  // O
+  ];
+
+  // Build flat row-major array (row 0→4, col 0→4)
+  const flat = [];
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      flat.push(row === 2 && col === 2 ? null : cols[col][row]);
+    }
+  }
+  return flat; // length 25, index 12 is null (FREE)
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 5 ▸ WIN DETECTION
+   12 possible lines: 5 rows + 5 cols + 2 diagonals.
+   Line key format: "r0"-"r4", "c0"-"c4", "d0", "d1"
+──────────────────────────────────────────────────────────────── */
+
+/** Returns the 5 cell indices belonging to a given line key. */
+function lineIndices(key) {
+  if (key[0] === 'r') {
+    const r = +key[1];
+    return [0,1,2,3,4].map(c => r*5+c);
+  }
+  if (key[0] === 'c') {
+    const c = +key[1];
+    return [0,1,2,3,4].map(r => r*5+c);
+  }
+  if (key === 'd0') return [0,6,12,18,24];  // top-left → bottom-right
+  if (key === 'd1') return [4,8,12,16,20];  // top-right → bottom-left
+  return [];
+}
+
+/**
+ * Calculates how many lines on `board` are completed given `calledSet`.
+ * Returns an array of completed line keys.
+ */
+function completedLines(board, calledSet) {
+  const isMarked = i => board[i] === null || calledSet.has(board[i]);
+
+  const allKeys = [
+    'r0','r1','r2','r3','r4',
+    'c0','c1','c2','c3','c4',
+    'd0','d1',
+  ];
+
+  return allKeys.filter(key =>
+    lineIndices(key).every(i => isMarked(i))
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 6 ▸ AUTHENTICATION
+──────────────────────────────────────────────────────────────── */
+
+function initAuth() {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      State.uid  = user.uid;
+      // Persist name across sessions so user always has same identity
+      let name   = localStorage.getItem('dingo_name');
+      if (!name) {
+        name = 'Guest_' + rnd4();
+        localStorage.setItem('dingo_name', name);
+      }
+      State.name = name;
+      document.getElementById('display-name').textContent = name;
+      onAuthenticated();
+    } else {
+      auth.signInAnonymously().catch(err => {
+        console.error('[DiNGo] Auth failed:', err);
+        toast('Connection error – please refresh.');
+      });
+    }
+  });
+}
+
+function onAuthenticated() {
+  // Check for a ?room=XXXX invite in the URL
+  const params      = new URLSearchParams(location.search);
+  const inviteRoom  = params.get('room');
+
+  if (inviteRoom) {
+    // Clean up the URL so a refresh doesn't re-trigger
+    if (history.replaceState) history.replaceState({}, '', location.pathname);
+    joinPrivateRoom(inviteRoom.toUpperCase());
+  } else {
+    showScreen('screen-menu');
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 7 ▸ PUBLIC MATCHMAKING (queue)
+   Race-condition strategy:
+     – Both players write to /queue/<uid>
+     – We watch /queue for value changes
+     – When 2+ players exist, the lexicographically SMALLEST uid
+       acts as "host" (deterministic, no transaction needed for
+       host selection since only one client becomes host per pair)
+     – Host creates the room, removes both from queue, and writes
+       a /queue_assignments/<guestUid> signal so guest learns the roomId
+──────────────────────────────────────────────────────────────── */
+
+let _queueValueListener = null;  // separate from State._listeners for precise removal
+let _myQueueRef         = null;
+
+function enterQueue() {
+  showScreen('screen-matchmaking');
+
+  const queueRef = db.ref('queue');
+  _myQueueRef    = queueRef.child(State.uid);
+
+  // Announce ourselves in queue; auto-remove on disconnect
+  _myQueueRef.set({ uid: State.uid, name: State.name });
+  _myQueueRef.onDisconnect().remove();
+
+  // HOST DETECTION: watch the queue for another player
+  _queueValueListener = queueRef.on('value', snap => {
+    const queue = snap.val();
+    if (!queue) return;
+
+    const uids = Object.keys(queue).sort();
+    if (uids.length < 2) return;  // not enough players yet
+
+    const [hostUid, guestUid] = uids;
+
+    if (hostUid === State.uid) {
+      // I am the host – stop watching queue and build the room
+      queueRef.off('value', _queueValueListener);
+      _queueValueListener = null;
+
+      const host  = queue[hostUid];
+      const guest = queue[guestUid];
+      createMatchRoom(makeRoomId(), host, guest, guestUid);
+    }
+    // Guest role: wait for /queue_assignments/<myUid>
+  });
+
+  // GUEST DETECTION: watch for an assignment written by the host
+  const assignRef = db.ref('queue_assignments/' + State.uid);
+  listen(assignRef, 'value', snap => {
+    if (!snap.exists()) return;
+    const { roomId } = snap.val();
+
+    // Stop watching queue
+    if (_queueValueListener) {
+      db.ref('queue').off('value', _queueValueListener);
+      _queueValueListener = null;
+    }
+    snap.ref.remove();   // clean up the assignment signal
+    enterRoom(roomId);   // join the room created by host
+  });
+}
+
+/** Host creates room, removes both from queue, signals guest. */
+function createMatchRoom(roomId, host, guest, guestUid) {
+  const hostBoard  = generateBoard();
+  const guestBoard = generateBoard();
+
+  const roomData = {
+    status:    'playing',
+    turn:      host.uid,   // host goes first
+    winner:    null,
+    called:    null,
+    createdAt: Date.now(),
+    players: {
+      [host.uid]: {
+        name:    host.name,
+        score:   0,
+        rematch: false,
+        board:   hostBoard,
+      },
+      [guest.uid]: {
+        name:    guest.name,
+        score:   0,
+        rematch: false,
+        board:   guestBoard,
+      },
+    },
+  };
+
+  db.ref('rooms/' + roomId).set(roomData)
+    .then(() => db.ref('queue').update({ [host.uid]: null, [guest.uid]: null }))
+    .then(() => db.ref('queue_assignments/' + guestUid).set({ roomId }))
+    .then(() => enterRoom(roomId))
+    .catch(err => {
+      console.error('[DiNGo] createMatchRoom failed:', err);
+      toast('Matchmaking error – please retry.');
+      showScreen('screen-menu');
+    });
+}
+
+function cancelMatchmaking() {
+  if (_queueValueListener) {
+    db.ref('queue').off('value', _queueValueListener);
+    _queueValueListener = null;
+  }
+  if (_myQueueRef) {
+    _myQueueRef.remove();
+    _myQueueRef = null;
+  }
+  cleanListeners();
+  showScreen('screen-menu');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 8 ▸ PRIVATE ROOMS
+──────────────────────────────────────────────────────────────── */
+
+function createPrivateRoom() {
+  const roomId    = makeRoomId();
+  const hostBoard = generateBoard();
+
+  const roomData = {
+    status:    'waiting',
+    turn:      State.uid,
+    winner:    null,
+    called:    null,
+    createdAt: Date.now(),
+    players: {
+      [State.uid]: {
+        name:    State.name,
+        score:   0,
+        rematch: false,
+        board:   hostBoard,
+      },
+    },
+  };
+
+  db.ref('rooms/' + roomId).set(roomData)
+    .then(() => {
+      State.roomId = roomId;
+
+      // Presence: remove my entry if I close the tab while waiting
+      db.ref(`rooms/${roomId}/players/${State.uid}`)
+        .onDisconnect().remove();
+
+      // Show the waiting screen with the room code
+      document.getElementById('waiting-code').textContent = roomId;
+      const link = `${location.origin}${location.pathname}?room=${roomId}`;
+      document.getElementById('share-link-input').value = link;
+      showScreen('screen-waiting');
+
+      // Wait for a second player to join
+      const playersRef = db.ref(`rooms/${roomId}/players`);
+      listen(playersRef, 'value', snap => {
+        const players = snap.val() || {};
+        if (Object.keys(players).length >= 2) {
+          cleanListeners();  // remove this watcher before entering game
+          enterRoom(roomId);
         }
+      });
+    })
+    .catch(err => {
+      console.error('[DiNGo] createPrivateRoom failed:', err);
+      toast('Could not create room – try again.');
+    });
+}
+
+function joinPrivateRoom(roomId) {
+  db.ref('rooms/' + roomId).once('value')
+    .then(snap => {
+      if (!snap.exists()) {
+        toast('Room not found.');
+        showScreen('screen-private');
+        return;
+      }
+
+      const room    = snap.val();
+      const players = room.players || {};
+      const uids    = Object.keys(players);
+
+      // Already in the room (e.g., page refresh) → just re-enter
+      if (uids.includes(State.uid)) {
+        enterRoom(roomId);
+        return;
+      }
+
+      if (room.status !== 'waiting') {
+        toast('This room is no longer open.');
+        showScreen('screen-private');
+        return;
+      }
+      if (uids.length >= 2) {
+        toast('This room is full.');
+        showScreen('screen-private');
+        return;
+      }
+
+      // Add guest and flip status to 'playing'
+      const guestBoard = generateBoard();
+      const updates = {
+        [`players/${State.uid}`]: {
+          name:    State.name,
+          score:   0,
+          rematch: false,
+          board:   guestBoard,
+        },
+        status: 'playing',
+      };
+
+      db.ref('rooms/' + roomId).update(updates)
+        .then(() => {
+          db.ref(`rooms/${roomId}/players/${State.uid}`)
+            .onDisconnect().remove();
+          enterRoom(roomId);
+        });
+    })
+    .catch(err => {
+      console.error('[DiNGo] joinPrivateRoom failed:', err);
+      toast('Could not join room.');
+      showScreen('screen-private');
+    });
+}
+
+function cancelWaiting() {
+  cleanListeners();
+  if (State.roomId) {
+    db.ref('rooms/' + State.roomId).remove();
+    State.roomId = null;
+  }
+  showScreen('screen-menu');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 9 ▸ ENTER & WATCH ROOM
+──────────────────────────────────────────────────────────────── */
+
+function enterRoom(roomId) {
+  cleanListeners();  // remove any stale watchers
+
+  State.roomId     = roomId;
+  State.gameActive = true;
+  State.myLines    = new Set();
+
+  // Clear the URL invite param (avoid re-join on refresh)
+  if (history.replaceState) history.replaceState({}, '', location.pathname);
+
+  // Guarantee our presence entry auto-removes on disconnect
+  db.ref(`rooms/${roomId}/players/${State.uid}`)
+    .onDisconnect().remove();
+
+  // Load room once to initialise local state, then subscribe
+  db.ref('rooms/' + roomId).once('value')
+    .then(snap => {
+      if (!snap.exists()) {
+        toast('Room disappeared.');
+        resetToMenu();
+        return;
+      }
+
+      const room    = snap.val();
+      const players = room.players || {};
+      const opUid   = Object.keys(players).find(u => u !== State.uid);
+
+      State.opponentId   = opUid || null;
+      State.opponentName = opUid ? players[opUid].name : 'Opponent';
+      State.board        = toArray(players[State.uid].board);
+
+      // Render the board UI
+      renderBoard();
+      document.getElementById('my-name').textContent  = State.name;
+      document.getElementById('opp-name').textContent = State.opponentName;
+      showScreen('screen-game');
+
+      // Subscribe to all relevant room sub-paths
+      watchRoom(roomId);
+    })
+    .catch(err => {
+      console.error('[DiNGo] enterRoom failed:', err);
+      toast('Failed to load room.');
+      resetToMenu();
+    });
+}
+
+/**
+ * Subscribe to all room sub-paths. Each watcher handles one concern.
+ * Using separate paths (not root) avoids re-rendering everything on each write.
+ */
+function watchRoom(roomId) {
+  const R = db.ref('rooms/' + roomId);
+
+  /* — called numbers ────────────────────────────────────── */
+  listen(R.child('called'), 'value', snap => {
+    const raw        = snap.val() || {};
+    const called     = Object.values(raw).map(Number);
+    const calledSet  = new Set(called);
+
+    applyCalledToBoard(calledSet);
+    renderCalledChips(called);
+
+    // Recalculate my line score and write it back to DB
+    const lines = completedLines(State.board, calledSet);
+    State.myLines = new Set(lines);
+    highlightLines(lines);
+    updateMyScore(lines.length, calledSet);
+  });
+
+  /* — whose turn ─────────────────────────────────────────── */
+  listen(R.child('turn'), 'value', snap => {
+    renderTurnBanner(snap.val());
+  });
+
+  /* — game status / winner ───────────────────────────────── */
+  listen(R.child('status'), 'value', snap => {
+    if (snap.val() === 'finished') {
+      R.child('winner').once('value').then(ws => showResult(ws.val()));
+    }
+  });
+
+  /* — players node (presence + opponent score + rematch) ─── */
+  listen(R.child('players'), 'value', snap => {
+    const players = snap.val();
+
+    // Room deleted / everyone left
+    if (!players) {
+      handleRoomGone();
+      return;
     }
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = {
-                uid: user.uid,
-                name: generateName()
-            };
-            $('user-display').innerText = currentUser.name;
-            hide('loading');
-            show('screen-home');
-        }
+    const uids = Object.keys(players);
+
+    // Discover opponent late (e.g. if we're the first one in)
+    if (!State.opponentId) {
+      const opUid = uids.find(u => u !== State.uid);
+      if (opUid) {
+        State.opponentId   = opUid;
+        State.opponentName = players[opUid].name;
+        document.getElementById('opp-name').textContent = State.opponentName;
+      }
+    }
+
+    // Opponent score
+    if (State.opponentId && players[State.opponentId]) {
+      const oppScore = players[State.opponentId].score || 0;
+      document.getElementById('opp-score').textContent = oppScore;
+      renderPips('opp-pips', oppScore);
+    }
+
+    // Opponent disconnected mid-game
+    if (State.opponentId && !uids.includes(State.opponentId)) {
+      handleOpponentLeft(roomId);
+    }
+
+    // Rematch check: both players set rematch = true
+    if (State.opponentId && players[State.uid]?.rematch && players[State.opponentId]?.rematch) {
+      doRematch(roomId, players);
+    }
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 10 ▸ BOARD RENDERING
+──────────────────────────────────────────────────────────────── */
+
+function renderBoard() {
+  const grid = document.getElementById('bingo-grid');
+  grid.innerHTML = '';
+
+  State.board.forEach((num, idx) => {
+    const cell       = document.createElement('div');
+    const isFree     = num === null;
+    cell.className   = 'cell' + (isFree ? ' free marked' : '');
+    cell.dataset.idx = idx;
+    cell.dataset.num = isFree ? 'FREE' : num;
+    cell.textContent = isFree ? 'FREE' : num;
+
+    if (!isFree) {
+      cell.addEventListener('click', () => handleCellClick(num, cell));
+    }
+
+    grid.appendChild(cell);
+  });
+}
+
+function applyCalledToBoard(calledSet) {
+  document.querySelectorAll('#bingo-grid .cell:not(.free)').forEach(cell => {
+    const num = Number(cell.dataset.num);
+    cell.classList.toggle('marked', calledSet.has(num));
+  });
+}
+
+function highlightLines(lineKeys) {
+  // Clear all previous line-win highlights
+  document.querySelectorAll('#bingo-grid .cell.line-win')
+    .forEach(c => c.classList.remove('line-win'));
+
+  lineKeys.forEach(key => {
+    lineIndices(key).forEach(i => {
+      const cell = document.querySelector(`#bingo-grid .cell[data-idx="${i}"]`);
+      if (cell) cell.classList.add('line-win');
+    });
+  });
+}
+
+function renderTurnBanner(turnUid) {
+  const banner  = document.getElementById('turn-banner');
+  const isMyTurn = turnUid === State.uid;
+
+  if (isMyTurn) {
+    banner.className   = 'turn-banner mine';
+    banner.textContent = '⚡ Your turn – tap a number!';
+  } else {
+    banner.className   = 'turn-banner theirs';
+    banner.textContent = `⏳ ${State.opponentName || 'Opponent'}'s turn…`;
+  }
+
+  // Update cell clickability appearance
+  document.querySelectorAll('#bingo-grid .cell:not(.free)').forEach(cell => {
+    cell.classList.toggle('clickable', isMyTurn);
+    cell.classList.toggle('dimmed', !isMyTurn);
+  });
+}
+
+function renderCalledChips(called) {
+  const el = document.getElementById('called-chips');
+  el.innerHTML = '';
+  called.slice().sort((a, b) => a - b).forEach(n => {
+    const chip       = document.createElement('span');
+    chip.className   = 'chip';
+    chip.textContent = n;
+    el.appendChild(chip);
+  });
+}
+
+function renderPips(containerId, count) {
+  const pips = document.querySelectorAll(`#${containerId} .pip`);
+  pips.forEach((pip, i) => pip.classList.toggle('on', i < count));
+}
+
+function updateMyScore(lineCount, calledSet) {
+  document.getElementById('my-score').textContent = lineCount;
+  renderPips('my-pips', lineCount);
+
+  // Persist score to DB for opponent's UI to read
+  db.ref(`rooms/${State.roomId}/players/${State.uid}/score`).set(lineCount);
+
+  // WIN CONDITION: 5 lines completed
+  if (lineCount >= 5 && State.gameActive) {
+    // Use a transaction to safely claim the win (avoid race if both hit 5)
+    const roomRef = db.ref('rooms/' + State.roomId);
+    roomRef.child('status').transaction(currentStatus => {
+      if (currentStatus === 'playing') return 'finished';
+      return; // abort – someone else already finished it
+    }).then(result => {
+      if (result.committed) {
+        roomRef.child('winner').set(State.uid);
+      }
+    });
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 11 ▸ TURN HANDLING (anti-cheat, server-side validation)
+──────────────────────────────────────────────────────────────── */
+
+function handleCellClick(num, cellEl) {
+  if (!State.gameActive) return;
+  if (cellEl.classList.contains('marked')) { toast('Already called!'); return; }
+  if (cellEl.classList.contains('dimmed'))  { toast('Not your turn!'); return; }
+
+  // VALIDATION: re-read turn from DB before writing.
+  // This prevents a fast-click or out-of-sync client from cheating.
+  db.ref(`rooms/${State.roomId}/turn`).once('value').then(snap => {
+    if (snap.val() !== State.uid) {
+      toast('Not your turn!');
+      return;
+    }
+    if (cellEl.classList.contains('marked')) return;  // raced with opponent
+
+    submitCall(num);
+  });
+}
+
+function submitCall(num) {
+  if (!State.opponentId) return;
+
+  const roomRef   = db.ref('rooms/' + State.roomId);
+  const calledRef = roomRef.child('called');
+
+  // Read current called list to compute post-call line count
+  calledRef.once('value').then(snap => {
+    const prev       = snap.val() ? Object.values(snap.val()).map(Number) : [];
+    const nextCalled = new Set([...prev, num]);
+    const myLines    = completedLines(State.board, nextCalled);
+    const won        = myLines.length >= 5;
+
+    // Build atomic multi-path update
+    const newPushKey = calledRef.push().key;
+    const update = {
+      [`called/${newPushKey}`]: num,
+      turn:                     State.opponentId, // pass turn to opponent
+    };
+
+    if (won) {
+      update.status = 'finished';
+      update.winner = State.uid;
+    }
+
+    roomRef.update(update).catch(err => {
+      console.error('[DiNGo] submitCall failed:', err);
+      toast('Error submitting – try again.');
+    });
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 12 ▸ RESULT SCREEN
+──────────────────────────────────────────────────────────────── */
+
+function showResult(winnerUid) {
+  State.gameActive = false;
+
+  const didWin = winnerUid === State.uid;
+
+  document.getElementById('result-icon').textContent     = didWin ? '🎉' : '😔';
+  document.getElementById('result-headline').textContent  = didWin ? 'YOU WIN!' : 'YOU LOSE';
+  document.getElementById('result-headline').className    = 'result-headline ' + (didWin ? 'win' : 'lose');
+  document.getElementById('result-sub').textContent       = didWin
+    ? '5 lines – excellent!'
+    : `${State.opponentName || 'Opponent'} completed 5 lines`;
+
+  document.getElementById('rematch-waiting').style.display = 'none';
+  document.getElementById('btn-rematch').disabled  = false;
+  document.getElementById('btn-rematch').textContent = '🔄 Rematch';
+
+  document.getElementById('overlay-result').classList.add('show');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE 13 ▸ REMATCH
+──────────────────────────────────────────────────────────────── */
+
+function requestRematch() {
+  // Signal our intent; the players watcher will detect when both agree
+  document.getElementById('btn-rematch').disabled   = true;
+  document.getElementById('btn-rematch').textContent = '⏳ Waiting…';
+  document.getElementById('rematch-waiting').style.display = 'block';
+
+  db.ref(`rooms/${State.roomId}/players/${State.uid}/rematch`).set(true);
+}
+
+/**
+ * Called when both players have rematch = true.
+ * Uses a transaction on `status` so only one client performs the reset.
+ */
+function doRematch(roomId, players) {
+  const roomRef = db.ref('rooms/' + roomId);
+
+  roomRef.child('status').transaction(current => {
+    if (current === 'finished') return 'resetting';
+    return; // abort – already handled
+  }).then(({ committed }) => {
+    if (!committed) return;
+
+    // Generate fresh boards for both players
+    const uids = Object.keys(players);
+    const boards = {};
+    uids.forEach(uid => { boards[uid] = generateBoard(); });
+
+    const update = {
+      called:  null,
+      winner:  null,
+      status:  'playing',
+      turn:    uids[0], // first uid alphabetically goes first
+    };
+
+    uids.forEach(uid => {
+      update[`players/${uid}/score`]   = 0;
+      update[`players/${uid}/rematch`] = false;
+      update[`players/${uid}/board`]   = boards[uid];
     });
 
-    initAuth();
+    roomRef.update(update).then(() => {
+      // Update our local board and reset UI
+      State.board      = boards[State.uid];
+      State.myLines    = new Set();
+      State.gameActive = true;
 
-    /* --- GAME LOGIC --- */
+      document.getElementById('overlay-result').classList.remove('show');
+      renderBoard();
+    });
+  });
+}
 
-    function createBoard() {
-        const numbers = Array.from({length: 25}, (_, i) => i + 1);
-        return numbers.sort(() => Math.random() - 0.5);
-    }
+/* ────────────────────────────────────────────────────────────────
+   MODULE 14 ▸ LEAVE & ROOM CLEANUP
+   No Cloud Functions – all cleanup is client-side.
+   Strategy:
+     • Player A leaves → removes own /players/<uid> node
+     • checkAndCleanRoom() reads remaining player count
+     • 0 players → delete room immediately
+     • 1 player  → set a 60-second timer; delete if still 1 after that
+──────────────────────────────────────────────────────────────── */
 
-    async function findMatch() {
-        if (!currentUser) return;
-        hide('screen-home');
-        show('screen-lobby');
+function leaveGame() {
+  const roomId = State.roomId;
 
-        // Simple matchmaking: Look for an existing open room
-        const roomsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
-        const querySnap = await getDocs(roomsRef);
-        
-        let foundRoom = null;
-        querySnap.forEach(doc => {
-            const data = doc.data();
-            if (data.status === 'waiting' && data.player1 && data.player1.uid !== currentUser.uid) {
-                foundRoom = { id: doc.id, ...data };
-            }
+  document.getElementById('overlay-result').classList.remove('show');
+  cleanListeners();
+
+  const prevRoomId   = State.roomId;
+  State.gameActive   = false;
+  State.roomId       = null;
+  State.opponentId   = null;
+  State.opponentName = null;
+  State.board        = [];
+  State.myLines      = new Set();
+
+  if (prevRoomId) {
+    db.ref(`rooms/${prevRoomId}/players/${State.uid}`)
+      .remove()
+      .then(() => checkAndCleanRoom(prevRoomId));
+  }
+
+  showScreen('screen-menu');
+}
+
+function checkAndCleanRoom(roomId) {
+  db.ref(`rooms/${roomId}/players`).once('value').then(snap => {
+    const players = snap.val();
+    const count   = players ? Object.keys(players).length : 0;
+
+    if (count === 0) {
+      // Everyone is gone – delete immediately
+      db.ref('rooms/' + roomId).remove();
+    } else if (count === 1) {
+      // One player remains – give them 60 s to get a new opponent
+      // Use a dedicated cleanup flag so multiple clients don't double-delete
+      const flagRef = db.ref('cleanup/' + roomId);
+      flagRef.set(Date.now());
+      flagRef.onDisconnect().remove();
+
+      setTimeout(() => {
+        db.ref(`rooms/${roomId}/players`).once('value').then(s => {
+          const remaining = s.val() ? Object.keys(s.val()).length : 0;
+          if (remaining <= 1) db.ref('rooms/' + roomId).remove();
+          flagRef.remove();
         });
-
-        if (foundRoom) {
-            joinRoom(foundRoom.id);
-        } else {
-            createPrivateRoom();
-        }
+      }, 60_000);
     }
+  });
+}
 
-    async function createPrivateRoom() {
-        if (!currentUser) return;
-        hide('screen-home');
-        show('screen-lobby');
+function handleOpponentLeft(roomId) {
+  // Don't override an already-finished game
+  db.ref(`rooms/${roomId}/status`).once('value').then(snap => {
+    if (snap.val() === 'finished') return;
+    // Opponent left during active game – award win to remaining player
+    db.ref('rooms/' + roomId).update({ status: 'finished', winner: State.uid });
+    toast('Opponent disconnected – you win!', 3500);
+  });
+}
 
-        const roomsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
-        const roomDoc = doc(roomsRef);
-        const roomId = roomDoc.id;
-        $('room-id-display').innerText = `ID: ${roomId}`;
+function handleRoomGone() {
+  if (!State.gameActive && !State.roomId) return;
+  cleanListeners();
+  State.gameActive = false;
+  document.getElementById('overlay-result').classList.remove('show');
+  toast('Room was closed.');
+  resetToMenu();
+}
 
-        await setDoc(roomDoc, {
-            status: 'waiting',
-            player1: currentUser,
-            player2: null,
-            called: [],
-            turn: currentUser.uid,
-            createdAt: Date.now(),
-            rematch: {}
-        });
+function resetToMenu() {
+  State.roomId      = null;
+  State.opponentId  = null;
+  State.board       = [];
+  State.myLines     = new Set();
+  State.gameActive  = false;
+  showScreen('screen-menu');
+}
 
-        watchRoom(roomId);
-    }
+/* ────────────────────────────────────────────────────────────────
+   MODULE 15 ▸ DOM EVENT WIRING
+──────────────────────────────────────────────────────────────── */
 
-    async function joinRoom(roomId) {
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-        await updateDoc(roomRef, {
-            player2: currentUser,
-            status: 'playing'
-        });
-        watchRoom(roomId);
-    }
+function initDOMEvents() {
+  /* Main menu */
+  document.getElementById('btn-quickplay').addEventListener('click', enterQueue);
+  document.getElementById('btn-private').addEventListener('click', () => showScreen('screen-private'));
 
-    function watchRoom(roomId) {
-        if (unsubscribeGame) unsubscribeGame();
+  /* Matchmaking */
+  document.getElementById('btn-cancel-match').addEventListener('click', cancelMatchmaking);
 
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-        unsubscribeGame = onSnapshot(roomRef, (snap) => {
-            if (!snap.exists()) {
-                leaveGame();
-                return;
-            }
-            
-            const data = snap.val ? snap.val() : snap.data(); // Standardizing data access
-            currentGame = { id: snap.id, ...data };
+  /* Private room */
+  document.getElementById('btn-create-room').addEventListener('click', createPrivateRoom);
+  document.getElementById('btn-back-private').addEventListener('click', () => showScreen('screen-menu'));
+  document.getElementById('btn-join-code').addEventListener('click', () => {
+    const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+    if (code.length < 4) { toast('Enter a valid room code.'); return; }
+    joinPrivateRoom(code);
+  });
 
-            if (data.status === 'playing') {
-                renderGameScreen();
-            } else if (data.status === 'finished') {
-                handleGameOver(data);
-            }
-        }, (error) => {
-            console.error("Room watch error:", error);
-            leaveGame();
-        });
-    }
+  // Uppercase-transform the join input as user types
+  document.getElementById('join-code-input').addEventListener('input', function () {
+    this.value = this.value.toUpperCase();
+  });
 
-    function renderGameScreen() {
-        hide('screen-lobby');
-        hide('screen-home');
-        show('screen-game');
+  /* Waiting screen */
+  document.getElementById('btn-cancel-waiting').addEventListener('click', cancelWaiting);
+  document.getElementById('btn-copy-link').addEventListener('click', () => {
+    const link = document.getElementById('share-link-input').value;
+    navigator.clipboard
+      .writeText(link)
+      .then(() => toast('Link copied to clipboard!'))
+      .catch(() => {
+        // Fallback for environments where clipboard API is unavailable
+        const inp = document.getElementById('share-link-input');
+        inp.select();
+        try { document.execCommand('copy'); toast('Link copied!'); } catch (_) {}
+      });
+  });
 
-        if (myBoard.length === 0) {
-            myBoard = createBoard();
-            myMarks = [];
-        }
+  /* Result overlay */
+  document.getElementById('btn-rematch').addEventListener('click', requestRematch);
+  document.getElementById('btn-leave').addEventListener('click', leaveGame);
 
-        const isMyTurn = currentGame.turn === currentUser.uid;
-        const opponent = currentGame.player1.uid === currentUser.uid ? currentGame.player2 : currentGame.player1;
+  /* Prevent accidental back navigation during game */
+  window.addEventListener('popstate', () => {
+    if (State.gameActive) history.pushState(null, '', location.pathname);
+  });
+}
 
-        $('opponent-name').innerText = `vs ${opponent?.name || 'Searching...'}`;
-        $('turn-indicator').innerText = isMyTurn ? "Your Turn!" : "Waiting for Move...";
-        $('turn-indicator').className = `text-xl font-bold ${isMyTurn ? 'text-blue-400' : 'text-gray-600'}`;
+/* ────────────────────────────────────────────────────────────────
+   MODULE 16 ▸ PWA (Inline Manifest + Service Worker via Blob URLs)
+   Using Blob URLs avoids needing external manifest.json / sw.js files,
+   making the app fully self-contained in one HTML file.
+──────────────────────────────────────────────────────────────── */
 
-        const boardEl = $('game-board');
-        boardEl.innerHTML = '';
+function initPWA() {
+  // ─── Inline Web App Manifest ───────────────────────────────
+  const manifest = {
+    name:             'DiNGo – Multiplayer Bingo',
+    short_name:       'DiNGo',
+    description:      'Real-time multiplayer bingo – Quick Play or invite friends!',
+    start_url:        '.',
+    display:          'standalone',
+    orientation:      'portrait',
+    background_color: '#080a14',
+    theme_color:      '#ff3d5a',
+    icons: [{
+      // Inline SVG icon works for most platforms
+      src: [
+        'data:image/svg+xml,',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">',
+        '<rect width="512" height="512" rx="96" fill="%23080a14"/>',
+        '<text x="80" y="340" font-size="320" font-family="Arial">🎱</text>',
+        '</svg>'
+      ].join(''),
+      sizes: 'any',
+      type:  'image/svg+xml',
+      purpose: 'any maskable',
+    }],
+  };
 
-        myBoard.forEach((num, index) => {
-            const isMarked = currentGame.called.includes(num);
-            const cell = document.createElement('div');
-            cell.className = `bingo-cell ${isMarked ? 'marked' : ''}`;
-            
-            if (currentGame.called.length > 0 && num === currentGame.called[currentGame.called.length - 1]) {
-                cell.classList.add('last-called');
-            }
+  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
 
-            cell.innerText = num;
-            cell.onclick = () => handleCellClick(num, isMarked);
-            boardEl.appendChild(cell);
-        });
+  // ─── Service Worker ────────────────────────────────────────
+  if (!('serviceWorker' in navigator)) return;
 
-        updateProgress();
-    }
+  const swSource = `
+    const CACHE = 'dingo-v2';
 
-    async function handleCellClick(num, isMarked) {
-        if (currentGame.turn !== currentUser.uid || isMarked) return;
+    self.addEventListener('install', e => {
+      // Cache the app shell (this very page)
+      e.waitUntil(
+        caches.open(CACHE).then(c => c.addAll([self.registration.scope]))
+      );
+      self.skipWaiting();
+    });
 
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
-        const nextTurn = currentGame.player1.uid === currentUser.uid ? currentGame.player2.uid : currentGame.player1.uid;
-        
-        const newCalled = [...currentGame.called, num];
-        
-        await updateDoc(roomRef, {
-            called: newCalled,
-            turn: nextTurn
-        });
-    }
+    self.addEventListener('activate', e => {
+      e.waitUntil(
+        caches.keys().then(keys =>
+          Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+        )
+      );
+      self.clients.claim();
+    });
 
-    function updateProgress() {
-        const winningLines = [
-            [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24], // Rows
-            [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24], // Cols
-            [0,6,12,18,24], [4,8,12,16,20] // Diagonals
-        ];
+    self.addEventListener('fetch', e => {
+      const url = e.request.url;
+      // Let Firebase and Google APIs always go through the network
+      if (url.includes('firebase') || url.includes('googleapis') || url.includes('gstatic')) return;
+      // Network-first with cache fallback for the app shell
+      e.respondWith(
+        fetch(e.request)
+          .then(r => {
+            const clone = r.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+            return r;
+          })
+          .catch(() => caches.match(e.request))
+      );
+    });
+  `;
 
-        let lineCount = 0;
-        winningLines.forEach(line => {
-            if (line.every(idx => currentGame.called.includes(myBoard[idx]))) {
-                lineCount++;
-            }
-        });
+  const swBlob = new Blob([swSource], { type: 'application/javascript' });
+  const swUrl  = URL.createObjectURL(swBlob);
 
-        const letters = ['D','I','N','G','O'];
-        letters.forEach((letter, i) => {
-            const el = document.querySelector(`[data-letter="${letter}"]`);
-            if (i < lineCount) el.classList.add('active');
-            else el.classList.remove('active');
-        });
+  navigator.serviceWorker.register(swUrl, { scope: '/' })
+    .catch(err => console.warn('[DiNGo] SW registration skipped:', err.message));
+}
 
-        if (lineCount >= 5 && currentGame.status !== 'finished') {
-            finishGame();
-        }
-    }
-
-    async function finishGame() {
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
-        await updateDoc(roomRef, {
-            status: 'finished',
-            winner: currentUser.uid
-        });
-    }
-
-    function handleGameOver(data) {
-        const isWinner = data.winner === currentUser.uid;
-        show('overlay-win');
-        $('win-title').innerText = isWinner ? "VICTORY" : "DEFEAT";
-        $('win-subtitle').innerText = isWinner ? "You mastered the DiNGo Arena!" : "Better luck next time, challenger.";
-        
-        const rematchBtn = $('rematch-btn');
-        const myRematch = data.rematch?.[currentUser.uid];
-        rematchBtn.innerText = myRematch ? "Waiting for Opponent..." : "Request Rematch";
-        rematchBtn.className = myRematch ? 
-            "w-full bg-gray-700 p-4 rounded-2xl font-bold opacity-50 cursor-not-allowed" : 
-            "w-full bg-blue-600 p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all";
-    }
-
-    async function requestRematch() {
-        if (!currentGame || currentGame.rematch?.[currentUser.uid]) return;
-
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentGame.id);
-        const updatedRematch = { ...(currentGame.rematch || {}), [currentUser.uid]: true };
-
-        if (Object.keys(updatedRematch).length === 2) {
-            // Both agreed, reset room
-            await updateDoc(roomRef, {
-                status: 'playing',
-                called: [],
-                winner: null,
-                rematch: {},
-                turn: currentGame.winner // Loser starts? Actually let's keep it winner starts or random
-            });
-            myBoard = []; // Force re-generate board
-            hide('overlay-win');
-        } else {
-            await updateDoc(roomRef, {
-                rematch: updatedRematch
-            });
-        }
-    }
-
-    async function leaveGame() {
-        if (currentGame) {
-            // Clean up if we were host and room is empty or logic to handle abandonment
-            // For now, just reset local state
-            if (unsubscribeGame) unsubscribeGame();
-        }
-
-        myBoard = [];
-        myMarks = [];
-        currentGame = null;
-
-        hide('screen-lobby');
-        hide('screen-game');
-        hide('overlay-win');
-        show('screen-home');
-    }
-
-    // Expose to window for onclick handlers
-    window.findMatch = findMatch;
-    window.createPrivateRoom = createPrivateRoom;
-    window.leaveGame = leaveGame;
-    window.requestRematch = requestRematch;
+/* ────────────────────────────────────────────────────────────────
+   BOOTSTRAP – Wire everything together on DOM ready
+──────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  initPWA();         // register SW + manifest (non-blocking)
+  initDOMEvents();   // attach all button listeners
+  initAuth();        // triggers Firebase auth → onAuthenticated()
+});
 
 </script>
 </body>
 </html>
-

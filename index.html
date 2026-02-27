@@ -4,6 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>DiNGo — Live Multiplayer Bingo</title>
+
+  <!-- ── PWA Meta Tags ── -->
+  <meta name="theme-color" content="#00ffcc"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="DiNGo"/>
+  <meta name="description" content="5-in-a-row live multiplayer bingo. Challenge friends or battle the AI bot."/>
+  <!-- Manifest injected via JS below (single-file PWA) -->
+  <link id="pwa-manifest" rel="manifest" href=""/>
+  <!-- Apple touch icons (generated from inline SVG → data URI via JS) -->
+  <link id="apple-icon" rel="apple-touch-icon" href=""/>
+
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -65,22 +78,42 @@
   /* Kill all canvas/particle elements */
   #bg-canvas,.bg-grid,.particles,.home-grid-bg,.home-grid-canvas,.scanlines,#splash-canvas{display:none!important}
 
-  /* ── UI Pills ── */
+  /* ── UI Buttons (Home + Theme) ── */
   .ui-pill{
-    position:fixed;top:14px;z-index:600;
-    display:flex;align-items:center;gap:6px;
-    background:var(--panel2);
-    border:2px solid var(--edge2);
-    border-radius:var(--r);
-    padding:6px 13px;
-    cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
-    color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;
-    transition:color .12s,border-color .12s;
+    position:fixed;top:12px;z-index:600;
+    display:flex;align-items:center;gap:5px;
+    font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:800;
+    letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+    border:none;outline:none;
+    border-radius:6px;
+    padding:0;overflow:hidden;
+    transition:transform .12s,filter .12s;
+    box-shadow:3px 3px 0 rgba(0,0,0,0.4);
   }
-  .ui-pill:hover{color:var(--ink);border-color:var(--c1)}
-  .ui-pill .icon{font-size:14px}
-  #global-home-btn{left:14px;display:none}
-  #theme-toggle{right:14px}
+  .ui-pill:hover{transform:translate(-1px,-1px);filter:brightness(1.1)}
+  .ui-pill:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(0,0,0,0.3)}
+  /* Inner layout */
+  .ui-pill .pill-icon{
+    display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;font-size:13px;
+    background:rgba(0,0,0,0.25);flex-shrink:0;
+  }
+  .ui-pill .pill-label{
+    padding:0 11px;color:inherit;white-space:nowrap;
+  }
+  /* Home button — electric mint */
+  #global-home-btn{
+    left:12px;display:none;
+    background:var(--c1);color:#000;
+  }
+  #global-home-btn .pill-icon{background:rgba(0,0,0,0.2)}
+  /* Theme button — deep violet */
+  #theme-toggle{
+    right:12px;
+    background:var(--c4);color:#fff;
+  }
+  #theme-toggle .pill-icon{background:rgba(0,0,0,0.25)}
+  body.light #theme-toggle{background:#222;color:#fff}
 
   /* ── Screen system ── */
   .screen{
@@ -379,9 +412,21 @@
   .puzzle-mini-board{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
   .puzzle-cell{aspect-ratio:1;border-radius:3px;background:var(--panel);border:2px solid var(--edge);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--ink3)}
   .puzzle-cell.filled{background:rgba(0,255,204,.08);border-color:rgba(0,255,204,.3);color:var(--c1)}
-  .puzzle-cell.hint{background:rgba(255,204,0,.1);border-color:var(--c3);color:var(--c3);animation:hintGlow 2s ease-in-out infinite}
+  .puzzle-cell.clickable{cursor:pointer;border-color:rgba(255,204,0,.3);color:var(--ink2);transition:border-color .12s,background .12s,transform .1s}
+  .puzzle-cell.clickable:hover{background:rgba(255,204,0,.1);border-color:var(--c3);color:var(--c3);transform:scale(1.1)}
+  .puzzle-cell.correct{background:rgba(0,255,204,.2)!important;border-color:var(--c1)!important;color:var(--c1)!important;animation:correctPop .3s cubic-bezier(.2,.8,.4,1.2)}
+  .puzzle-cell.wrong{animation:wrongShake .35s ease}
+  .puzzle-cell.revealed-win{background:rgba(255,204,0,.15)!important;border-color:var(--c3)!important;color:var(--c3)!important;animation:hintGlow 1.4s infinite}
+  .puzzle-cell.done-filled{background:rgba(0,255,204,.08);border-color:rgba(0,255,204,.3);color:var(--c1)}
+  .puzzle-cell.done-answer{background:rgba(255,204,0,.15);border-color:var(--c3);color:var(--c3)}
+  @keyframes correctPop{0%{transform:scale(.7);opacity:.4}100%{transform:scale(1);opacity:1}}
+  @keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
   @keyframes hintGlow{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(255,204,0,.4)}}
   .puzzle-cta{font-size:10px;color:var(--ink2);margin-top:6px;text-align:center}
+  .puzzle-result{margin-top:7px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.5px;padding:5px 10px;border-radius:5px}
+  .puzzle-result.win{color:var(--c1);background:rgba(0,255,204,.08);border:1px solid rgba(0,255,204,.2)}
+  .puzzle-result.lose{color:var(--c2);background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2)}
+  .puzzle-result.done{color:var(--c3);background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2)}
 
   /* Lobby chat */
   .home-lobby-chat{background:var(--panel2);border:2px solid var(--edge);border-radius:var(--r);padding:10px 12px;margin-bottom:12px}
@@ -481,6 +526,85 @@
   .diff-cancel{display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--ink2);font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;padding:8px;transition:color .12s}
   .diff-cancel:hover{color:var(--ink)}
 
+  /* ── How to Play Modal ── */
+  #htp-modal{
+    position:fixed;inset:0;z-index:800;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.82);backdrop-filter:blur(4px);
+    opacity:0;pointer-events:none;transition:opacity .22s;padding:16px;
+  }
+  #htp-modal.show{opacity:1;pointer-events:all}
+  .htp-card{
+    background:var(--panel);border:2px solid var(--edge2);
+    border-radius:var(--r-lg);padding:0;width:100%;max-width:360px;
+    box-shadow:8px 8px 0 rgba(0,0,0,.5);
+    animation:diffCardIn .22s ease both;
+    position:relative;overflow:hidden;max-height:90vh;overflow-y:auto;
+    scrollbar-width:none;
+  }
+  .htp-card::-webkit-scrollbar{display:none}
+  .htp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--c1),var(--c4),var(--c2));z-index:1}
+  .htp-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 18px 0;
+  }
+  .htp-title{font-family:'Black Han Sans',sans-serif;font-size:26px;letter-spacing:3px;color:var(--ink)}
+  .htp-close{background:none;border:2px solid var(--edge2);color:var(--ink2);
+    width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .12s,color .12s}
+  .htp-close:hover{border-color:var(--c2);color:var(--c2)}
+  .htp-body{padding:12px 18px 22px}
+  .htp-step{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:10px 0;border-bottom:1px solid var(--edge);
+  }
+  .htp-step:last-child{border-bottom:none}
+  .htp-step-num{
+    width:26px;height:26px;border-radius:6px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Black Han Sans',sans-serif;font-size:13px;
+    background:var(--panel2);border:2px solid var(--edge2);color:var(--c1);
+  }
+  .htp-step-text{flex:1;font-size:12px;color:var(--ink2);line-height:1.6}
+  .htp-step-text strong{color:var(--ink);font-weight:700}
+  .htp-win-demo{
+    margin:12px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;
+  }
+  .htp-cell{
+    aspect-ratio:1;border-radius:4px;border:2px solid var(--edge);
+    background:var(--panel2);display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:700;color:var(--ink3);font-family:'Black Han Sans',sans-serif;
+  }
+  .htp-cell.cx{background:rgba(0,255,204,.1);border-color:rgba(0,255,204,.4);color:var(--c1)}
+  .htp-cell.win{background:rgba(255,204,0,.18);border-color:var(--c3);color:var(--c3);
+    animation:winLinePulse 1.6s ease-in-out infinite}
+  .htp-tag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;border-radius:3px;padding:2px 7px;margin-top:4px}
+  .htp-tag.green{background:rgba(0,255,204,.1);color:var(--c1);border:1px solid rgba(0,255,204,.25)}
+  .htp-tag.gold{background:rgba(255,204,0,.1);color:var(--c3);border:1px solid rgba(255,204,0,.25)}
+  .htp-tag.red{background:rgba(255,45,85,.1);color:var(--c2);border:1px solid rgba(255,45,85,.25)}
+
+  /* ── Abandon countdown banner ── */
+  #abandon-banner{
+    position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-20px);
+    z-index:900;opacity:0;pointer-events:none;
+    transition:opacity .3s,transform .3s;
+    background:var(--panel);border:2px solid var(--c2);border-radius:var(--r);
+    padding:9px 16px;display:flex;align-items:center;gap:10px;
+    box-shadow:4px 4px 0 rgba(255,45,85,.25);
+    white-space:nowrap;
+  }
+  #abandon-banner.show{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+  .abandon-icon{font-size:18px}
+  .abandon-text{font-size:11px;color:var(--ink2);font-weight:600}
+  .abandon-text strong{color:var(--c2)}
+  #abandon-timer{
+    font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--c2);
+    min-width:28px;text-align:center;line-height:1;
+  }
+
   /* AI thinking */
   #ai-thinking-bar{display:none;align-items:center;gap:6px;justify-content:center;font-size:10px;color:var(--c4);letter-spacing:2.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px}
   #ai-thinking-bar.show{display:flex}
@@ -564,12 +688,34 @@
   }
   @keyframes crossPop{0%{transform:scale(1.3)}100%{transform:scale(1)}}
   .cell.win-line{
-    background:rgba(255,204,0,.15)!important;border-color:var(--c3)!important;
+    background:rgba(255,204,0,.18)!important;border-color:var(--c3)!important;
     color:var(--c3)!important;z-index:2;
-    animation:winLinePulse 1.6s ease-in-out infinite!important;
+    animation:winLinePulse 1.4s ease-in-out infinite!important;
   }
   .cell.win-line::after{color:var(--c3)!important}
-  @keyframes winLinePulse{0%,100%{box-shadow:0 0 6px rgba(255,204,0,.3)}50%{box-shadow:0 0 20px rgba(255,204,0,.7),4px 4px 0 rgba(255,204,0,.2)}}
+  @keyframes winLinePulse{
+    0%,100%{box-shadow:0 0 6px rgba(255,204,0,.4),inset 0 0 8px rgba(255,204,0,.08)}
+    50%{box-shadow:0 0 22px rgba(255,204,0,.85),0 0 44px rgba(255,204,0,.35),4px 4px 0 rgba(255,204,0,.25),inset 0 0 14px rgba(255,204,0,.15)}
+  }
+  /* Flash overlay that fires once when a new line is found */
+  @keyframes lineBurst{
+    0%{opacity:1;transform:scale(1.18)}
+    100%{opacity:0;transform:scale(1)}
+  }
+  .cell.line-burst{
+    animation:lineBurst .35s ease-out forwards, winLinePulse 1.4s ease-in-out infinite .35s!important;
+    background:rgba(255,204,0,.35)!important;border-color:#ffe066!important;
+    box-shadow:0 0 30px rgba(255,204,0,1),0 0 60px rgba(255,204,0,.5)!important;
+  }
+  /* Full-screen flash when a line is completed */
+  #line-flash{
+    position:fixed;inset:0;z-index:9000;
+    background:rgba(255,204,0,.12);
+    pointer-events:none;opacity:0;
+    animation:none;
+  }
+  #line-flash.flash{animation:flashFade .45s ease-out forwards}
+  @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
 
   /* ═══════════════════════════════════════════════
      GAME SCREEN
@@ -730,9 +876,103 @@
   .chat-text-input::placeholder{color:var(--ink3);font-size:12px}
   .chat-send-btn{width:33px;height:33px;border-radius:var(--r);border:2px solid var(--c1);background:var(--c1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:opacity .12s;color:#000}
   .chat-send-btn:hover{opacity:.8}
+
+  /* ── PWA Install Banner ── */
+  #pwa-install-banner{
+    position:fixed;bottom:0;left:0;right:0;z-index:10000;
+    background:var(--panel);
+    border-top:3px solid var(--c1);
+    padding:16px 18px 20px;
+    display:flex;align-items:center;gap:14px;
+    transform:translateY(100%);
+    transition:transform .4s cubic-bezier(.2,.8,.4,1);
+    box-shadow:0 -6px 30px rgba(0,0,0,.5);
+  }
+  #pwa-install-banner.show{transform:translateY(0)}
+  .pwa-icon{
+    width:52px;height:52px;border-radius:12px;flex-shrink:0;
+    background:linear-gradient(135deg,#0d0d0f 0%,#1c1c1f 100%);
+    border:2px solid var(--c1);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:3px 3px 0 rgba(0,255,204,.25);
+    overflow:hidden;
+  }
+  .pwa-icon svg{width:36px;height:36px}
+  .pwa-text{flex:1;min-width:0}
+  .pwa-title{font-family:'Black Han Sans',sans-serif;font-size:18px;letter-spacing:2px;color:var(--ink);line-height:1}
+  .pwa-sub{font-size:10px;color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:700}
+  .pwa-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+  .pwa-install-btn{
+    background:var(--c1);color:#000;border:none;cursor:pointer;
+    font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:11px;
+    letter-spacing:1.5px;text-transform:uppercase;
+    padding:8px 16px;border-radius:6px;
+    box-shadow:3px 3px 0 rgba(0,255,204,.3);
+    transition:transform .1s,box-shadow .1s;white-space:nowrap;
+  }
+  .pwa-install-btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 rgba(0,255,204,.4)}
+  .pwa-install-btn:active{transform:translate(1px,1px)}
+  .pwa-dismiss-btn{
+    background:none;border:none;color:var(--ink3);cursor:pointer;
+    font-family:'Space Grotesk',sans-serif;font-size:10px;
+    letter-spacing:1px;text-transform:uppercase;font-weight:700;
+    text-align:center;padding:4px;transition:color .12s;
+  }
+  .pwa-dismiss-btn:hover{color:var(--ink2)}
   </style>
 </head>
 <body>
+
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner">
+  <div class="pwa-icon">
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Board grid background -->
+      <rect width="36" height="36" rx="8" fill="#0d0d0f"/>
+      <!-- 5×5 mini grid (very small dots) -->
+      <g opacity="0.3" fill="#00ffcc">
+        <rect x="5" y="5" width="3" height="3" rx="1"/>
+        <rect x="10" y="5" width="3" height="3" rx="1"/>
+        <rect x="15" y="5" width="3" height="3" rx="1"/>
+        <rect x="20" y="5" width="3" height="3" rx="1"/>
+        <rect x="25" y="5" width="3" height="3" rx="1"/>
+        <rect x="5" y="10" width="3" height="3" rx="1"/>
+        <rect x="25" y="10" width="3" height="3" rx="1"/>
+        <rect x="5" y="15" width="3" height="3" rx="1"/>
+        <rect x="25" y="15" width="3" height="3" rx="1"/>
+        <rect x="5" y="20" width="3" height="3" rx="1"/>
+        <rect x="25" y="20" width="3" height="3" rx="1"/>
+        <rect x="5" y="25" width="3" height="3" rx="1"/>
+        <rect x="10" y="25" width="3" height="3" rx="1"/>
+        <rect x="15" y="25" width="3" height="3" rx="1"/>
+        <rect x="20" y="25" width="3" height="3" rx="1"/>
+        <rect x="25" y="25" width="3" height="3" rx="1"/>
+      </g>
+      <!-- Diagonal win line — glowing gold -->
+      <g fill="#ffcc00">
+        <rect x="5" y="5" width="4" height="4" rx="1"/>
+        <rect x="10.5" y="10.5" width="4" height="4" rx="1"/>
+        <rect x="16" y="16" width="4" height="4" rx="1"/>
+        <rect x="21.5" y="21.5" width="4" height="4" rx="1"/>
+        <rect x="27" y="27" width="4" height="4" rx="1"/>
+      </g>
+      <!-- "Di" text top-left in neon mint -->
+      <text x="7" y="16" font-family="Arial Black,sans-serif" font-size="8" font-weight="900" fill="#00ffcc" opacity="0.9">Di</text>
+      <!-- "Go" text bottom-right in hot red -->
+      <text x="20" y="32" font-family="Arial Black,sans-serif" font-size="8" font-weight="900" fill="#ff2d55" opacity="0.9">Go</text>
+      <!-- Center lightning bolt star -->
+      <text x="14" y="21" font-family="Arial,sans-serif" font-size="9" fill="#ffcc00">⚡</text>
+    </svg>
+  </div>
+  <div class="pwa-text">
+    <div class="pwa-title">DiNGo</div>
+    <div class="pwa-sub">Add to Home Screen · Play Offline</div>
+  </div>
+  <div class="pwa-actions">
+    <button class="pwa-install-btn" id="pwa-install-btn">⚡ Install</button>
+    <button class="pwa-dismiss-btn" id="pwa-dismiss-btn">Not now</button>
+  </div>
+</div>
 
 <div class="bg-grid"></div>
 <canvas id="bg-canvas"></canvas>
@@ -740,8 +980,8 @@
 <canvas id="confetti-canvas"></canvas>
 
 <!-- Top UI controls -->
-<button class="ui-pill" id="global-home-btn"><span class="icon">🏠</span> Home</button>
-<button class="ui-pill" id="theme-toggle"><span class="icon">🌙</span> Theme</button>
+<button class="ui-pill" id="global-home-btn"><span class="pill-icon">🏠</span><span class="pill-label">Home</span></button>
+<button class="ui-pill" id="theme-toggle"><span class="pill-icon" id="theme-icon">🌙</span><span class="pill-label">Theme</span></button>
 
 <!-- Number Announcement -->
 <div id="number-announce" style="display:none">
@@ -751,6 +991,9 @@
     <div class="announce-sub" id="announce-sub">picks this number</div>
   </div>
 </div>
+
+<!-- Line completion flash overlay -->
+<div id="line-flash"></div>
 
 <!-- Win Overlay -->
 <div id="win-overlay">
@@ -915,10 +1158,11 @@
       <div class="home-puzzle-section" id="home-puzzle-section">
         <div class="puzzle-header">
           <span class="puzzle-label">🧩 Daily Clutch Puzzle</span>
-          <span class="puzzle-timer" id="puzzle-timer">Resets in 14h 22m</span>
+          <span class="puzzle-timer" id="puzzle-timer">Loading…</span>
         </div>
         <div class="puzzle-mini-board" id="puzzle-mini-board"></div>
-        <p class="puzzle-cta">Find the winning 5-in-a-row in one move →</p>
+        <p class="puzzle-cta" id="puzzle-cta">Find the one move that completes a BINGO line →</p>
+        <div class="puzzle-result" id="puzzle-result" style="display:none"></div>
       </div>
 
       <!-- ④ GLOBAL LOBBY CHAT -->
@@ -973,6 +1217,13 @@
         <div class="join-row" id="join-row" style="display:none;margin-top:8px">
           <input id="room-code-input" type="text" maxlength="4" placeholder="Room code e.g. A3K9"/>
           <button id="join-btn" class="btn btn-primary">Join</button>
+        </div>
+
+        <!-- How to play link -->
+        <div style="text-align:center;margin-top:10px">
+          <button id="htp-btn" style="background:none;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:4px;transition:color .12s">
+            <span style="font-size:13px">❓</span> How to Play
+          </button>
         </div>
       </div>
 
@@ -1082,6 +1333,67 @@
 </div>
 
 
+<!-- ── HOW TO PLAY MODAL ── -->
+<div id="htp-modal">
+  <div class="htp-card">
+    <div class="htp-header">
+      <div class="htp-title">HOW TO PLAY</div>
+      <button class="htp-close" id="htp-close-btn">✕</button>
+    </div>
+    <div class="htp-body">
+
+      <div class="htp-step">
+        <div class="htp-step-num">1</div>
+        <div class="htp-step-text">
+          <strong>Build your board.</strong> You get a blank 5×5 grid. Tap cells to fill them with numbers 1–25 in any order you like, or hit <strong>Random</strong> to shuffle instantly. Your arrangement is your secret weapon.
+        </div>
+      </div>
+
+      <div class="htp-step">
+        <div class="htp-step-num">2</div>
+        <div class="htp-step-text">
+          <strong>Take turns calling numbers.</strong> Each player picks one uncalled number per turn. When a number is called, every player who has it on their board crosses it out automatically.
+        </div>
+      </div>
+
+      <div class="htp-step">
+        <div class="htp-step-num">3</div>
+        <div class="htp-step-text">
+          <strong>Complete 5 in a row to score a line.</strong> A line can run horizontally, vertically, or diagonally — any direction counts. Watch all three directions!
+          <!-- Mini demo board -->
+          <div class="htp-win-demo" id="htp-demo-board"></div>
+          <span class="htp-tag gold">Row ✓</span>
+          <span class="htp-tag gold" style="margin-left:4px">Column ✓</span>
+          <span class="htp-tag gold" style="margin-left:4px">Diagonal ✓</span>
+        </div>
+      </div>
+
+      <div class="htp-step">
+        <div class="htp-step-num">4</div>
+        <div class="htp-step-text">
+          <strong>First to 5 lines wins the match.</strong> Every completed line glows gold on your board. Stack lines fast — your opponent is racing you.
+          <br><span class="htp-tag green" style="margin-top:6px">5 Lines = WIN</span>
+        </div>
+      </div>
+
+      <div class="htp-step">
+        <div class="htp-step-num">5</div>
+        <div class="htp-step-text">
+          <strong>Strategy tip:</strong> Numbers near the center of your board belong to more lines (rows + columns + both diagonals), so placing small, easy-to-call numbers in the center gives you the fastest path to 5 lines.
+          <br><span class="htp-tag red" style="margin-top:6px">Center = More Lines</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── ABANDON COUNTDOWN BANNER ── -->
+<div id="abandon-banner">
+  <span class="abandon-icon">🏃</span>
+  <div class="abandon-text">Opponent left! You win in <strong id="abandon-timer">60</strong>s</div>
+</div>
+
 <!-- AI DIFFICULTY SELECTION MODAL -->
 <div id="ai-difficulty-modal">
   <div class="diff-card">
@@ -1154,8 +1466,7 @@ let isLight = false;
 document.getElementById('theme-toggle').addEventListener('click', () => {
   isLight = !isLight;
   document.body.classList.toggle('light', isLight);
-  document.getElementById('theme-toggle').innerHTML =
-    isLight ? '<span class="icon">☀️</span> Theme' : '<span class="icon">🌙</span> Theme';
+  document.getElementById('theme-icon').textContent  = isLight ? '☀️' : '🌙';
 });
 
 /* ── Global home pill ─────────────────────────────────────────── */
@@ -1168,6 +1479,7 @@ document.getElementById('global-home-btn').addEventListener('click', () => {
 
 /* ── In-card home buttons ─────────────────────────────────────── */
 document.getElementById('home-from-setup').addEventListener('click', () => {
+  leaveRoomCleanup();
   showScreen('home');
   document.getElementById('chat-fab').style.display = 'none';
   document.getElementById('chat-panel').classList.remove('open');
@@ -1224,45 +1536,169 @@ document.getElementById && document.addEventListener('DOMContentLoaded', ()=>{},
   dots.forEach(d => d.addEventListener('click', () => go(+d.dataset.idx)));
 })();
 
-/* Puzzle of the Day mini board */
-(function initPuzzle() {
-  const board = document.getElementById('puzzle-mini-board');
-  if (!board) return;
-  // Pre-configured board state — a puzzle state with numbers 1-25
-  // "filled" = already crossed, "hint" = the winning move cell
-  const layout = [
-    {n:7,  s:'filled'},{n:12, s:'filled'},{n:3,  s:''},{n:19, s:'filled'},{n:5,  s:''},
-    {n:23, s:''},{n:8,  s:'filled'},{n:14, s:''},{n:2,  s:''},{n:21, s:'filled'},
-    {n:11, s:'filled'},{n:25, s:''},{n:6,  s:'filled'},{n:17, s:'filled'},{n:9,  s:''},
-    {n:4,  s:''},{n:16, s:'filled'},{n:22, s:''},{n:13, s:'hint'},{n:24, s:''},
-    {n:18, s:''},{n:1,  s:'filled'},{n:15, s:''},{n:20, s:'filled'},{n:10, s:''},
-  ];
-  layout.forEach(({n, s}) => {
-    const cell = document.createElement('div');
-    cell.className = 'puzzle-cell' + (s ? ' '+s : '');
-    cell.textContent = n;
-    board.appendChild(cell);
-  });
+/* ══════════════════════════════════════
+   DAILY CLUTCH PUZZLE — fully functional
+   • Deterministic daily board via date-seeded PRNG
+   • 4 cells already "called", 1 mystery cell completes a BINGO line
+   • Remaining 20 cells are decoys (clickable but wrong)
+   • State persisted in localStorage (one attempt per calendar day)
+══════════════════════════════════════ */
+(function initDailyPuzzle() {
 
-  // Puzzle timer countdown to midnight
+  /* ── Simple seeded PRNG (mulberry32) ── */
+  function seeded(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ── Date seed: unique per calendar day ── */
+  function dateKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+  }
+
+  function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; }
+    return Math.abs(h);
+  }
+
+  /* ── Shuffle array using a PRNG ── */
+  function shuffle(arr, rng) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ── All 12 line definitions for a 5×5 grid ── */
+  const ALL_LINES = [];
+  for (let r = 0; r < 5; r++) { const b = r*5; ALL_LINES.push([b,b+1,b+2,b+3,b+4]); }
+  for (let c = 0; c < 5; c++) { ALL_LINES.push([c,c+5,c+10,c+15,c+20]); }
+  ALL_LINES.push([0,6,12,18,24], [4,8,12,16,20]);
+
+  /* ── Generate today's puzzle ── */
+  function generatePuzzle() {
+    const rng    = seeded(hashStr(dateKey()));
+    const nums   = shuffle(Array.from({length:25},(_,i)=>i+1), rng); // board numbers 1–25
+    const line   = ALL_LINES[Math.floor(rng() * ALL_LINES.length)];  // pick a random line
+    const ansIdx = line[Math.floor(rng() * 5)];                      // which index is the mystery cell
+
+    // The 4 "already called" cells are the rest of the chosen line
+    const called  = line.filter(i => i !== ansIdx);
+    const answer  = ansIdx;  // board-index of the winning move
+
+    return { nums, called, answer };
+  }
+
+  /* ── Render the puzzle ── */
+  function render() {
+    const board   = document.getElementById('puzzle-mini-board');
+    const cta     = document.getElementById('puzzle-cta');
+    const result  = document.getElementById('puzzle-result');
+    if (!board) return;
+
+    const today   = dateKey();
+    const saved   = (() => { try { return JSON.parse(localStorage.getItem('dingo_puzzle')||'null'); } catch(e){return null;} })();
+    const { nums, called, answer } = generatePuzzle();
+
+    board.innerHTML = '';
+    result.style.display = 'none';
+
+    /* ── Already solved today ── */
+    if (saved && saved.date === today) {
+      cta.textContent = '✅ Puzzle complete — come back tomorrow!';
+      nums.forEach((n, i) => {
+        const cell = document.createElement('div');
+        const wasAnswer  = (i === answer);
+        const wasCalled  = called.includes(i);
+        cell.className = 'puzzle-cell ' + (wasAnswer ? 'done-answer' : wasCalled ? 'done-filled' : '');
+        cell.textContent = n;
+        board.appendChild(cell);
+      });
+      result.className = 'puzzle-result done';
+      result.textContent = saved.won ? '🎯 You nailed it! +10 XP' : `😅 The answer was: ${nums[answer]}`;
+      result.style.display = 'block';
+      return;
+    }
+
+    /* ── Active puzzle ── */
+    cta.textContent = 'Tap the ONE uncalled number that completes a BINGO line →';
+    let attempted = false;
+
+    nums.forEach((n, i) => {
+      const cell = document.createElement('div');
+      const isCalled = called.includes(i);
+
+      if (isCalled) {
+        cell.className = 'puzzle-cell filled';
+        cell.textContent = n;
+      } else {
+        // Every uncalled cell is clickable (mystery cells + decoys)
+        cell.className = 'puzzle-cell clickable';
+        cell.textContent = n;
+        cell.addEventListener('click', () => {
+          if (attempted) return;
+          attempted = true;
+
+          if (i === answer) {
+            // ✅ Correct!
+            cell.className = 'puzzle-cell correct';
+            sfx && sfx.win && sfx.win();
+            result.className = 'puzzle-result win';
+            result.textContent = '🎯 Correct! You found the BINGO move!';
+            result.style.display = 'block';
+            cta.textContent = '🏆 Perfect solve!';
+            localStorage.setItem('dingo_puzzle', JSON.stringify({date:today, won:true}));
+            // Light up the full winning line
+            ALL_LINES.forEach(line => {
+              if (line.includes(answer)) {
+                const allInLine = line.every(idx => called.includes(idx) || idx === answer);
+                if (allInLine) {
+                  line.forEach(idx => {
+                    const el = board.children[idx];
+                    if (el) { el.className = 'puzzle-cell revealed-win'; }
+                  });
+                }
+              }
+            });
+          } else {
+            // ❌ Wrong
+            cell.className = 'puzzle-cell wrong';
+            setTimeout(() => { cell.className = 'puzzle-cell clickable'; attempted = false; }, 400);
+            sfx && sfx.lose && sfx.lose();
+          }
+        });
+      }
+      board.appendChild(cell);
+    });
+  }
+
+  /* ── Countdown timer to midnight ── */
   function updatePuzzleTimer() {
     const now = new Date();
     const mdn = new Date(); mdn.setHours(24,0,0,0);
-    const diff = Math.floor((mdn - now) / 1000);
+    const diff = Math.max(0, Math.floor((mdn - now) / 1000));
     const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60);
     const el = document.getElementById('puzzle-timer');
     if (el) el.textContent = `Resets in ${h}h ${m}m`;
   }
+
+  render();
   updatePuzzleTimer();
   setInterval(updatePuzzleTimer, 60000);
 
-  document.getElementById('home-puzzle-section').addEventListener('click', () => {
-    // Haptic feedback
-    if (navigator.vibrate) navigator.vibrate([30, 10, 30]);
-    document.getElementById('home-puzzle-section').style.borderColor = 'var(--gold)';
-    setTimeout(() => {
-      document.getElementById('home-puzzle-section').style.borderColor = '';
-    }, 800);
+  // Prevent accidental navigation when clicking on the section header
+  document.getElementById('home-puzzle-section').addEventListener('click', e => {
+    if (e.target.classList.contains('puzzle-cell') || e.target.classList.contains('home-puzzle-section')) return;
+    // Allow bubbling only from non-cell clicks (for the border flash)
+    if (navigator.vibrate) navigator.vibrate([20, 5, 20]);
   });
 })();
 
@@ -1273,6 +1709,33 @@ document.getElementById('join-btn-toggle').addEventListener('click', () => {
   row.style.display = visible ? 'none' : 'flex';
   if (!visible) document.getElementById('room-code-input').focus();
 });
+
+/* ── How to Play modal ─────────────────────────── */
+(function initHTP() {
+  // Build the mini demo board: a 5×5 showing a diagonal win line
+  const demo = document.getElementById('htp-demo-board');
+  // Layout: indices 0,6,12,18,24 are the diagonal win line; some others are crossed
+  const crossed  = new Set([1,5,7,10,15,20]);
+  const winLine  = new Set([0,6,12,18,24]);
+  const nums = [7,14,3,19,5, 23,8,2,11,21, 16,25,6,17,9, 4,12,22,13,24, 18,1,15,20,10];
+  nums.forEach((n, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'htp-cell' + (winLine.has(i) ? ' win' : crossed.has(i) ? ' cx' : '');
+    cell.textContent = n;
+    demo.appendChild(cell);
+  });
+
+  const modal   = document.getElementById('htp-modal');
+  const openBtn = document.getElementById('htp-btn');
+  const closeBtn= document.getElementById('htp-close-btn');
+
+  openBtn.addEventListener('click', () => {
+    modal.classList.add('show');
+    if (navigator.vibrate) navigator.vibrate(20);
+  });
+  closeBtn.addEventListener('click', () => modal.classList.remove('show'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
+})();
 
 /* ── VS Bot button — opens difficulty modal ───── */
 document.getElementById('vs-bot-btn').addEventListener('click', () => {
@@ -1399,7 +1862,12 @@ const app = firebase.initializeApp({
 const db = firebase.database();
 
 /* helper shims so the rest of the code works unchanged */
-function ref(path)              { return db.ref(path); }
+/* Fix: the codebase uses the modular SDK signature ref(db, 'path'),
+   so we detect which style is being used and handle both.
+   When called as ref(db, 'rooms/foo'), dbOrPath is the DB object
+   and path is the string we actually want. When called as ref('rooms/foo'),
+   dbOrPath is already the string path. */
+function ref(dbOrPath, path)    { return db.ref(path !== undefined ? path : dbOrPath); }
 function get(r)                 { return r.get(); }
 function set(r, v)              { return r.set(v); }
 function update(r, v)           { return r.update(v); }
@@ -1658,14 +2126,44 @@ function getAIMove(calledNums) {
    BOT GAME — UI & FLOW (no Firebase)
 ═══════════════════════════════════════════════ */
 
-/* Highlight win cells on bot game board */
+/* Highlight win cells on bot game board — staggered burst + flash */
+let botLastLineCount = 0;
 function botHighlightWinCells(board, selected, prefix) {
-  const { winIdx } = botCheckLines(board, selected);
+  const { winIdx, lines } = botCheckLines(board, selected);
+  const isNewLine = lines > botLastLineCount;
+  botLastLineCount = lines;
+
+  // Group win indices into lines so we can stagger per-line
+  const newLineSegs = [];
+  if (isNewLine) {
+    const ALL_LINES_BOT = [];
+    for(let r=0;r<5;r++){const b=r*5;ALL_LINES_BOT.push([b,b+1,b+2,b+3,b+4]);}
+    for(let c=0;c<5;c++){ALL_LINES_BOT.push([c,c+5,c+10,c+15,c+20]);}
+    ALL_LINES_BOT.push([0,6,12,18,24],[4,8,12,16,20]);
+    const hits = board.map(n => selected.includes(n) ? 1 : 0);
+    ALL_LINES_BOT.forEach(line => {
+      if (line.every(i => hits[i])) {
+        const el0 = document.getElementById(`${prefix}cell-${board[line[0]]}`);
+        if (el0 && !el0.classList.contains('win-line')) {
+          newLineSegs.push(line);
+        }
+      }
+    });
+  }
+
   winIdx.forEach(idx => {
     const n = board[idx];
     const cell = document.getElementById(`${prefix}cell-${n}`);
-    if (cell) cell.classList.add('win-line');
+    if (cell && !cell.classList.contains('win-line')) cell.classList.add('win-line');
   });
+
+  if (isNewLine && newLineSegs.length > 0) {
+    newLineSegs.forEach(seg => {
+      const els = seg.map(i => document.getElementById(`${prefix}cell-${board[i]}`)).filter(Boolean);
+      triggerLineBurst(els);
+    });
+    fireLineFlash();
+  }
 }
 
 /* Render the player's bot-game board */
@@ -1773,7 +2271,8 @@ function startBotRematchCountdown() {
 
 function restartBotGame() {
   if (botCountdownInterval) clearInterval(botCountdownInterval);
-  botWinShown = false;
+  botWinShown = false; botLastLineCount = 0;
+  cleanupScheduled = false;
   document.getElementById('win-overlay').classList.remove('show');
   document.getElementById('rematch-countdown').style.display = 'none';
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
@@ -1838,10 +2337,10 @@ document.getElementById('restart-btn').addEventListener('click', () => {
   if (botMode) restartBotGame(); else doRestart();
 });
 document.getElementById('win-reset-btn').addEventListener('click', () => {
-  if (botMode) { botMode=false; location.reload(); } else doReset();
+  if (botMode) { botMode=false; doReset(); } else doReset();
 });
 document.getElementById('reset-btn').addEventListener('click', () => {
-  if (botMode) { botMode=false; location.reload(); } else doReset();
+  if (botMode) { botMode=false; doReset(); } else doReset();
 });
 
 /* Also patch home-from-game for bot mode */
@@ -1850,6 +2349,7 @@ document.getElementById('home-from-game').addEventListener('click', () => {
   document.getElementById('ai-mode-pill').classList.remove('show');
   document.getElementById('ai-thinking-bar').classList.remove('show');
   document.getElementById('p2-box').classList.remove('is-bot');
+  leaveRoomCleanup();
   showScreen('home');
   document.getElementById('chat-fab').style.display = 'none';
   document.getElementById('chat-panel').classList.remove('open');
@@ -1867,6 +2367,174 @@ function readDINGO() {
   playerName   = window.DINGO.playerName    || 'Player';
   playerAvatar = window.DINGO.selectedAvatar || '👹';
   playerColor  = window.DINGO.selectedColor  || '#00e5ff';
+}
+
+/* ═══════════════════════════════════════════════
+   PRESENCE & ABANDONMENT SYSTEM
+   ─ Each player writes true to rooms/{id}/presence/{role}
+   ─ onDisconnect().remove() auto-clears it if tab closes
+   ─ When opponent presence disappears a 60-second countdown
+     starts; if they don't return the remaining player wins
+   ─ When a player deliberately clicks Home we remove their
+     presence ourselves so the opponent is notified instantly
+═══════════════════════════════════════════════ */
+let opponentWasPresent   = false;   // guard: only start countdown if opponent WAS here
+let abandonInterval      = null;
+let abandonSecondsLeft   = 60;
+let presenceRef          = null;    // keep reference so we can remove on leave
+
+function setupPresence() {
+  if (!roomId || !playerRole) return;
+  opponentWasPresent = false;
+  presenceRef = ref(db, `rooms/${roomId}/presence/${playerRole}`);
+  // Write true AND register auto-delete if the connection drops
+  presenceRef.set(true);
+  presenceRef.onDisconnect().remove();
+}
+
+function watchOpponentPresence() {
+  if (!roomId || !playerRole) return;
+  const opponentRole = playerRole === 'p1' ? 'p2' : 'p1';
+
+  onValue(ref(db, `rooms/${roomId}/presence/${opponentRole}`), snap => {
+    const present = snap.val();
+
+    if (present === true) {
+      opponentWasPresent = true;          // they arrived — note it
+      stopAbandonCountdown(false);        // cancel any running countdown
+    } else if (present === null && opponentWasPresent) {
+      // They were here and are now gone
+      startAbandonCountdown();
+    }
+  });
+}
+
+function startAbandonCountdown() {
+  if (abandonInterval) return;            // already running
+  // Only count down while we're in an active multiplayer screen
+  if (!roomId || botMode) return;
+
+  abandonSecondsLeft = 60;
+  const banner = document.getElementById('abandon-banner');
+  const timerEl = document.getElementById('abandon-timer');
+  timerEl.textContent = abandonSecondsLeft;
+  banner.classList.add('show');
+  sfx.ping && sfx.ping();
+
+  abandonInterval = setInterval(() => {
+    abandonSecondsLeft--;
+    timerEl.textContent = abandonSecondsLeft;
+    if (abandonSecondsLeft <= 0) {
+      stopAbandonCountdown(false);
+      // Declare current player the winner
+      declareAbandonWin();
+    }
+  }, 1000);
+}
+
+function stopAbandonCountdown(hideOnly = true) {
+  if (abandonInterval) { clearInterval(abandonInterval); abandonInterval = null; }
+  if (!hideOnly) return;
+  document.getElementById('abandon-banner').classList.remove('show');
+}
+
+async function declareAbandonWin() {
+  document.getElementById('abandon-banner').classList.remove('show');
+  if (!roomId) return;
+  // Write winner + a special 'abandoned' status so the win overlay
+  // can show the right message
+  await update(ref(db, `rooms/${roomId}/gameState`), {
+    winner: playerRole,
+    status: 'abandoned'
+  });
+}
+
+/* ─── Graceful leave: remove own presence so opponent is notified ─── */
+function leaveRoomCleanup() {
+  stopAbandonCountdown(false);
+  opponentWasPresent = false;
+  if (presenceRef) {
+    presenceRef.onDisconnect().cancel();  // cancel the auto-remove (we'll do it now)
+    presenceRef.remove();
+    presenceRef = null;
+  }
+  // If we created a room but nobody ever joined (we're p1, no p2), just delete it now
+  if (roomId && playerRole === 'p1') {
+    ref(db, `rooms/${roomId}/players`).get().then(snap => {
+      const players = snap.val();
+      if (players && !players.p2) {
+        // Nobody else joined — safe to delete the whole room immediately
+        set(ref(db, `rooms/${roomId}`), null).catch(() => {});
+      }
+    }).catch(() => {});
+  }
+  roomId = '';
+  playerRole = '';
+}
+
+/* ═══════════════════════════════════════════════
+   ROOM CLEANUP — delete Firebase data after game ends
+   Fires 15 s after a winner is declared, giving both
+   clients enough time to read the final game state.
+   Only the player who DECLARES the win triggers the
+   deletion (avoids a race condition where both try).
+═══════════════════════════════════════════════ */
+let cleanupScheduled = false;
+function scheduleRoomCleanup() {
+  if (cleanupScheduled || !roomId) return;
+  cleanupScheduled = true;
+  const roomToDelete = roomId;           // capture now; roomId may clear later
+  setTimeout(async () => {
+    try {
+      await set(ref(db, `rooms/${roomToDelete}`), null);
+    } catch (e) { /* already deleted or permission error — ignore */ }
+  }, 15000);  // 15 seconds
+}
+
+/* ═══════════════════════════════════════════════
+   STAGGERED BINGO LINE BURST + TOAST
+   When a new 5-in-a-row is completed the five cells
+   light up one by one (domino-style, 55 ms apart)
+   and a "BINGO!" toast drops in from the top of the board.
+═══════════════════════════════════════════════ */
+function triggerLineBurst(cellElements) {
+  // cellElements: array of DOM elements in the line, in order
+  cellElements.forEach((cell, i) => {
+    setTimeout(() => {
+      cell.classList.add('line-burst');
+      setTimeout(() => cell.classList.remove('line-burst'), 420);
+    }, i * 55);
+  });
+  // Show the BINGO toast after the last cell lights up
+  setTimeout(() => showBingoToast(), cellElements.length * 55 + 40);
+}
+
+let bingoToastTimeout = null;
+function showBingoToast() {
+  let toast = document.getElementById('bingo-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'bingo-toast';
+    toast.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.6);
+      z-index:8000;pointer-events:none;opacity:0;
+      font-family:'Black Han Sans',sans-serif;font-size:clamp(38px,10vw,64px);
+      letter-spacing:6px;color:var(--c3);
+      text-shadow:0 0 20px rgba(255,204,0,.8),0 0 40px rgba(255,204,0,.4);
+      transition:opacity .15s,transform .15s;
+    `;
+    toast.textContent = 'BINGO!';
+    document.body.appendChild(toast);
+  }
+  // Force reflow then animate in
+  void toast.offsetWidth;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translate(-50%,-50%) scale(1)';
+  if (bingoToastTimeout) clearTimeout(bingoToastTimeout);
+  bingoToastTimeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%,-50%) scale(1.15)';
+  }, 900);
 }
 
 /* ── PLAY NOW — instant matchmaking ───────────── */
@@ -1904,6 +2572,7 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Connected!';
       initSetupBoard(); showScreen('setup'); showChat();
+      setupPresence(); watchOpponentPresence();
       onValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; document.getElementById('p1-avatar').textContent = info.p1.avatar; }
@@ -1925,6 +2594,7 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Waiting for an opponent…';
       initSetupBoard(); showScreen('setup'); showChat();
+      setupPresence(); watchOpponentPresence();
       onValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p2) {
@@ -1984,6 +2654,7 @@ document.getElementById('create-btn').addEventListener('click', async () => {
     document.getElementById('display-room-code').innerText  = roomId;
     document.getElementById('waiting-label').innerText      = 'Waiting for opponent…';
     initSetupBoard(); showScreen('setup'); showChat();
+    setupPresence(); watchOpponentPresence();
 
     onValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
       const info = snap.val();
@@ -2045,6 +2716,7 @@ document.getElementById('join-btn').addEventListener('click', async () => {
       document.getElementById('p2-avatar').textContent=playerAvatar;
       document.getElementById('waiting-label').textContent='You joined!';
       initSetupBoard(); showScreen('setup'); showChat();
+      setupPresence(); watchOpponentPresence();
       onValue(ref(db,`rooms/${roomId}/scores`),s=>{
         const sc=s.val();if(sc){scores.p1=sc.p1||0;scores.p2=sc.p2||0;updateScoreDisplay()}
       });
@@ -2156,10 +2828,17 @@ function startGame(){
 
     if(state.winner&&!winShown){
       winShown=true;
+      stopAbandonCountdown(false);
       const iWon=state.winner===playerRole;
+      const wasAbandoned = state.status === 'abandoned';
       if(iWon){scores[playerRole]++;update(ref(db,`rooms/${roomId}/scores`),{[playerRole]:scores[playerRole]})}
       if(state.selectedNumbers)checkAndHighlightWin(state.selectedNumbers);
-      setTimeout(()=>showWinOverlay(iWon),500);
+      setTimeout(()=>{
+        showWinOverlay(iWon, wasAbandoned);
+      },500);
+      // The player who did NOT declare the win also schedules cleanup
+      // (so cleanup fires even if the declarer disconnects right after)
+      scheduleRoomCleanup();
       turnText.innerText=''; return;
     }
     turnText.innerText=state.currentTurn===playerRole?'Your Turn!':"Opponent's Turn…";
@@ -2193,14 +2872,69 @@ async function handleNumberClick(num){
 }
 
 /* ─── Win check + highlight ───────────────────── */
+/* ─── Screen flash helper ─────────────────────────── */
+let flashTimeout = null;
+function fireLineFlash() {
+  const el = document.getElementById('line-flash');
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+  if (flashTimeout) clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(() => el.classList.remove('flash'), 500);
+}
+
+/* ─── Win check + highlight (multiplayer) ─────────── */
+let lastLineCount = 0;
+
+// ALL_LINES definition shared with win-check helpers
+const BOARD_LINES = [];
+for(let r=0;r<5;r++){const b=r*5;BOARD_LINES.push([b,b+1,b+2,b+3,b+4]);}
+for(let c=0;c<5;c++){BOARD_LINES.push([c,c+5,c+10,c+15,c+20]);}
+BOARD_LINES.push([0,6,12,18,24],[4,8,12,16,20]);
+
 function checkAndHighlightWin(sel){
-  const hits=myBoard.map(n=>sel.includes(n)?1:0);
-  let lines=0; const wi=new Set();
-  for(let r=0;r<5;r++){const b=r*5,row=[b,b+1,b+2,b+3,b+4];if(row.every(i=>hits[i])){row.forEach(i=>wi.add(i));lines++}}
-  for(let c=0;c<5;c++){const col=[c,c+5,c+10,c+15,c+20];if(col.every(i=>hits[i])){col.forEach(i=>wi.add(i));lines++}}
-  [[0,6,12,18,24],[4,8,12,16,20]].forEach(d=>{if(d.every(i=>hits[i])){d.forEach(i=>wi.add(i));lines++}});
-  wi.forEach(idx=>{const c=document.getElementById(`cell-${myBoard[idx]}`);if(c)c.classList.add('win-line')});
-  if(lines>=5)update(ref(db,`rooms/${roomId}/gameState`),{winner:playerRole});
+  const hits = myBoard.map(n => sel.includes(n) ? 1 : 0);
+  let lines = 0;
+  const winIdx = new Set();
+  // Track which new line cells to burst (per line so we can stagger in order)
+  const newLineSegments = [];
+
+  BOARD_LINES.forEach(line => {
+    if (line.every(i => hits[i])) {
+      // This line is complete
+      const isNew = !line.some(i => {
+        const c = document.getElementById(`cell-${myBoard[i]}`);
+        return c && c.classList.contains('win-line');
+      });
+      line.forEach(i => winIdx.add(i));
+      lines++;
+      if (isNew) newLineSegments.push(line);
+    }
+  });
+
+  const isNewLine = lines > lastLineCount;
+  lastLineCount = lines;
+
+  // Apply win-line class to all winning cells
+  winIdx.forEach(idx => {
+    const c = document.getElementById(`cell-${myBoard[idx]}`);
+    if (c && !c.classList.contains('win-line')) c.classList.add('win-line');
+  });
+
+  // Staggered burst for every newly completed line
+  if (isNewLine && newLineSegments.length > 0) {
+    newLineSegments.forEach(seg => {
+      const els = seg.map(i => document.getElementById(`cell-${myBoard[i]}`)).filter(Boolean);
+      triggerLineBurst(els);
+    });
+    fireLineFlash();
+    sfx.cross && sfx.cross();
+  }
+
+  if (lines >= 5) {
+    update(ref(db, `rooms/${roomId}/gameState`), {winner: playerRole});
+    scheduleRoomCleanup(); // ← delete Firebase data 15 s after win is declared
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -2208,12 +2942,20 @@ function checkAndHighlightWin(sel){
 ═══════════════════════════════════════════════ */
 const winPhrases =['Domination! 👑','Flawless Victory! ⚡','You\'re on fire! 🔥','GG! Absolutely lethal 🎯','Champion energy! 💎'];
 const losePhrases=['So close… Try again 💪','Next time you\'ll have it!','Respect the grind 🤝'];
-function showWinOverlay(iWon){
+function showWinOverlay(iWon, wasAbandoned){
   iWon?sfx.win():sfx.lose();
-  document.getElementById('win-title-text').textContent=iWon?'🎉 YOU WIN!':'😢 YOU LOSE';
-  document.getElementById('win-subtitle-text').textContent=iWon
-    ?winPhrases[Math.floor(Math.random()*winPhrases.length)]
-    :losePhrases[Math.floor(Math.random()*losePhrases.length)];
+  if (wasAbandoned && iWon) {
+    document.getElementById('win-title-text').textContent = '🏆 YOU WIN!';
+    document.getElementById('win-subtitle-text').textContent = '🏃 Opponent fled the arena!';
+  } else if (wasAbandoned && !iWon) {
+    document.getElementById('win-title-text').textContent = '😔 YOU LEFT';
+    document.getElementById('win-subtitle-text').textContent = 'Opponent claimed the victory.';
+  } else {
+    document.getElementById('win-title-text').textContent=iWon?'🎉 YOU WIN!':'😢 YOU LOSE';
+    document.getElementById('win-subtitle-text').textContent=iWon
+      ?winPhrases[Math.floor(Math.random()*winPhrases.length)]
+      :losePhrases[Math.floor(Math.random()*losePhrases.length)];
+  }
   document.getElementById('win-overlay').classList.add('show');
   if(iWon)launchConfetti();
   startRematchCountdown(); updateScoreDisplay();
@@ -2257,7 +2999,8 @@ function launchConfetti(){
 /* ─── Restart / reset ─────────────────────────── */
 async function doRestart(){
   if(countdownInterval)clearInterval(countdownInterval);
-  winShown=false;
+  winShown=false; lastLineCount=0; cleanupScheduled=false;
+  stopAbandonCountdown(false);
   document.getElementById('win-overlay').classList.remove('show');
   document.getElementById('rematch-countdown').style.display='none';
   document.querySelectorAll('.cell.win-line').forEach(c=>c.classList.remove('win-line'));
@@ -2267,7 +3010,16 @@ async function doRestart(){
   const rb=document.getElementById('ready-btn');rb.disabled=true;rb.textContent="✓ I'm Ready!";
   sfx.click();
 }
-function doReset(){if(countdownInterval)clearInterval(countdownInterval);location.reload()}
+function doReset(){
+  if(countdownInterval)clearInterval(countdownInterval);
+  // Clean up Firebase presence & room before leaving
+  leaveRoomCleanup();
+  // Go home — never back to the splash/welcome screen
+  showScreen('home');
+  document.getElementById('chat-fab').style.display='none';
+  document.getElementById('chat-panel').classList.remove('open');
+  document.getElementById('win-overlay').classList.remove('show');
+}
 
 /* original restart/reset handled above with bot-mode awareness */
 /* ── Keeping doRestart / doReset for multiplayer mode ── */
@@ -2370,6 +3122,159 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
   document.getElementById('chat-panel').classList.toggle('open',chatOpen);
   if(chatOpen){document.getElementById('chat-badge').classList.remove('show');document.getElementById('chat-messages').scrollTop=9999}
 });
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     PWA — Manifest · Service Worker · Install Prompt
+     Single-file approach: generate manifest + SW as Blob URLs
+═══════════════════════════════════════════════ -->
+<script>
+(function initPWA() {
+  /* ── 1. SVG App Icon → PNG data URL for the manifest ──────── */
+  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="100" fill="#0d0d0f"/>
+    <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#0d0d0f"/>
+        <stop offset="100%" stop-color="#1c1c1f"/>
+      </linearGradient>
+    </defs>
+    <!-- 5×5 grid dots (dim) -->
+    <g fill="#00ffcc" opacity="0.12">
+      ${Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>
+        `<rect x="${68+c*94}" y="${68+r*94}" width="44" height="44" rx="10"/>`
+      ).join('')).join('')}
+    </g>
+    <!-- Diagonal win line highlight (gold glow) -->
+    <g fill="#ffcc00">
+      <rect x="64" y="64" width="56" height="56" rx="12"/>
+      <rect x="158" y="158" width="56" height="56" rx="12"/>
+      <rect x="252" y="252" width="56" height="56" rx="12"/>
+      <rect x="346" y="346" width="56" height="56" rx="12"/>
+      <rect x="440" y="440" width="56" height="56" rx="12" opacity="0.9"/>
+    </g>
+    <!-- DiNGo wordmark -->
+    <text x="256" y="210" text-anchor="middle" font-family="Arial Black,Impact,sans-serif"
+      font-size="148" font-weight="900" letter-spacing="-4" fill="#00ffcc">Di</text>
+    <text x="256" y="370" text-anchor="middle" font-family="Arial Black,Impact,sans-serif"
+      font-size="148" font-weight="900" letter-spacing="-4" fill="#ff2d55">Go</text>
+    <!-- Lightning bolt centre accent -->
+    <text x="256" y="295" text-anchor="middle" font-family="Arial,sans-serif" font-size="72" fill="#ffcc00">⚡</text>
+    <!-- Neon top bar -->
+    <rect x="0" y="0" width="512" height="8" rx="4" fill="url(#bar)"/>
+    <defs>
+      <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#00ffcc"/>
+        <stop offset="50%" stop-color="#ff2d55"/>
+        <stop offset="100%" stop-color="#ffcc00"/>
+      </linearGradient>
+    </defs>
+  </svg>`;
+
+  /* Convert SVG to a data URL for use in manifest icons */
+  const iconDataURL = 'data:image/svg+xml;base64,' + btoa(ICON_SVG);
+
+  /* Patch the apple-touch-icon link */
+  document.getElementById('apple-icon').href = iconDataURL;
+
+  /* ── 2. Create the Web App Manifest as a Blob ─────────────── */
+  const manifest = {
+    name: 'DiNGo — Live Multiplayer Bingo',
+    short_name: 'DiNGo',
+    description: '5-in-a-row live multiplayer bingo. Challenge friends or battle the AI.',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#0d0d0f',
+    theme_color: '#00ffcc',
+    orientation: 'portrait',
+    icons: [
+      { src: iconDataURL, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconDataURL, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  const manifestURL  = URL.createObjectURL(manifestBlob);
+  document.getElementById('pwa-manifest').href = manifestURL;
+
+  /* ── 3. Register a minimal Service Worker via Blob ────────── */
+  const SW_CODE = `
+const CACHE = 'dingo-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(['./', location.href]))
+  );
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+  ));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./')))
+  );
+});`;
+
+  if ('serviceWorker' in navigator) {
+    const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
+    const swURL  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL).catch(() => {/* blob SW may not work in all browsers */});
+  }
+
+  /* ── 4. Install prompt banner logic ───────────────────────── */
+  const banner  = document.getElementById('pwa-install-banner');
+  const installBtn = document.getElementById('pwa-install-btn');
+  const dismissBtn = document.getElementById('pwa-dismiss-btn');
+  let deferredPrompt = null;
+
+  /* Don't show again if user dismissed within 7 days */
+  const lastDismiss = parseInt(localStorage.getItem('pwa_dismiss') || '0', 10);
+  const dismissed   = (Date.now() - lastDismiss) < 7 * 24 * 3600 * 1000;
+
+  /* Also hide if already installed (display-mode: standalone) */
+  const alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches
+                        || window.navigator.standalone === true;
+
+  if (!dismissed && !alreadyInstalled) {
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      /* Delay banner so it doesn't clash with the splash screen */
+      setTimeout(() => banner.classList.add('show'), 3500);
+    });
+  }
+
+  installBtn.addEventListener('click', async () => {
+    banner.classList.remove('show');
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') {
+        console.log('[PWA] User installed DiNGo ✅');
+      }
+    } else {
+      /* Fallback: iOS / browsers that don't expose beforeinstallprompt */
+      alert('To install: tap the Share button → "Add to Home Screen" 📲');
+    }
+  });
+
+  dismissBtn.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem('pwa_dismiss', String(Date.now()));
+  });
+
+  /* Also hide banner when the game starts (so it doesn't block gameplay) */
+  const _origShow = window.showScreen;
+  window.showScreen = function(name) {
+    if (_origShow) _origShow(name);
+    if (name !== 'splash' && name !== 'name') banner.classList.remove('show');
+  };
+
+})();
 </script>
 </body>
 </html>

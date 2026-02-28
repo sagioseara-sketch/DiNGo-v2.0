@@ -408,9 +408,19 @@
     aspect-ratio:1;border-radius:var(--r);border:2px solid var(--edge);
     background:var(--panel2);display:flex;align-items:center;justify-content:center;
     font-size:20px;cursor:pointer;transition:border-color .12s,transform .12s;
+    overflow:hidden;padding:4px;
   }
+  .avatar-opt svg{ width:100%;height:100%;display:block;border-radius:4px; }
   .avatar-opt:hover{border-color:var(--edge2);transform:scale(1.08)}
-  .avatar-opt.selected{border-color:var(--c1);background:rgba(0,255,204,.08);transform:scale(1.1)}
+  .avatar-opt.selected{border-color:var(--c1);background:rgba(0,255,204,.08);transform:scale(1.1);box-shadow:0 0 0 2px rgba(0,255,204,0.2)}
+  /* Avatar display in player boxes, home, stats — make SVG fill container */
+  .player-avatar svg,.home-avatar svg,.stats-big-avatar svg,.pc-avatar svg{
+    width:100%;height:100%;display:block;
+  }
+  .player-avatar{display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .home-avatar{display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .stats-big-avatar{display:flex;align-items:center;justify-content:center;overflow:hidden;width:48px;height:48px}
+  .pc-avatar{display:flex;align-items:center;justify-content:center;overflow:hidden;width:64px;height:64px;margin:0 auto 8px}
 
   .color-strip{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
   .color-swatch{
@@ -815,7 +825,6 @@
   }
   .pc-top-bar{height:4px;background:linear-gradient(90deg,var(--c1),var(--c4),var(--c2));
     position:absolute;top:0;left:0;right:0}
-  .pc-avatar{font-size:56px;line-height:1;margin-bottom:8px;display:block}
   .pc-name{font-family:'Black Han Sans',sans-serif;font-size:28px;letter-spacing:2px;
     color:var(--ink);margin-bottom:6px}
   .pc-color-bar{height:6px;border-radius:3px;margin:0 auto 12px;width:60px}
@@ -1306,7 +1315,22 @@
   .chat-send-btn{width:33px;height:33px;border-radius:var(--r);border:2px solid var(--c1);background:var(--c1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:opacity .12s;color:#000}
   .chat-send-btn:hover{opacity:.8}
 
-  /* ── PWA Install Banner ── */
+  /* ── INVITE TO GAME TOAST — improved ── */
+  #game-invite-toast {
+    animation: inviteSlideIn .3s cubic-bezier(.2,.8,.4,1.1) both;
+  }
+  @keyframes inviteSlideIn {
+    from { opacity:0; transform:translateX(-50%) translateY(20px) scale(.9); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  }
+  /* Notification badge — supports count number */
+  #friends-notif-dot {
+    min-width:10px;min-height:10px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:10px;padding:0 2px;
+    font-size:7px;line-height:1;font-weight:800;
+  }
+
   #pwa-install-banner{
     position:fixed;bottom:0;left:0;right:0;z-index:10000;
     background:var(--panel);
@@ -1634,7 +1658,7 @@
     background:var(--panel);border:2px solid var(--c1);border-radius:var(--r-lg);
     padding:28px 24px;max-width:320px;width:100%;text-align:center;
     box-shadow:0 0 40px rgba(0,255,204,.15)">
-    <div id="wb-avatar" style="font-size:52px;margin-bottom:8px">👹</div>
+    <div id="wb-avatar" style="font-size:52px;margin-bottom:8px;width:64px;height:64px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center"></div>
     <div style="font-family:'Black Han Sans',sans-serif;font-size:22px;letter-spacing:2px;color:var(--c1)" id="wb-greeting">WELCOME BACK</div>
     <div style="font-size:18px;font-weight:700;margin:6px 0 4px" id="wb-name">Player</div>
     <div style="font-size:12px;color:var(--ink2);margin-bottom:6px" id="wb-username">@username</div>
@@ -2294,7 +2318,7 @@ function suggestUsername(name) {
 function showWelcomeBack(profile) {
   applyProfile(profile);
   const s = loadStats();
-  document.getElementById('wb-avatar').textContent   = profile.avatar;
+  renderAvatar(document.getElementById('wb-avatar'), profile.avatar);
   document.getElementById('wb-name').textContent     = profile.name;
   document.getElementById('wb-username').textContent = '@' + (profile.username || '—');
   document.getElementById('wb-stats-line').textContent = `${s.wins} wins · ${s.played} games`;
@@ -2318,11 +2342,24 @@ document.getElementById('wb-edit-btn').addEventListener('click', () => {
 /* Pre-fill name screen with saved data */
 function prefillNameScreen(profile) {
   if (!profile) return;
-  // Select matching avatar
+  // Select matching avatar by id first, then fall back to svg string comparison
+  let matched = false;
   document.querySelectorAll('.avatar-opt').forEach(el => {
-    el.classList.toggle('selected', el.textContent === profile.avatar);
-    if (el.textContent === profile.avatar) window.DINGO.selectedAvatar = profile.avatar;
+    const isMatch = (el.dataset.avatarId && el.dataset.avatarId === profile.avatarId)
+                 || el.innerHTML === profile.avatar;
+    el.classList.toggle('selected', isMatch);
+    if (isMatch) {
+      window.DINGO.selectedAvatar   = profile.avatar;
+      window.DINGO.selectedAvatarId = profile.avatarId || el.dataset.avatarId;
+      matched = true;
+    }
   });
+  // If no match (e.g. old emoji profile), default to first avatar
+  if (!matched && AVATAR_DEFS.length) {
+    document.querySelectorAll('.avatar-opt')[0]?.classList.add('selected');
+    window.DINGO.selectedAvatar   = AVATAR_DEFS[0].svg;
+    window.DINGO.selectedAvatarId = AVATAR_DEFS[0].id;
+  }
   // Select matching colour
   document.querySelectorAll('.color-swatch').forEach((sw, i) => {
     if (COLORS[i] && COLORS[i].val === profile.color) {
@@ -2357,7 +2394,8 @@ document.getElementById('username-input').addEventListener('input', () => {
 
 
 /* ── Shared player data (read by Firebase module script) ─────── */
-window.DINGO = { selectedAvatar:'👹', selectedColor:'#00e5ff', playerName:'Player' };
+/* DINGO shared state — selectedAvatar is set after AVATAR_DEFS are declared below */
+window.DINGO = { selectedAvatar:'', selectedAvatarId:'', selectedColor:'#00e5ff', playerName:'Player' };
 
 /* ══════════════════════════════════════════
    HOME SCREEN — Hardware UI upgrades
@@ -2368,7 +2406,7 @@ function refreshHomeProfile() {
   const p = loadProfile();
   if (p) applyProfile(p);
   const d = window.DINGO;
-  document.getElementById('home-avatar-display').textContent = d.selectedAvatar || '👹';
+  renderAvatar(document.getElementById('home-avatar-display'), d.selectedAvatar || AVATAR_DEFS[0].svg);
   document.getElementById('home-username-display').textContent = d.playerName || 'Player';
   const ranks = ['ARENA','CLUTCH','ELITE','BEAST','LEGEND'];
   const s = (typeof loadStats === 'function') ? loadStats() : {wins:0};
@@ -2490,7 +2528,39 @@ function rotateLobbyMessages() {
   document.getElementById('lobby-chat-count') && (document.getElementById('lobby-chat-count').textContent = '');
 }
 
-const AVATARS = ['👹','😘','🦊','🐉','👾','🤖','🦋','🔥','⚡','🌙','💎','🎯'];
+/* ══════════════════════════════════════════════════════════
+   DYNAMIC SVG AVATARS — 12 unique character faces
+   Each avatar stores: id (for matching), svg (full markup),
+   label (display name). DINGO.selectedAvatar holds the svg.
+══════════════════════════════════════════════════════════ */
+const AVATAR_DEFS = [
+  { id:'ninja', label:'Ninja', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#12132a"/><circle cx="20" cy="20" r="19" fill="url(#ng)" opacity="0.4"/><defs><radialGradient id="ng" cx="30%" cy="25%"><stop offset="0%" stop-color="#3a3a7a"/><stop offset="100%" stop-color="#12132a"/></radialGradient></defs><rect x="5" y="17" width="30" height="7" rx="3.5" fill="#e63946"/><rect x="5" y="17" width="30" height="2.5" rx="1.5" fill="#ff6b6b"/><circle cx="14" cy="13.5" r="3.2" fill="white"/><circle cx="26" cy="13.5" r="3.2" fill="white"/><circle cx="15" cy="13.5" r="1.8" fill="#12132a"/><circle cx="27" cy="13.5" r="1.8" fill="#12132a"/><circle cx="15.6" cy="12.8" r="0.7" fill="white"/><circle cx="27.6" cy="12.8" r="0.7" fill="white"/><path d="M8 9 Q14 5 20 8 Q26 5 32 9" stroke="#e63946" stroke-width="2" fill="none" stroke-linecap="round"/></svg>` },
+  { id:'dragon', label:'Dragon', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dg" cx="35%" cy="30%"><stop offset="0%" stop-color="#4dd9e0"/><stop offset="100%" stop-color="#0a6a70"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#dg)"/><ellipse cx="10" cy="9" rx="5" ry="7" rx="5" fill="#0a6a70" transform="rotate(-25,10,9)"/><ellipse cx="30" cy="9" rx="5" ry="7" fill="#0a6a70" transform="rotate(25,30,9)"/><ellipse cx="10" cy="8" rx="3" ry="4.5" fill="#4dd9e0" opacity="0.5" transform="rotate(-25,10,8)"/><ellipse cx="30" cy="8" rx="3" ry="4.5" fill="#4dd9e0" opacity="0.5" transform="rotate(25,30,8)"/><ellipse cx="14" cy="19" rx="5" ry="3.5" fill="#072e30"/><ellipse cx="26" cy="19" rx="5" ry="3.5" fill="#072e30"/><ellipse cx="14" cy="19" rx="2" ry="3" fill="#ffe066"/><ellipse cx="26" cy="19" rx="2" ry="3" fill="#ffe066"/><path d="M14 27 Q20 31 26 27" stroke="#072e30" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="14" cy="24" r="1" fill="#072e30"/><circle cx="26" cy="24" r="1" fill="#072e30"/></svg>` },
+  { id:'fox', label:'Fox', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="fg" cx="40%" cy="30%"><stop offset="0%" stop-color="#ff9f43"/><stop offset="100%" stop-color="#d35400"/></radialGradient></defs><circle cx="20" cy="22" r="17" fill="url(#fg)"/><polygon points="6,8 14,20 2,18" fill="#d35400"/><polygon points="34,8 26,20 38,18" fill="#d35400"/><polygon points="7,7 13,18 4,17" fill="#ff9f43" opacity="0.7"/><polygon points="33,7 27,18 36,17" fill="#ff9f43" opacity="0.7"/><ellipse cx="20" cy="26" rx="10" ry="7" fill="#fff0e6"/><circle cx="14.5" cy="20" r="3.5" fill="white"/><circle cx="25.5" cy="20" r="3.5" fill="white"/><circle cx="15.2" cy="20" r="2" fill="#2c2c54"/><circle cx="26.2" cy="20" r="2" fill="#2c2c54"/><circle cx="15.8" cy="19.3" r="0.8" fill="white"/><circle cx="26.8" cy="19.3" r="0.8" fill="white"/><ellipse cx="20" cy="25" rx="2.5" ry="1.5" fill="#e17055"/><path d="M16 28 Q20 31 24 28" stroke="#d35400" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>` },
+  { id:'robot', label:'Robot', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8395a7"/><stop offset="100%" stop-color="#4a6075"/></linearGradient></defs><rect x="2" y="8" width="36" height="30" rx="6" fill="url(#rg)"/><rect x="2" y="8" width="36" height="30" rx="6" fill="none" stroke="#00ffcc" stroke-width="1.5" opacity="0.6"/><rect x="16" y="2" width="8" height="8" rx="2" fill="#4a6075"/><circle cx="20" cy="6" r="2" fill="#00ffcc"/><rect x="7" y="15" width="11" height="8" rx="3" fill="#0a0a0a"/><rect x="22" y="15" width="11" height="8" rx="3" fill="#0a0a0a"/><rect x="9" y="17" width="7" height="4" rx="1" fill="#00ffcc" opacity="0.9"/><rect x="24" y="17" width="7" height="4" rx="1" fill="#00ffcc" opacity="0.9"/><rect x="11" y="26" width="18" height="5" rx="2" fill="#0a0a0a"/><rect x="13" y="27.5" width="14" height="2" rx="1" fill="#ff2d55" opacity="0.8"/><circle cx="8" cy="22" r="2" fill="#00ffcc" opacity="0.5"/><circle cx="32" cy="22" r="2" fill="#00ffcc" opacity="0.5"/></svg>` },
+  { id:'phoenix', label:'Phoenix', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pg" cx="50%" cy="60%"><stop offset="0%" stop-color="#e17055"/><stop offset="100%" stop-color="#c0392b"/></radialGradient></defs><circle cx="20" cy="22" r="17" fill="url(#pg)"/><path d="M14 4 Q16 10 14 14 Q10 8 14 4Z" fill="#ffe066"/><path d="M20 2 Q22 9 20 13 Q18 9 20 2Z" fill="#ffa502"/><path d="M26 4 Q24 10 26 14 Q30 8 26 4Z" fill="#ffe066"/><path d="M10 6 Q13 12 11 16 Q8 10 10 6Z" fill="#ff7675" opacity="0.8"/><path d="M30 6 Q27 12 29 16 Q32 10 30 6Z" fill="#ff7675" opacity="0.8"/><circle cx="15" cy="21" r="3.5" fill="#2d0a00"/><circle cx="25" cy="21" r="3.5" fill="#2d0a00"/><circle cx="15" cy="21" r="2" fill="#ffe066"/><circle cx="25" cy="21" r="2" fill="#ffe066"/><circle cx="15.5" cy="20.5" r="0.8" fill="#2d0a00"/><circle cx="25.5" cy="20.5" r="0.8" fill="#2d0a00"/><path d="M14 28 Q20 33 26 28" stroke="#2d0a00" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>` },
+  { id:'ghost', label:'Ghost', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gg" cx="40%" cy="30%"><stop offset="0%" stop-color="#dfe6ff"/><stop offset="100%" stop-color="#a29bfe"/></radialGradient></defs><path d="M6 38 Q6 10 20 6 Q34 10 34 38 Q30 33 26 38 Q23 33 20 38 Q17 33 14 38 Q10 33 6 38Z" fill="url(#gg)"/><circle cx="15" cy="21" r="4" fill="#2d3436"/><circle cx="25" cy="21" r="4" fill="#2d3436"/><circle cx="16" cy="20" r="2" fill="white"/><circle cx="26" cy="20" r="2" fill="white"/><ellipse cx="20" cy="30" rx="4" ry="2.5" fill="#a29bfe" opacity="0.5"/><path d="M15 32 Q20 36 25 32" stroke="#6c5ce7" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>` },
+  { id:'warrior', label:'Warrior', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="wg" cx="35%" cy="30%"><stop offset="0%" stop-color="#e55c5c"/><stop offset="100%" stop-color="#8b0000"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#wg)"/><path d="M8 5 Q12 2 20 3 Q28 2 32 5 L30 14 Q20 10 10 14Z" fill="#8b0000"/><path d="M8 5 Q12 2 20 3 Q28 2 32 5 L30 12 Q20 9 10 12Z" fill="#c0392b"/><path d="M5 13 L9 11 L10 19 L6 18Z" fill="#c0392b"/><path d="M35 13 L31 11 L30 19 L34 18Z" fill="#c0392b"/><ellipse cx="20" cy="26" rx="11" ry="9" fill="#c0392b"/><circle cx="14" cy="22" r="3.5" fill="#1a0000"/><circle cx="26" cy="22" r="3.5" fill="#1a0000"/><circle cx="14" cy="22" r="2" fill="#e55c5c" opacity="0.9"/><circle cx="26" cy="22" r="2" fill="#e55c5c" opacity="0.9"/><path d="M18 22 L20 24 L22 22" stroke="#1a0000" stroke-width="1.5" fill="none"/><line x1="10" y1="20" x2="13" y2="25" stroke="#ffe066" stroke-width="1.5"/><path d="M14 30 Q20 34 26 30" stroke="#1a0000" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>` },
+  { id:'mage', label:'Mage', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mg" cx="40%" cy="35%"><stop offset="0%" stop-color="#a29bfe"/><stop offset="100%" stop-color="#4a0080"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#mg)"/><path d="M6 12 Q13 0 20 4 Q27 0 34 12 L32 20 Q20 15 8 20Z" fill="#4a0080"/><path d="M6 12 Q13 0 20 4 Q27 0 34 12 L32 17 Q20 13 8 17Z" fill="#6c3db5"/><text x="20" y="13" text-anchor="middle" font-size="8" fill="#ffe066">✦</text><circle cx="14" cy="21" r="3.5" fill="#1a003a"/><circle cx="26" cy="21" r="3.5" fill="#1a003a"/><circle cx="14" cy="21" r="2.2" fill="#a29bfe"/><circle cx="26" cy="21" r="2.2" fill="#a29bfe"/><circle cx="14.5" cy="20.5" r="0.8" fill="white"/><circle cx="26.5" cy="20.5" r="0.8" fill="white"/><path d="M16 28 Q20 32 24 28" stroke="#1a003a" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="20" y="35" text-anchor="middle" font-size="5" fill="#ffe066" opacity="0.7">✧ ✧ ✧</text></svg>` },
+  { id:'hunter', label:'Hunter', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="hg" cx="40%" cy="30%"><stop offset="0%" stop-color="#55efc4"/><stop offset="100%" stop-color="#00695c"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#hg)"/><path d="M5 10 Q10 2 20 4 Q30 2 35 10 L34 18 Q20 12 6 18Z" fill="#00695c"/><path d="M5 10 Q10 2 20 4 Q30 2 35 10 L34 15 Q20 10 6 15Z" fill="#00897b"/><circle cx="14" cy="21" r="3.5" fill="#002a20"/><circle cx="26" cy="21" r="3.5" fill="#002a20"/><circle cx="14" cy="21" r="2" fill="#55efc4" opacity="0.8"/><circle cx="26" cy="21" r="2" fill="#55efc4" opacity="0.8"/><circle cx="14.5" cy="20.5" r="0.7" fill="#002a20"/><circle cx="26.5" cy="20.5" r="0.7" fill="#002a20"/><path d="M15 28 Q20 32 25 28" stroke="#002a20" stroke-width="1.8" fill="none" stroke-linecap="round"/><line x1="12" y1="22" x2="16" y2="17" stroke="#ffe066" stroke-width="1.2" stroke-linecap="round"/><line x1="28" y1="22" x2="24" y2="17" stroke="#ffe066" stroke-width="1.2" stroke-linecap="round"/></svg>` },
+  { id:'crystal', label:'Crystal', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="cg" cx="40%" cy="35%"><stop offset="0%" stop-color="#81ecec"/><stop offset="100%" stop-color="#0984e3"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#cg)"/><polygon points="20,2 26,12 34,10 28,18" fill="white" opacity="0.3"/><polygon points="20,2 14,12 6,10 12,18" fill="white" opacity="0.2"/><circle cx="14.5" cy="20" r="3.5" fill="#004a7c"/><circle cx="25.5" cy="20" r="3.5" fill="#004a7c"/><circle cx="14.5" cy="20" r="2" fill="#81ecec"/><circle cx="25.5" cy="20" r="2" fill="#81ecec"/><circle cx="15" cy="19.5" r="0.8" fill="white"/><circle cx="26" cy="19.5" r="0.8" fill="white"/><path d="M15 27 Q20 31 25 27" stroke="#004a7c" stroke-width="1.8" fill="none" stroke-linecap="round"/><polygon points="20,14 22,17 25,17 23,19 24,22 20,20 16,22 17,19 15,17 18,17" fill="white" opacity="0.4"/></svg>` },
+  { id:'shadow', label:'Shadow', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="sg" cx="50%" cy="50%"><stop offset="0%" stop-color="#2d3436"/><stop offset="100%" stop-color="#0a0a0a"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#sg)"/><circle cx="14" cy="20" r="4" fill="#1a0000"/><circle cx="26" cy="20" r="4" fill="#1a0000"/><circle cx="14" cy="20" r="2.5" fill="#ff2d55"/><circle cx="26" cy="20" r="2.5" fill="#ff2d55"/><circle cx="14.8" cy="19.5" r="1" fill="#ff6b6b"/><circle cx="26.8" cy="19.5" r="1" fill="#ff6b6b"/><path d="M14 27 Q20 30 26 27" stroke="#ff2d55" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M5 20 Q8 12 20 10 Q32 12 35 20" stroke="#2d3436" stroke-width="3" fill="none" opacity="0.7"/><path d="M3 15 Q10 5 20 7 Q30 5 37 15" stroke="#1a1a1a" stroke-width="4" fill="none"/></svg>` },
+  { id:'bolt', label:'Bolt', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg2" cx="40%" cy="30%"><stop offset="0%" stop-color="#ffe066"/><stop offset="100%" stop-color="#e67e00"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#bg2)"/><path d="M22 4 L12 20 L19 20 L17 36 L28 18 L21 18Z" fill="white" opacity="0.9"/><path d="M22 4 L12 20 L19 20 L17 36 L28 18 L21 18Z" fill="#e67e00" opacity="0.3"/><circle cx="14" cy="23" r="3" fill="#7d3c00"/><circle cx="26" cy="23" r="3" fill="#7d3c00"/><circle cx="14.5" cy="22.5" r="1.5" fill="#ffe066"/><circle cx="26.5" cy="22.5" r="1.5" fill="#ffe066"/><path d="M15 30 Q20 34 25 30" stroke="#7d3c00" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>` }
+];
+/* Keep a flat array of SVG strings for compatibility with indices */
+const AVATARS = AVATAR_DEFS.map(d => d.svg);
+
+/* Helper: render avatar safely in any element (supports SVG or emoji fallback) */
+function renderAvatar(el, avatarStr) {
+  if (!el) return;
+  if (!avatarStr) { el.textContent = '👤'; return; }
+  // SVG strings start with '<svg'; emoji/text fallback uses textContent
+  if (avatarStr.trim().startsWith('<svg')) {
+    el.innerHTML = avatarStr;
+  } else {
+    el.textContent = avatarStr;
+  }
+}
 const COLORS  = [
   /* ── Neons ── */
   {val:'#00e5ff',label:'Cyan'},
@@ -2517,19 +2587,25 @@ const COLORS  = [
   {val:'#fff0f3',label:'Blush'},
 ];
 
-/* Render avatar grid */
+/* Render avatar grid — SVG avatars, each tagged with data-avatar-id for matching */
 const avatarRow = document.getElementById('avatar-row');
-AVATARS.forEach((a, i) => {
+AVATAR_DEFS.forEach((def, i) => {
   const el = document.createElement('div');
   el.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
-  el.textContent = a;
+  el.dataset.avatarId = def.id;                // for reliable matching in prefill
+  el.innerHTML = def.svg;                      // render SVG (not textContent)
+  el.title = def.label;
   el.addEventListener('click', () => {
     document.querySelectorAll('.avatar-opt').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
-    window.DINGO.selectedAvatar = a;
+    window.DINGO.selectedAvatar    = def.svg;   // store SVG string
+    window.DINGO.selectedAvatarId  = def.id;    // store id for matching
   });
   avatarRow.appendChild(el);
 });
+// Apply the first avatar as default immediately
+window.DINGO.selectedAvatar   = AVATAR_DEFS[0].svg;
+window.DINGO.selectedAvatarId = AVATAR_DEFS[0].id;
 
 /* ── applyAccentColor: swaps --c1 on :root so every element that uses var(--c1) updates instantly ── */
 function applyAccentColor(hex) {
@@ -2578,7 +2654,8 @@ document.getElementById('name-confirm-btn').addEventListener('click', () => {
   const profile = {
     name,
     username,
-    avatar: window.DINGO.selectedAvatar || '👹',
+    avatar: window.DINGO.selectedAvatar || AVATAR_DEFS[0].svg,
+    avatarId: window.DINGO.selectedAvatarId || AVATAR_DEFS[0].id,
     color:  window.DINGO.selectedColor  || '#00e5ff',
     token:  localStorage.getItem('dingo_token') || Math.random().toString(36).slice(2),
   };
@@ -2715,7 +2792,7 @@ let countdownInterval = null;
 let scores = { p1:0, p2:0 };
 /* Player identity — read fresh from window.DINGO at create/join time */
 let playerName   = 'Player';
-let playerAvatar = '👹';
+let playerAvatar = AVATAR_DEFS[0].svg;
 let playerColor  = '#00e5ff';
 
 /* ═══════════════════════════════════════════════
@@ -3256,9 +3333,9 @@ document.addEventListener('startBotGame', (e) => {
 
   // Set up UI
   document.getElementById('p1-name').textContent   = playerName;
-  document.getElementById('p1-avatar').textContent = playerAvatar;
+  renderAvatar(document.getElementById('p1-avatar'), playerAvatar)
   document.getElementById('p2-name').textContent   = BOT_NAMES[botLevel];
-  document.getElementById('p2-avatar').textContent = BOT_AVATARS[botLevel];
+  renderAvatar(document.getElementById('p2-avatar'), BOT_AVATARS[botLevel])
   document.getElementById('p2-box').classList.add('is-bot');
 
   // Show AI mode pill
@@ -3334,7 +3411,7 @@ function genRoomId() {
 }
 function readDINGO() {
   playerName   = window.DINGO.playerName    || 'Player';
-  playerAvatar = window.DINGO.selectedAvatar || '👹';
+  playerAvatar = window.DINGO.selectedAvatar || AVATAR_DEFS[0].svg;
   playerColor  = window.DINGO.selectedColor  || '#00e5ff';
 }
 
@@ -3581,8 +3658,8 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
       setupPresence(); watchOpponentPresence();
       onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
-        if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; document.getElementById('p1-avatar').textContent = info.p1.avatar; }
-        if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; document.getElementById('p2-avatar').textContent = info.p2.avatar; }
+        if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar); }
+        if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar); }
       });
       onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
         const s = snap.val();
@@ -3604,12 +3681,12 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
         const info = snap.val();
         if (info?.p2) {
           document.getElementById('p2-name').textContent = info.p2.name;
-          document.getElementById('p2-avatar').textContent = info.p2.avatar;
+          renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar)
           document.getElementById('waiting-label').textContent = `${info.p2.name} joined!`;
         }
         if (info?.p1) {
           document.getElementById('p1-name').textContent = info.p1.name;
-          document.getElementById('p1-avatar').textContent = info.p1.avatar;
+          renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar)
         }
       });
       onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
@@ -3665,12 +3742,12 @@ document.getElementById('create-btn').addEventListener('click', async () => {
       const info = snap.val();
       if (info?.p2) {
         document.getElementById('p2-name').textContent    = info.p2.name;
-        document.getElementById('p2-avatar').textContent  = info.p2.avatar;
+        renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar)
         document.getElementById('waiting-label').textContent = `${info.p2.name} joined!`;
       }
       if (info?.p1) {
         document.getElementById('p1-name').textContent   = info.p1.name;
-        document.getElementById('p1-avatar').textContent = info.p1.avatar;
+        renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar)
       }
     });
     onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
@@ -3716,9 +3793,9 @@ document.getElementById('join-btn').addEventListener('click', async () => {
       const info=snap.val().playerInfo||{};
       document.getElementById('display-room-code').innerText=roomId;
       document.getElementById('p1-name').textContent=info.p1?info.p1.name:'P1';
-      document.getElementById('p1-avatar').textContent=info.p1?info.p1.avatar:'🎮';
+      renderAvatar(document.getElementById('p1-avatar'), info.p1?info.p1.avatar:'🎮')
       document.getElementById('p2-name').textContent=playerName;
-      document.getElementById('p2-avatar').textContent=playerAvatar;
+      renderAvatar(document.getElementById('p2-avatar'), playerAvatar)
       document.getElementById('waiting-label').textContent='You joined!';
       initSetupBoard(); showScreen('setup'); showChat();
       setupPresence(); watchOpponentPresence();
@@ -3980,12 +4057,12 @@ function startGame(){
     const info=snap.val()||{};
     if(info.p1){
       document.getElementById('p1-name').textContent=info.p1.name;
-      document.getElementById('p1-avatar').textContent=info.p1.avatar;
+      renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar)
       document.getElementById('score-lbl-p1').textContent=info.p1.name;
     }
     if(info.p2){
       document.getElementById('p2-name').textContent=info.p2.name;
-      document.getElementById('p2-avatar').textContent=info.p2.avatar;
+      renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar)
       document.getElementById('score-lbl-p2').textContent=info.p2.name;
     }
   });
@@ -4341,7 +4418,7 @@ function recordLoss() { const s=loadStats(); s.played++; s.losses++;  saveStats(
 function openStatsPopup() {
   const d = window.DINGO || {};
   const s = loadStats();
-  document.getElementById('stats-avatar').textContent  = d.selectedAvatar || '👹';
+  renderAvatar(document.getElementById('stats-avatar'), d.selectedAvatar || AVATAR_DEFS[0].svg);
   document.getElementById('stats-name').textContent    = d.playerName     || 'Player';
   document.getElementById('stats-color-dot').style.background = d.selectedColor || '#00e5ff';
   document.getElementById('stats-color-label').textContent    = d.selectedColor || '#00e5ff';
@@ -4378,7 +4455,7 @@ function getRankTitle() {
 function openPlayerCard() {
   const d = window.DINGO || {};
   const color = d.selectedColor || '#00e5ff';
-  document.getElementById('pc-avatar').textContent = d.selectedAvatar || '👹';
+  renderAvatar(document.getElementById('pc-avatar'), d.selectedAvatar || AVATAR_DEFS[0].svg);
   document.getElementById('pc-name').textContent   = d.playerName    || 'Player';
   document.getElementById('pc-color-bar').style.background = color;
   document.getElementById('pc-badge').textContent  = getRankTitle();
@@ -4760,7 +4837,10 @@ document.getElementById('friends-btn').addEventListener('click', () => {
   renderFriendsList();
   showScreen('friends');
 });
-document.getElementById('friends-back-btn').addEventListener('click', () => showScreen('home'));
+document.getElementById('friends-back-btn').addEventListener('click', () => {
+  detachFriendStatusListeners(); // stop live Firebase listeners when leaving
+  showScreen('home');
+});
 
 /* Copy username */
 document.getElementById('copy-username-btn').addEventListener('click', () => {
@@ -4860,29 +4940,31 @@ document.getElementById('freq-decline-btn').addEventListener('click', async () =
 });
 
 /* Watch friends online status */
+/* ─── Realtime online-status listeners for the friends screen ───────────────
+   We keep a map of { username → Firebase ref } so we can detach every listener
+   the moment the user leaves the friends screen.  This prevents ghost callbacks
+   from firing on unrelated screens.
+──────────────────────────────────────────────────────────────────────────── */
+let _friendStatusListeners = {}; // { username: dbRef }
+
+function detachFriendStatusListeners() {
+  Object.entries(_friendStatusListeners).forEach(([u, r]) => {
+    try { r.off('value'); } catch(e) {}
+  });
+  _friendStatusListeners = {};
+}
+
+/* watchFriendsStatus — simplified: just keeps the friend count badge live.
+   Per-card live status is now owned by renderFriendsList itself. */
 function watchFriendsStatus(myUsername) {
-  const friendsRef = db.ref('friends/' + myUsername);
-  friendsRef.on('value', snap => {
-    if (!snap.exists()) return;
-    const friends = snap.val() || {};
-    Object.keys(friends).forEach(username => {
-      db.ref('users/' + username + '/online').on('value', s => {
-        // Update the online status locally
-        const storedFriends = getLocalFriends();
-        if (storedFriends[username]) {
-          storedFriends[username].online = s.val() === true;
-          setLocalFriends(storedFriends);
-        }
-        // Re-render if friends screen is active
-        if (document.getElementById('friends-screen').classList.contains('active')) {
-          renderFriendsList();
-        }
-      });
-    });
+  db.ref('friends/' + myUsername).on('value', snap => {
+    const count = snap.exists() ? Object.keys(snap.val() || {}).length : 0;
+    const countEl = document.getElementById('friends-count');
+    if (countEl) countEl.textContent = '(' + count + ')';
   });
 }
 
-/* Local friends cache */
+/* Local friends cache — kept for legacy compat */
 function getLocalFriends() {
   try { return JSON.parse(localStorage.getItem('dingo_friends') || '{}'); } catch(e) { return {}; }
 }
@@ -4890,91 +4972,257 @@ function setLocalFriends(data) {
   localStorage.setItem('dingo_friends', JSON.stringify(data));
 }
 
-/* Render friends list in friends screen */
+/* ─── applyOnlineStatus ──────────────────────────────────────────────────────
+   Updates the three status elements inside a friend card in-place, without
+   rebuilding the whole card.  Called once immediately (current value) and
+   again automatically every time Firebase changes the value.
+──────────────────────────────────────────────────────────────────────────── */
+function applyOnlineStatus(card, username, isOnline) {
+  if (!card) return;
+  const dot    = card.querySelector('.fs-dot');
+  const label  = card.querySelector('.fs-label');
+  const invRow = card.querySelector('.fs-invite-row');
+
+  if (dot) {
+    dot.style.background = isOnline ? 'var(--c1)' : 'var(--ink3)';
+    dot.style.boxShadow  = isOnline ? '0 0 6px var(--c1)' : 'none';
+  }
+  if (label) {
+    label.textContent = isOnline ? 'Online' : 'Offline';
+    label.style.color = isOnline ? 'var(--c1)' : 'var(--ink3)';
+  }
+  // Show invite button only when friend is online
+  if (invRow) invRow.style.display = isOnline ? 'block' : 'none';
+}
+
+/* ─── renderFriendsList ──────────────────────────────────────────────────────
+   Builds the friends list once from a snapshot, then attaches a LIVE Firebase
+   listener to each card so the online/offline dot updates in real-time.
+   Key difference from the old code: we use .on('value') instead of .get(),
+   which fires immediately with the current state AND on every future change.
+──────────────────────────────────────────────────────────────────────────── */
 async function renderFriendsList() {
+  // Detach any previous status listeners before rebuilding the list
+  detachFriendStatusListeners();
+
   const myProfile = loadProfile();
   const container = document.getElementById('friends-list');
   const emptyEl   = document.getElementById('friends-empty');
   const countEl   = document.getElementById('friends-count');
+
   if (!myProfile || !myProfile.username) {
     container.innerHTML = '<div style="text-align:center;color:var(--ink3);font-size:12px;padding:20px 0">Set up your profile first!</div>';
     return;
   }
+
   try {
     const snap = await db.ref('friends/' + myProfile.username).get();
+
     if (!snap.exists()) {
-      emptyEl.style.display = 'block';
-      countEl.textContent   = '(0)';
-      // Remove any friend cards
+      if (emptyEl) emptyEl.style.display = 'block';
+      if (countEl) countEl.textContent   = '(0)';
       container.querySelectorAll('.friend-card').forEach(el => el.remove());
       return;
     }
+
     const friends = snap.val() || {};
     const keys    = Object.keys(friends);
-    countEl.textContent = '(' + keys.length + ')';
-    emptyEl.style.display = keys.length ? 'none' : 'block';
-    // Remove old cards
+
+    if (countEl) countEl.textContent   = '(' + keys.length + ')';
+    if (emptyEl) emptyEl.style.display = keys.length ? 'none' : 'block';
     container.querySelectorAll('.friend-card').forEach(el => el.remove());
-    // Fetch live online status for each
+
     for (const username of keys) {
-      const f    = friends[username];
-      const oSnap = await db.ref('users/' + username + '/online').get();
-      const online = oSnap.val() === true;
+      const f = friends[username];
+
+      // Avatar — SVG or emoji fallback
+      const avatarHtml = (f.avatar && f.avatar.trim().startsWith('<svg'))
+        ? `<div style="width:40px;height:40px;flex-shrink:0;border-radius:8px;overflow:hidden">${f.avatar}</div>`
+        : `<div style="font-size:28px;flex-shrink:0;width:40px;text-align:center">${f.avatar || '👤'}</div>`;
+
       const card = document.createElement('div');
       card.className = 'friend-card';
+      card.dataset.username = username; // used by applyOnlineStatus to find the card
       card.style.cssText = `
-        display:flex;align-items:center;gap:10px;
+        display:flex;align-items:center;gap:12px;
         background:var(--panel2);border:2px solid var(--edge2);
         border-radius:var(--r);padding:10px 12px;
+        transition:border-color .15s;
       `;
+
+      // The .fs-dot, .fs-label and .fs-invite-row are deliberately classed
+      // so applyOnlineStatus() can update them cheaply without innerHTML rebuilds.
       card.innerHTML = `
-        <div style="font-size:28px">${f.avatar || '👤'}</div>
+        ${avatarHtml}
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px">${f.name || username}</div>
+          <div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name || username}</div>
           <div style="font-size:11px;color:var(--ink2)">@${username}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:${online ? 'var(--c1)' : 'var(--ink3)'}">
-            <span style="width:7px;height:7px;border-radius:50%;background:${online ? 'var(--c1)' : 'var(--ink3)'}"></span>
-            ${online ? 'Online' : 'Offline'}
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="fs-dot"   style="width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0;transition:background .35s,box-shadow .35s"></span>
+            <span class="fs-label" style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--ink3);transition:color .35s">...</span>
           </div>
-          ${online ? `<button class="btn btn-ghost" onclick="inviteFriend('${username}')" style="font-size:10px;padding:3px 8px">🎮 Invite</button>` : ''}
+          <div class="fs-invite-row" style="display:none">
+            <button class="btn btn-ghost fs-invite-btn"
+              style="font-size:10px;padding:3px 10px;border-color:rgba(255,204,0,.4);color:var(--c3);white-space:nowrap">
+              🎮 Invite
+            </button>
+          </div>
         </div>
       `;
+
+      // Safe event listener — no inline onclick
+      card.querySelector('.fs-invite-btn')
+          .addEventListener('click', () => inviteFriend(username));
+
       container.appendChild(card);
+
+      // ── Attach LIVE listener — this is the core fix ──────────────────────
+      // Firebase fires immediately with the current stored value, which gives
+      // us the correct initial state.  Then it fires again automatically
+      // whenever the friend's online field changes — no polling or re-renders.
+      const statusRef = db.ref('users/' + username + '/online');
+      statusRef.on('value', snap => {
+        const isOnline = snap.val() === true;
+        // Query the card fresh in case the list was rebuilt since this fired
+        const liveCard = container.querySelector(`.friend-card[data-username="${username}"]`);
+        applyOnlineStatus(liveCard, username, isOnline);
+      });
+      _friendStatusListeners[username] = statusRef; // track so we can detach later
     }
+
   } catch(e) {
-    container.innerHTML = '<div style="color:var(--c2);font-size:12px;text-align:center">Error loading friends</div>';
+    console.error('renderFriendsList error:', e);
+    container.innerHTML = '<div style="color:var(--c2);font-size:12px;text-align:center;padding:16px 0">Could not load friends — check your connection.</div>';
   }
 }
 
-/* Invite friend to a game */
+/* Invite friend to a game — improved:
+   1. Creates the room immediately so the code is valid when friend joins
+   2. Navigates the inviter to the setup screen as host (room code shown)
+   3. Sends the invite to Firebase with roomId + notification badge
+   4. Shows a dismissable in-app toast instead of alert()
+*/
 async function inviteFriend(username) {
   const myProfile = loadProfile();
   if (!myProfile) return;
-  // Create a room for them to join
+
+  // Read current DINGO profile into game state vars
+  readDINGO();
+
+  // Generate a room and create it in Firebase so it's live when friend joins
   const inviteRoomId = genRoomId();
-  await db.ref('gameInvites/' + username).set({
-    from:      myProfile.username,
-    fromName:  myProfile.name,
-    fromAvatar:myProfile.avatar,
-    roomId:    inviteRoomId,
-    ts:        Date.now()
-  });
-  // Show confirm
-  alert('✅ Game invite sent to @' + username + '!\nShare Room Code: ' + inviteRoomId);
+  try {
+    await set(ref(db, `rooms/${inviteRoomId}`), {
+      players:    { p1: myPlayerId },
+      playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor } },
+      gameState:  { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
+      scores:     { p1: 0, p2: 0 }
+    });
+
+    // Write the invite to the friend's gameInvites node
+    await db.ref('gameInvites/' + username).set({
+      from:       myProfile.username,
+      fromName:   myProfile.name,
+      fromAvatar: myProfile.avatar,
+      roomId:     inviteRoomId,
+      ts:         Date.now()
+    });
+
+    // Navigate the inviter to the setup screen as host (p1)
+    roomId     = inviteRoomId;
+    playerRole = 'p1';
+    document.getElementById('display-room-code').innerText = roomId;
+    document.getElementById('waiting-label').innerText     = 'Waiting for ' + username + '…';
+    initSetupBoard();
+    showScreen('setup');
+    showChat();
+    setupPresence();
+    watchOpponentPresence();
+
+    // Listen for p2 joining
+    onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
+      const info = snap.val();
+      if (info?.p2) {
+        renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar);
+        document.getElementById('p2-name').textContent = info.p2.name;
+        document.getElementById('waiting-label').textContent = info.p2.name + ' joined!';
+      }
+      if (info?.p1) {
+        renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar);
+        document.getElementById('p1-name').textContent = info.p1.name;
+      }
+    });
+    onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
+      const s = snap.val();
+      if (s) { scores.p1 = s.p1 || 0; scores.p2 = s.p2 || 0; updateScoreDisplay(); }
+    });
+
+    // Show a success toast in the setup screen
+    showInviteSentToast(username, inviteRoomId);
+
+  } catch(err) {
+    console.error('Invite error:', err);
+    const msg = document.getElementById('home-msg');
+    if (msg) { msg.textContent = '❌ Could not send invite: ' + err.message; msg.style.color = 'var(--c2)'; }
+  }
+}
+
+/* Small "Invite sent!" toast that appears briefly in the setup screen */
+function showInviteSentToast(username, code) {
+  let t = document.getElementById('invite-sent-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'invite-sent-toast';
+    t.style.cssText = `
+      position:fixed;top:80px;left:50%;transform:translateX(-50%);
+      z-index:9000;background:var(--panel);
+      border:2px solid var(--c3);border-radius:var(--r-lg);
+      padding:10px 18px;text-align:center;
+      box-shadow:4px 4px 0 rgba(0,0,0,.4);
+      font-family:'Space Grotesk',sans-serif;
+      opacity:0;transition:opacity .25s;pointer-events:none;
+    `;
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `<div style="font-size:11px;color:var(--ink2);letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:3px">⚡ Invite sent to @${username}</div>
+                 <div style="font-size:14px;font-weight:800;color:var(--c3);letter-spacing:3px">${code}</div>`;
+  t.style.opacity = '1';
+  t.style.pointerEvents = 'none';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
 /* Watch for game invites */
+let _gameInviteBadgeCount = 0;
 function watchGameInvites(myUsername) {
   db.ref('gameInvites/' + myUsername).on('child_added', snap => {
     const data = snap.val();
     if (!data) return;
     _pendingGameInvite = { ...data, key: snap.key };
-    document.getElementById('ginv-text').textContent =
-      (data.fromAvatar || '🎮') + ' @' + data.from + ' invited you to play!';
+
+    // Build avatar html for toast
+    const avHtml = (data.fromAvatar && data.fromAvatar.trim().startsWith('<svg'))
+      ? `<span style="display:inline-block;width:24px;height:24px;vertical-align:middle">${data.fromAvatar}</span>`
+      : (data.fromAvatar || '🎮');
+    document.getElementById('ginv-text').innerHTML =
+      avHtml + ' <strong>@' + data.from + '</strong> invited you to play!';
     document.getElementById('game-invite-toast').style.display = 'block';
-    // Clean up old invite
+
+    // Notification badge on the Friends button
+    _gameInviteBadgeCount++;
+    const dot = document.getElementById('friends-notif-dot');
+    if (dot) {
+      dot.style.display = 'block';
+      dot.textContent   = _gameInviteBadgeCount > 1 ? _gameInviteBadgeCount : '';
+      dot.style.cssText += ';background:var(--c3);color:#000;font-size:7px;line-height:8px;text-align:center;font-weight:800';
+    }
+
+    // Ping sound
+    if (typeof sfx !== 'undefined') sfx.ping();
+
+    // Clean up old invite from Firebase
     db.ref('gameInvites/' + myUsername + '/' + snap.key).remove();
   });
 }
@@ -4982,6 +5230,10 @@ function watchGameInvites(myUsername) {
 document.getElementById('ginv-accept-btn').addEventListener('click', () => {
   if (!_pendingGameInvite) return;
   document.getElementById('game-invite-toast').style.display = 'none';
+  // Clear notification badge
+  _gameInviteBadgeCount = 0;
+  const dot = document.getElementById('friends-notif-dot');
+  if (dot) { dot.style.display = 'none'; dot.textContent = ''; }
   document.getElementById('room-code-input').value = _pendingGameInvite.roomId;
   document.getElementById('join-row').style.display = 'flex';
   showScreen('home');
@@ -4991,6 +5243,9 @@ document.getElementById('ginv-accept-btn').addEventListener('click', () => {
 
 document.getElementById('ginv-decline-btn').addEventListener('click', () => {
   document.getElementById('game-invite-toast').style.display = 'none';
+  _gameInviteBadgeCount = Math.max(0, _gameInviteBadgeCount - 1);
+  const dot = document.getElementById('friends-notif-dot');
+  if (dot && _gameInviteBadgeCount === 0) { dot.style.display = 'none'; dot.textContent = ''; }
   _pendingGameInvite = null;
 });
 
@@ -5004,7 +5259,7 @@ document.getElementById('tourn-host-btn').addEventListener('click',()=>{
   db.ref(`tournaments/${tournCode}`).set({
     status:'lobby',
     host:'p1',
-    players:{ p1:{ name:d.playerName||'Player', avatar:d.selectedAvatar||'👹' } }
+    players:{ p1:{ name:d.playerName||'Player', avatar:d.selectedAvatar||AVATAR_DEFS[0].svg } }
   });
   watchTournament(tournCode);
   document.getElementById('tourn-sub').textContent='Share code · '+tournCode;
@@ -5036,7 +5291,7 @@ document.getElementById('tourn-join-confirm-btn').addEventListener('click',async
   tournCode=code; tournRole=slot;
   const d=window.DINGO||{};
   await db.ref(`tournaments/${code}/players/${slot}`).set({
-    name:d.playerName||'Player', avatar:d.selectedAvatar||'👹'
+    name:d.playerName||'Player', avatar:d.selectedAvatar||AVATAR_DEFS[0].svg
   });
   watchTournament(code);
   document.getElementById('tourn-sub').textContent='Joined · '+code;

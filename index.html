@@ -1209,6 +1209,23 @@
   @keyframes winBounce{0%{transform:scale(0.3) rotate(-4deg);opacity:0}65%{transform:scale(1.08) rotate(1deg)}80%{transform:scale(.97)}100%{transform:scale(1) rotate(0);opacity:1}}
   .win-subtitle{font-size:14px;color:var(--ink2);margin-top:8px;margin-bottom:28px;letter-spacing:1.5px;text-align:center;animation:fadeUp .4s .3s both;text-transform:uppercase;font-weight:700}
   .win-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:fadeUp .4s .45s both}
+
+  /* ── Rematch toast (multiplayer only) ── */
+  #rematch-toast{
+    position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+    z-index:400;width:min(340px,92vw);
+    background:var(--panel);border:2px solid var(--c1);border-radius:var(--r-lg);
+    padding:16px 18px;text-align:center;
+    box-shadow:6px 6px 0 rgba(0,255,204,.2);
+    opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;
+  }
+  #rematch-toast.show{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+  .rematch-toast-icon{font-size:28px;margin-bottom:6px}
+  .rematch-toast-title{font-family:'Black Han Sans',sans-serif;font-size:18px;letter-spacing:2px;color:var(--c1);margin-bottom:4px}
+  .rematch-toast-sub{font-size:11px;color:var(--ink2);letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:14px}
+  .rematch-toast-btns{display:flex;gap:8px;justify-content:center}
+  .rematch-toast-btns .btn{font-size:11px;padding:9px 16px}
   
   #confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:199}
 
@@ -1537,11 +1554,22 @@
 
 <div id="line-flash"></div>
 
+<!-- Rematch request toast — shown to the winner when loser wants a rematch -->
+<div id="rematch-toast">
+  <div class="rematch-toast-icon">⚡</div>
+  <div class="rematch-toast-title">REMATCH?</div>
+  <div class="rematch-toast-sub">Opponent wants to play again!</div>
+  <div class="rematch-toast-btns">
+    <button class="btn btn-primary" id="rematch-accept-btn">✓ Accept</button>
+    <button class="btn btn-ghost"   id="rematch-decline-btn">✕ Decline</button>
+  </div>
+</div>
+
 <div id="win-overlay">
   <div class="win-title" id="win-title-text">YOU WIN!</div>
   <div class="win-subtitle" id="win-subtitle-text">Incredible performance 🎯</div>
   <div class="win-buttons">
-    <button class="btn btn-gold" id="win-restart-btn">↺ &nbsp;Restart Match</button>
+    <button class="btn btn-gold" id="play-again-btn" style="display:none">↺ &nbsp;Play Again</button>
     <button class="btn btn-ghost" id="win-reset-btn">⏏ &nbsp;Exit</button>
   </div>
   
@@ -2024,7 +2052,6 @@
 
       <div class="action-row">
         <button class="btn btn-ghost" id="home-from-game">🏠 Home</button>
-        <button class="btn btn-gold" id="restart-btn">↺ Restart</button>
         <button class="btn btn-ghost" id="reset-btn">⏏ Exit</button>
       </div>
     </div>
@@ -3278,29 +3305,44 @@ function showBotWinOverlay(playerWon) {
   document.getElementById('win-subtitle-text').textContent = playerWon
     ? winPhrases[Math.floor(Math.random()*winPhrases.length)]
     : losePhrases[Math.floor(Math.random()*losePhrases.length)];
-  // Hide restart for the winner — only loser can rematch
-  document.getElementById('win-restart-btn').style.display = playerWon ? 'none' : '';
+
+  // Only the LOSER gets the "Play Again" button
+  const btn = document.getElementById('play-again-btn');
+  btn.style.display = playerWon ? 'none' : '';
+  btn.disabled      = false;
+  btn.textContent   = '↺  Play Again';
+
   document.getElementById('win-overlay').classList.add('show');
-  
   if (playerWon) { launchWinAnimation(); recordWin(); } else { recordLoss(); }
-  
 }
 
 function restartBotGame() {
   if (botCountdownInterval) clearInterval(botCountdownInterval);
   if (botTurnTimeout) { clearTimeout(botTurnTimeout); botTurnTimeout = null; }
-  botWinShown = false; botLastLineCount = 0;
+  botWinShown      = false;
+  botLastLineCount = 0;
   cleanupScheduled = false;
+
   stopMoveTimer();
   resetLifelines();
+
+  // Hide win overlay
   document.getElementById('win-overlay').classList.remove('show');
-  document.getElementById('win-restart-btn').style.display = '';
+
+  // Reset play-again button for next loss
+  const btn = document.getElementById('play-again-btn');
+  btn.style.display = 'none';
+  btn.disabled      = false;
+  btn.textContent   = '↺  Play Again';
+
+  // Clear board highlights
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
   document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
   document.getElementById('ai-thinking-bar').classList.remove('show');
-  
-  botSelected = [];
-  botBoard = genRandomBoard();
+
+  // Fresh boards
+  botSelected    = [];
+  botBoard       = genRandomBoard();
   playerBotBoard = genRandomBoard();
   renderBotGameBoard();
   botUpdateTurnUI(true);
@@ -3364,12 +3406,6 @@ document.addEventListener('startBotGame', (e) => {
   sfx.click();
 });
 
-document.getElementById('win-restart-btn').addEventListener('click', () => {
-  if (botMode) restartBotGame(); else doRestart();
-});
-document.getElementById('restart-btn').addEventListener('click', () => {
-  if (botMode) restartBotGame(); else doRestart();
-});
 document.getElementById('win-reset-btn').addEventListener('click', () => {
   if (botMode) { botMode=false; doReset(); } else doReset();
 });
@@ -3480,7 +3516,7 @@ function leaveRoomCleanup() {
   stopAbandonCountdown(false);
   stopMoveTimer();
   stopRoomHeartbeat();          // stop heartbeat if we're P1 waiting
-  stopRestartWatcher();         // kill raw restart listener
+  stopRematchWatcher();         // kill rematch listener
   opponentWasPresent = false;
 
   detachRoomListeners();
@@ -3677,7 +3713,7 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Connected!';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence(); watchRestartVotes();
+      setupPresence(); watchOpponentPresence(); watchRematch();
       onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar); if(playerRole==='p2'&&info.p1) setCurrentOpponent(info.p1.name, info.p1.username||'', info.p1.avatar||''); }
@@ -3724,7 +3760,7 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Waiting for an opponent…';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence(); watchRestartVotes();
+      setupPresence(); watchOpponentPresence(); watchRematch();
       onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p2) {
@@ -3783,7 +3819,7 @@ document.getElementById('create-btn').addEventListener('click', async () => {
     document.getElementById('display-room-code').innerText  = roomId;
     document.getElementById('waiting-label').innerText      = 'Waiting for opponent…';
     initSetupBoard(); showScreen('setup'); showChat();
-    setupPresence(); watchOpponentPresence(); watchRestartVotes();
+    setupPresence(); watchOpponentPresence(); watchRematch();
 
     onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
       const info = snap.val();
@@ -3847,7 +3883,7 @@ document.getElementById('join-btn').addEventListener('click', async () => {
       renderAvatar(document.getElementById('p2-avatar'), playerAvatar)
       document.getElementById('waiting-label').textContent='You joined!';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence(); watchRestartVotes();
+      setupPresence(); watchOpponentPresence(); watchRematch();
       onRoomValue(ref(db,`rooms/${roomId}/playerInfo`), snap => {
         const info2 = snap.val();
         if(info2?.p1) setCurrentOpponent(info2.p1.name, info2.p1.username||'', info2.p1.avatar||'');
@@ -4068,8 +4104,6 @@ function showAnnouncement(num,callerName,isMe){
 }
 
 function startGame(){
-  _restartPending  = false;
-  _execRestartDone = false;
   winShown=false; 
   showScreen('game');
   const boardDiv=document.getElementById('game-board');
@@ -4251,8 +4285,13 @@ function showWinOverlay(iWon, wasAbandoned){
       ?winPhrases[Math.floor(Math.random()*winPhrases.length)]
       :losePhrases[Math.floor(Math.random()*losePhrases.length)];
   }
-  // Hide restart for the winner — only the loser can request a rematch
-  document.getElementById('win-restart-btn').style.display = iWon ? 'none' : '';
+
+  // Only the LOSER gets the "Play Again" button — winner sees Exit only
+  const btn = document.getElementById('play-again-btn');
+  btn.style.display = iWon ? 'none' : '';
+  btn.disabled      = false;
+  btn.textContent   = '↺  Play Again';
+
   document.getElementById('win-overlay').classList.add('show');
   if(iWon){ launchWinAnimation(); recordWin(); } else { recordLoss(); }
   updateScoreDisplay();
@@ -5679,7 +5718,7 @@ async function joinTournamentRoom(roomId_toJoin, myMatchRef, isP1OfMatch) {
   document.getElementById('display-room-code').innerText = roomId;
   document.getElementById('waiting-label').innerText = isP1OfMatch ? 'Waiting for opponent…' : 'Connected!';
   initSetupBoard(); showScreen('setup'); showChat();
-  setupPresence(); watchOpponentPresence(); watchRestartVotes();
+  setupPresence(); watchOpponentPresence(); watchRematch();
 
   onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
     const info = snap.val();
@@ -5962,125 +6001,157 @@ document.getElementById('tourn-start-btn').addEventListener('click',async()=>{
   });
 });
 
-let _restartPending = false;
+// ═══════════════════════════════════════════════════════════════════════════════
+// REMATCH SYSTEM — written from scratch
+// ───────────────────────────────────────────────────────────────────────────────
+// Rules:
+//   • Winner sees only "Exit".  Loser sees "↺ Play Again".
+//   • Bot mode:  loser clicks → immediate restart, no voting.
+//   • Multiplayer: loser clicks → sends rematch request to Firebase.
+//       – Winner gets a floating toast: [Accept] / [Decline].
+//       – Accept → both players reset to the setup screen.
+//       – Decline → loser's button resets with a "declined" message.
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Restart vote watcher ─────────────────────────────────────────────────────
-// Uses raw db.ref().on() — NOT onRoomValue() — so detachRoomListeners() never
-// kills it. We manually tear it down and rebuild when the room changes.
-let _restartWatcherRef  = null;
-let _restartWatcherCb   = null;
+let _rematchWatcherRef = null;
+let _rematchWatcherCb  = null;
+let _rematchPending    = false;
+let _rematchExecuting  = false;
 
-function stopRestartWatcher() {
-  if (_restartWatcherRef && _restartWatcherCb) {
-    try { _restartWatcherRef.off('value', _restartWatcherCb); } catch(e) {}
+// ── Watcher helpers ──────────────────────────────────────────────────────────
+
+function stopRematchWatcher() {
+  if (_rematchWatcherRef && _rematchWatcherCb) {
+    try { _rematchWatcherRef.off('value', _rematchWatcherCb); } catch(e) {}
   }
-  _restartWatcherRef = null;
-  _restartWatcherCb  = null;
+  _rematchWatcherRef = null;
+  _rematchWatcherCb  = null;
 }
 
-function watchRestartVotes() {
-  stopRestartWatcher();           // tear down any previous watcher first
+function watchRematch() {
+  stopRematchWatcher();
   if (!roomId) return;
 
-  _restartWatcherRef = db.ref('rooms/' + roomId + '/gameState');
-  _restartWatcherCb  = snap => {
-    const state = snap.val();
-    if (!state) return;
+  _rematchWatcherRef = db.ref('rooms/' + roomId + '/rematch');
+  _rematchWatcherCb  = snap => {
+    const data = snap.val();
+    if (!data) { _hideRematchToast(); return; }
 
-    // Both voted → execute restart
-    if (state.restartVote_p1 && state.restartVote_p2) {
-      execRestart();
-      return;
+    if (data.status === 'requested' && data.from !== playerRole) {
+      // Opponent (loser) sent a request — show the toast to this winner
+      _showRematchToast();
     }
 
-    // Opponent voted, we haven't yet → prompt
-    if ((state.restartVote_p1 || state.restartVote_p2) && !_restartPending) {
-      const opRole = playerRole === 'p1' ? 'p2' : 'p1';
-      if (state[`restartVote_${opRole}`]) {
-        const subtitle = document.getElementById('win-subtitle-text');
-        const overlay  = document.getElementById('win-overlay');
-        if (subtitle && overlay && overlay.classList.contains('show')) {
-          subtitle.textContent = '⚡ Opponent wants to restart — click Restart to continue!';
-        }
-        // Re-enable buttons so this player can vote
-        document.getElementById('win-restart-btn').disabled = false;
-        document.getElementById('restart-btn').disabled = false;
-      }
+    if (data.status === 'accepted') {
+      // Both sides run the reset
+      _hideRematchToast();
+      _executeRematch();
+    }
+
+    if (data.status === 'declined' && data.from !== playerRole) {
+      // Our request was declined — reset the button and tell user
+      _rematchPending = false;
+      const btn = document.getElementById('play-again-btn');
+      btn.disabled    = false;
+      btn.textContent = '↺  Play Again';
+      const sub = document.getElementById('win-subtitle-text');
+      if (sub) sub.textContent = '❌ Opponent declined the rematch.';
     }
   };
 
-  _restartWatcherRef.on('value', _restartWatcherCb);
+  _rematchWatcherRef.on('value', _rematchWatcherCb);
 }
 
-async function doRestart() {
-  if (_restartPending) return;  
-  _restartPending = true;
-  stopMoveTimer();
-  stopAbandonCountdown(false);
+// ── Toast UI ─────────────────────────────────────────────────────────────────
 
-  
-  await update(ref(db, `rooms/${roomId}/gameState`), {
-    [`restartVote_${playerRole}`]: true
+function _showRematchToast() {
+  document.getElementById('rematch-toast').classList.add('show');
+}
+
+function _hideRematchToast() {
+  document.getElementById('rematch-toast').classList.remove('show');
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+
+async function _requestRematch() {
+  if (_rematchPending) return;
+  _rematchPending = true;
+  const btn = document.getElementById('play-again-btn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Waiting…';
+  await set(ref(db, `rooms/${roomId}/rematch`), {
+    status: 'requested', from: playerRole, ts: Date.now()
   });
-
-  
-  const subtitle = document.getElementById('win-subtitle-text');
-  if (subtitle) subtitle.textContent = '⏳ Waiting for opponent to restart…';
-
-  
-  document.getElementById('win-restart-btn').disabled = true;
-  document.getElementById('restart-btn').disabled = true;
 }
 
-let _execRestartDone = false;
-async function execRestart() {
-  if (_execRestartDone) return;
-  _execRestartDone = true;
-  _restartPending  = false;
+async function _acceptRematch() {
+  _hideRematchToast();
+  await set(ref(db, `rooms/${roomId}/rematch`), {
+    status: 'accepted', ts: Date.now()
+  });
+}
+
+async function _declineRematch() {
+  _hideRematchToast();
+  await set(ref(db, `rooms/${roomId}/rematch`), {
+    status: 'declined', from: playerRole, ts: Date.now()
+  });
+}
+
+// ── Execute (both players reach here when accepted) ──────────────────────────
+
+async function _executeRematch() {
+  if (_rematchExecuting) return;
+  _rematchExecuting = true;
+  _rematchPending   = false;
 
   if (countdownInterval) clearInterval(countdownInterval);
-  winShown = false; lastLineCount = 0; cleanupScheduled = false; botWinShown = false;
+  winShown         = false;
+  lastLineCount    = 0;
+  cleanupScheduled = false;
   stopMoveTimer();
 
-  // P1 resets the shared DB state so both players get a clean slate
+  // P1 owns the DB reset so it happens once
   if (playerRole === 'p1') {
     await update(ref(db, `rooms/${roomId}/gameState`), {
       status: 'waiting', currentTurn: 'p1',
       selectedNumbers: [0], winner: '',
       lifelines_p1: 3, lifelines_p2: 3,
-      restartVote_p1: null, restartVote_p2: null,
       p1Exited: null, p2Exited: null
     });
     await set(ref(db, `rooms/${roomId}/boards`), null);
+    await set(ref(db, `rooms/${roomId}/rematch`), null);
   }
 
-  // Now detach listeners (after DB writes are done)
+  // Detach all live listeners before rebuilding
   detachRoomListeners();
 
-  // Reset local UI state
+  // Reset UI
   document.getElementById('win-overlay').classList.remove('show');
-  document.getElementById('win-restart-btn').style.display = '';
+
+  const btn = document.getElementById('play-again-btn');
+  btn.style.display = 'none';
+  btn.disabled      = false;
+  btn.textContent   = '↺  Play Again';
+
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
   document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
 
   lifelineState = { p1: 3, p2: 3 };
   renderLifelines();
-
-  document.getElementById('win-restart-btn').disabled = false;
-  document.getElementById('restart-btn').disabled = false;
-  const subtitle = document.getElementById('win-subtitle-text');
-  if (subtitle) subtitle.textContent = '';
-
-  // Reset readyListenerActive so the ready-btn listener re-registers properly
   readyListenerActive = false;
 
-  setTimeout(() => { _execRestartDone = false; }, 500);
+  setTimeout(() => { _rematchExecuting = false; }, 600);
 
-  initSetupBoard(); showScreen('setup');
+  // Go back to setup
+  initSetupBoard();
+  showScreen('setup');
   const rb = document.getElementById('ready-btn');
-  rb.disabled = false; rb.textContent = "✓ I'm Ready!";
+  rb.disabled    = false;
+  rb.textContent = "✓ I'm Ready!";
 
-  // Re-attach lobby listeners for the room
+  // Re-attach standard lobby listeners
   showChat();
   onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
     const info = snap.val();
@@ -6088,11 +6159,31 @@ async function execRestart() {
     if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar); }
   });
 
-  // Re-register restart vote watcher (was detached above)
-  watchRestartVotes();
-
+  // Restart the rematch watcher for the next round
+  watchRematch();
   sfx.click();
 }
+
+// ── Event listeners for play-again-btn and rematch toast ────────────────────
+
+document.getElementById('play-again-btn').addEventListener('click', () => {
+  if (botMode) {
+    restartBotGame();   // immediate — no voting for single player
+  } else {
+    _requestRematch();  // send request to opponent
+  }
+});
+
+document.getElementById('rematch-accept-btn').addEventListener('click', _acceptRematch);
+document.getElementById('rematch-decline-btn').addEventListener('click', _declineRematch);
+
+// ── Hook watchRematch into every place multiplayer sessions are set up ───────
+// (called after joining/creating a room, same pattern as old watchRestartVotes)
+
+function startRematchWatcher() { watchRematch(); }
+
+// ════════════════════════════════════════════════════════════════════════════════
+
 function doReset(){
   if(countdownInterval)clearInterval(countdownInterval);
   winShown = false;

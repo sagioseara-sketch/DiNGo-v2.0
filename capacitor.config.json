@@ -1,0 +1,6 @@
+{
+  "appId": "com.KGames.dingo",
+  "appName": "DiNGo",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

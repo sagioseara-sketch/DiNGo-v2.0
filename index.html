@@ -22,9 +22,10 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
   
   :root {
@@ -32,11 +33,11 @@
     --ink:     #ffffff;
     --ink2:    rgba(255,255,255,0.5);
     --ink3:    rgba(255,255,255,0.18);
-    --c1:      #00ffcc;   
-    --c2:      #ff2d55;   
-    --c3:      #ffcc00;   
-    --c4:      #7b61ff;   
-    --c5:      #00b4ff;   
+    --c1:      #00ffcc;
+    --c2:      #ff2d55;
+    --c3:      #ffcc00;
+    --c4:      #7b61ff;
+    --c5:      #00b4ff;
     --panel:   #141416;
     --panel2:  #1c1c1f;
     --edge:    rgba(255,255,255,0.08);
@@ -97,6 +98,7 @@
     transition:transform .12s,filter .12s,background .12s;
     flex-shrink:0;
   }
+  .ui-pill:hover, #hard-refresh-btn:hover{ transform:translate(-1px,-1px);filter:brightness(1.2); }
   .ui-pill:hover, #hard-refresh-btn:hover{ transform:translate(-1px,-1px);filter:brightness(1.2); }
   .ui-pill:active, #hard-refresh-btn:active{ transform:translate(1px,1px);filter:none; }
   .ui-pill .pill-icon{ display:flex;align-items:center;justify-content:center;width:32px;height:32px; }
@@ -3366,6 +3368,7 @@ function leaveRoomCleanup() {
   stopAbandonCountdown(false);
   stopMoveTimer();
   stopRoomHeartbeat();          // stop heartbeat if we're P1 waiting
+  stopRestartWatcher();         // kill raw restart listener
   opponentWasPresent = false;
 
   detachRoomListeners();
@@ -5106,7 +5109,7 @@ function renderTournBracket(data){
     div.appendChild(fiDiv);
     if(fi.winner&&data.players[fi.winner]){
       const champ=document.createElement('div');
-      champ.style='text-align:center;padding:10px;font-family:"Black Han Sans",sans-serif;font-size:20px;color:var(--c3)';
+      champ.style='text-align:center;padding:10px;font-family:"Syne",sans-serif;font-size:20px;color:var(--c3)';
       champ.textContent='🏆 '+data.players[fi.winner].name+' WINS!';
       div.appendChild(champ);
     }
@@ -5847,11 +5850,26 @@ document.getElementById('tourn-start-btn').addEventListener('click',async()=>{
 
 let _restartPending = false;
 
-// Persistent restart-vote watcher — survives detachRoomListeners because it
-// re-registers itself after execRestart completes.
+// ─── Restart vote watcher ─────────────────────────────────────────────────────
+// Uses raw db.ref().on() — NOT onRoomValue() — so detachRoomListeners() never
+// kills it. We manually tear it down and rebuild when the room changes.
+let _restartWatcherRef  = null;
+let _restartWatcherCb   = null;
+
+function stopRestartWatcher() {
+  if (_restartWatcherRef && _restartWatcherCb) {
+    try { _restartWatcherRef.off('value', _restartWatcherCb); } catch(e) {}
+  }
+  _restartWatcherRef = null;
+  _restartWatcherCb  = null;
+}
+
 function watchRestartVotes() {
+  stopRestartWatcher();           // tear down any previous watcher first
   if (!roomId) return;
-  onRoomValue(ref(db, `rooms/${roomId}/gameState`), snap => {
+
+  _restartWatcherRef = db.ref('rooms/' + roomId + '/gameState');
+  _restartWatcherCb  = snap => {
     const state = snap.val();
     if (!state) return;
 
@@ -5875,7 +5893,9 @@ function watchRestartVotes() {
         document.getElementById('restart-btn').disabled = false;
       }
     }
-  });
+  };
+
+  _restartWatcherRef.on('value', _restartWatcherCb);
 }
 
 async function doRestart() {

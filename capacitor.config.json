@@ -1,6 +1,5 @@
 {
-  "appId": "com.KGames.dingo",
+  "appId": "com.sagioseara.dingo",
   "appName": "DiNGo",
-  "webDir": ".",
-  "bundledWebRuntime": false
+  "webDir": "www"
 }

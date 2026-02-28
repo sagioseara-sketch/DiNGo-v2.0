@@ -621,6 +621,8 @@
   .badge-expert{background:rgba(123,97,255,.15);color:#a78bfa;border:2px solid rgba(123,97,255,.35)}
   .badge-nightmare{background:rgba(255,20,20,.18);color:#ff4444;border:2px solid rgba(255,20,20,.4);animation:nightmarePulse 1.8s infinite}
   @keyframes nightmarePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(255,20,20,.5)}}
+  .badge-godmode{background:rgba(255,215,0,.18);color:#ffd700;border:2px solid rgba(255,215,0,.5);animation:godmodePulse 1.2s infinite}
+  @keyframes godmodePulse{0%,100%{box-shadow:none;border-color:rgba(255,215,0,.5)}50%{box-shadow:0 0 14px rgba(255,215,0,.7);border-color:#ffd700}}
 
   
   #stats-popup{
@@ -2165,6 +2167,15 @@
       <span class="diff-badge badge-nightmare">⚠ INSANE</span>
     </div>
 
+    <div class="diff-option" data-level="godmode">
+      <span class="diff-emoji">👁️</span>
+      <div class="diff-info">
+        <div class="diff-name" style="color:#ffd700">Godmode</div>
+        <div class="diff-desc">Perfect omniscient AI. Blocks every line. ~1% chance you win. Are you sure?</div>
+      </div>
+      <span class="diff-badge badge-godmode">☠ IMPOSSIBLE</span>
+    </div>
+
     <button class="diff-cancel" id="diff-cancel-btn">✕ Cancel</button>
   </div>
 </div>
@@ -2745,8 +2756,8 @@ let botSelected   = [];
 let botScores     = {player:0, bot:0};
 let botWinShown   = false;
 let botCountdownInterval = null;
-const BOT_AVATARS = {easy:'🎲', medium:'🛡️', hard:'🧠', expert:'⚔️', nightmare:'💀'};
-const BOT_NAMES   = {easy:'ChillBot', medium:'DefendBot', hard:'ProBot', expert:'EliteBot', nightmare:'NightmareAI'};
+const BOT_AVATARS = {easy:'🎲', medium:'🛡️', hard:'🧠', expert:'⚔️', nightmare:'💀', godmode:'👁️'};
+const BOT_NAMES   = {easy:'ChillBot', medium:'DefendBot', hard:'ProBot', expert:'EliteBot', nightmare:'NightmareAI', godmode:'GODMODE'};
 
 function genRandomBoard() {
   const nums = Array.from({length:25}, (_,i) => i+1);
@@ -2895,6 +2906,98 @@ function getAIMove(calledNums) {
   if (botLevel === 'hard')      return aiMoveHard(calledNums, playerBotBoard, botBoard);
   if (botLevel === 'expert')    return aiMoveExpert(calledNums, playerBotBoard, botBoard);
   if (botLevel === 'nightmare') return aiMoveNightmare(calledNums, playerBotBoard, botBoard);
+  if (botLevel === 'godmode')   return aiMoveGodmode(calledNums, playerBotBoard, botBoard);
+}
+
+function aiMoveGodmode(calledNums, playerBoard, botBrd) {
+  // Omniscient AI: never lets the player win if it can help it.
+  // Priority: 1) Win immediately  2) Block player win  3) Prevent player 3-in-line threats
+  //           4) Complete bot lines  5) Deny any number helpful to player
+  const ALL_LINES = [];
+  for(let r=0;r<5;r++){const b=r*5;ALL_LINES.push([b,b+1,b+2,b+3,b+4])}
+  for(let c=0;c<5;c++){ALL_LINES.push([c,c+5,c+10,c+15,c+20])}
+  ALL_LINES.push([0,6,12,18,24],[4,8,12,16,20]);
+
+  const available = Array.from({length:25},(_,i)=>i+1).filter(n=>!calledNums.includes(n));
+  if (!available.length) return null;
+
+  // 1) Instant win for bot
+  for (const line of ALL_LINES) {
+    const vals = line.map(i => botBrd[i]);
+    const uncalled = vals.filter(v => !calledNums.includes(v));
+    if (uncalled.length === 1 && available.includes(uncalled[0]) &&
+        vals.filter(v => calledNums.includes(v)).length === 4) return uncalled[0];
+  }
+
+  // 2) Block EVERY player line that is 4-in (critical)
+  const criticalBlocks = [];
+  for (const line of ALL_LINES) {
+    const vals = line.map(i => playerBoard[i]);
+    const uncalled = vals.filter(v => !calledNums.includes(v));
+    if (uncalled.length === 1 && available.includes(uncalled[0]) &&
+        vals.filter(v => calledNums.includes(v)).length === 4) {
+      criticalBlocks.push(uncalled[0]);
+    }
+  }
+  // If any critical block, pick the one that also most helps the bot
+  if (criticalBlocks.length > 0) {
+    let best = criticalBlocks[0], bestScore = -Infinity;
+    criticalBlocks.forEach(num => {
+      let s = 0;
+      const botIdx = botBrd.indexOf(num);
+      ALL_LINES.forEach(line => {
+        if (line.includes(botIdx)) {
+          const called = line.filter(i => calledNums.includes(botBrd[i])).length;
+          s += [0,10,200,3000,50000][called] || 0;
+        }
+      });
+      if (s > bestScore) { bestScore = s; best = num; }
+    });
+    return best;
+  }
+
+  // 3) Heuristic scoring — extremely aggressive offense + defense
+  const scores = {};
+  available.forEach(n => scores[n] = 0);
+
+  available.forEach(num => {
+    const botIdx    = botBrd.indexOf(num);
+    const playerIdx = playerBoard.indexOf(num);
+
+    ALL_LINES.forEach(line => {
+      // Bot offense
+      if (line.includes(botIdx)) {
+        const called = line.filter(i => calledNums.includes(botBrd[i])).length;
+        if      (called === 4) scores[num] += 200000;
+        else if (called === 3) scores[num] +=  15000;
+        else if (called === 2) scores[num] +=   1500;
+        else if (called === 1) scores[num] +=    150;
+        else                   scores[num] +=     15;
+      }
+      // Player blocking — hyper-aggressive; deny lines early
+      if (line.includes(playerIdx)) {
+        const called = line.filter(i => calledNums.includes(playerBoard[i])).length;
+        if      (called === 4) scores[num] += 180000; // should never reach here (caught above)
+        else if (called === 3) scores[num] +=  30000; // block 3-in early
+        else if (called === 2) scores[num] +=   3000;
+        else if (called === 1) scores[num] +=    300;
+        else                   scores[num] +=     30;
+      }
+    });
+
+    // Heavy penalty: if calling this number gives player a new line, strongly avoid it
+    const newCalled = [...calledNums, num];
+    const pHits = playerBoard.map(n => newCalled.includes(n) ? 1 : 0);
+    let playerNewLines = 0;
+    ALL_LINES.forEach(line => { if (line.every(i => pHits[i])) playerNewLines++; });
+    scores[num] -= playerNewLines * 120000;
+
+    // Bonus: center positions help bot cover more lines
+    const centerIdxs = [6,7,8,11,12,13,16,17,18];
+    if (centerIdxs.includes(botBrd.indexOf(num))) scores[num] += 50;
+  });
+
+  return available.reduce((best, n) => scores[n] > scores[best] ? n : best, available[0]);
 }
 
 function aiMoveExpert(calledNums, playerBoard, botBrd) {
@@ -3040,6 +3143,7 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
 }
 
 let botLastLineCount = 0;
+let botTurnTimeout = null;
 function botHighlightWinCells(board, selected, prefix) {
   const { winIdx, lines } = botCheckLines(board, selected);
   const isNewLine = lines > botLastLineCount;
@@ -3133,11 +3237,14 @@ function botCheckWin() {
 
 function executeBotTurn() {
   botUpdateTurnUI(false);
-  const delay = botLevel === 'nightmare' ? 1400
+  const delay = botLevel === 'godmode'   ? 1600
+              : botLevel === 'nightmare' ? 1400
               : botLevel === 'expert'    ? 1100
               : botLevel === 'hard'      ?  900
               : botLevel === 'medium'    ?  700 : 500;
-  setTimeout(() => {
+  if (botTurnTimeout) clearTimeout(botTurnTimeout);
+  botTurnTimeout = setTimeout(() => {
+    botTurnTimeout = null;
     if (botWinShown) return;
     const move = getAIMove(botSelected);
     if (move == null) return;
@@ -3171,6 +3278,8 @@ function showBotWinOverlay(playerWon) {
   document.getElementById('win-subtitle-text').textContent = playerWon
     ? winPhrases[Math.floor(Math.random()*winPhrases.length)]
     : losePhrases[Math.floor(Math.random()*losePhrases.length)];
+  // Hide restart for the winner — only loser can rematch
+  document.getElementById('win-restart-btn').style.display = playerWon ? 'none' : '';
   document.getElementById('win-overlay').classList.add('show');
   
   if (playerWon) { launchWinAnimation(); recordWin(); } else { recordLoss(); }
@@ -3179,11 +3288,13 @@ function showBotWinOverlay(playerWon) {
 
 function restartBotGame() {
   if (botCountdownInterval) clearInterval(botCountdownInterval);
+  if (botTurnTimeout) { clearTimeout(botTurnTimeout); botTurnTimeout = null; }
   botWinShown = false; botLastLineCount = 0;
   cleanupScheduled = false;
   stopMoveTimer();
   resetLifelines();
   document.getElementById('win-overlay').classList.remove('show');
+  document.getElementById('win-restart-btn').style.display = '';
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
   document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
   document.getElementById('ai-thinking-bar').classList.remove('show');
@@ -3225,10 +3336,11 @@ document.addEventListener('startBotGame', (e) => {
     medium:    'rgba(255,204,0,.15)',
     hard:      'rgba(255,45,85,.15)',
     expert:    'rgba(123,97,255,.2)',
-    nightmare: 'rgba(255,20,20,.2)'
+    nightmare: 'rgba(255,20,20,.2)',
+    godmode:   'rgba(255,215,0,.25)'
   };
   const pillTextColors = {
-    easy:'#00ffcc', medium:'#ffcc00', hard:'#ff2d55', expert:'#a78bfa', nightmare:'#ff4444'
+    easy:'#00ffcc', medium:'#ffcc00', hard:'#ff2d55', expert:'#a78bfa', nightmare:'#ff4444', godmode:'#ffd700'
   };
   pill.style.background = pillColors[botLevel] || '';
   pill.style.color      = pillTextColors[botLevel] || '';
@@ -4139,6 +4251,8 @@ function showWinOverlay(iWon, wasAbandoned){
       ?winPhrases[Math.floor(Math.random()*winPhrases.length)]
       :losePhrases[Math.floor(Math.random()*losePhrases.length)];
   }
+  // Hide restart for the winner — only the loser can request a rematch
+  document.getElementById('win-restart-btn').style.display = iWon ? 'none' : '';
   document.getElementById('win-overlay').classList.add('show');
   if(iWon){ launchWinAnimation(); recordWin(); } else { recordLoss(); }
   updateScoreDisplay();
@@ -5945,6 +6059,7 @@ async function execRestart() {
 
   // Reset local UI state
   document.getElementById('win-overlay').classList.remove('show');
+  document.getElementById('win-restart-btn').style.display = '';
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
   document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
 

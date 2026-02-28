@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>DiNGo — Live Multiplayer Bingo</title>
 
-  <!-- ── PWA Meta Tags ── -->
+  
   <meta name="theme-color" content="#00ffcc"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="DiNGo"/>
   <meta name="description" content="5-in-a-row live multiplayer bingo. Challenge friends or battle the AI bot."/>
-  <!-- Real manifest file — NOT a blob URL -->
+  
   <link rel="manifest" href="manifest.json"/>
-  <!-- Apple touch icons — real PNG files -->
+  
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
   <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png"/>
-  <!-- Favicon -->
+  
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -26,22 +26,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-  /* ═══════════════════════════════════════════════
-     DiNGo — NEON ARCADE
-     Direction: Fighting game character select.
-     Chunky. Color-blocked. Electric. Zero blur.
-     Energy from contrast, not from animation noise.
-  ═══════════════════════════════════════════════ */
+  
   :root {
     --bg:      #0d0d0f;
     --ink:     #ffffff;
     --ink2:    rgba(255,255,255,0.5);
     --ink3:    rgba(255,255,255,0.18);
-    --c1:      #00ffcc;   /* electric mint  */
-    --c2:      #ff2d55;   /* hot red        */
-    --c3:      #ffcc00;   /* arcade yellow  */
-    --c4:      #7b61ff;   /* deep violet    */
-    --c5:      #00b4ff;   /* sky blue       */
+    --c1:      #00ffcc;   
+    --c2:      #ff2d55;   
+    --c3:      #ffcc00;   
+    --c4:      #7b61ff;   
+    --c5:      #00b4ff;   
     --panel:   #141416;
     --panel2:  #1c1c1f;
     --edge:    rgba(255,255,255,0.08);
@@ -68,7 +63,7 @@
     display:flex;align-items:center;justify-content:center;
   }
 
-  /* ── Scanline texture via CSS only ── */
+  
   body::after{
     content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     background:repeating-linear-gradient(
@@ -79,21 +74,21 @@
   }
   body.light::after{background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.015) 2px,rgba(0,0,0,0.015) 3px)}
 
-  /* Kill all canvas/particle elements */
+  
   #bg-canvas,.bg-grid,.particles,.home-grid-bg,.home-grid-canvas,.scanlines,#splash-canvas{display:none!important}
 
-  /* ── UI Buttons (Home + Theme) ── */
-  /* ── In-card toolbar — travels inside every card, never floats over the page ── */
+  
+  
   #ui-toolbar{
     display:flex;align-items:center;justify-content:space-between;
     padding:10px 12px 4px;
     gap:6px;
-    /* No position:fixed — just a normal flex row at the top of each card */
+    
   }
   .toolbar-left{ display:flex;align-items:center;gap:6px; }
   .toolbar-right{ display:flex;align-items:center;gap:6px; }
 
-  /* Shared base style for all three icon buttons */
+  
   .ui-pill, #hard-refresh-btn{
     width:32px;height:32px;border-radius:7px;
     display:flex;align-items:center;justify-content:center;
@@ -105,15 +100,15 @@
   .ui-pill:hover, #hard-refresh-btn:hover{ transform:translate(-1px,-1px);filter:brightness(1.2); }
   .ui-pill:active, #hard-refresh-btn:active{ transform:translate(1px,1px);filter:none; }
   .ui-pill .pill-icon{ display:flex;align-items:center;justify-content:center;width:32px;height:32px; }
-  .ui-pill .pill-label{ display:none; } /* icon-only — no text label */
+  .ui-pill .pill-label{ display:none; } 
 
-  /* Home button — mint */
+  
   #global-home-btn{
     background:var(--c1);color:#000;
     box-shadow:2px 2px 0 rgba(0,255,204,0.25);
   }
 
-  /* Hard Refresh button */
+  
   #hard-refresh-btn{
     background:rgba(255,255,255,0.07);
     border:2px solid rgba(255,255,255,0.14)!important;
@@ -126,14 +121,14 @@
   }
   body.light #hard-refresh-btn{ background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12)!important; }
 
-  /* Theme button — violet */
+  
   #theme-toggle{
     background:var(--c4);color:#fff;
     box-shadow:2px 2px 0 rgba(123,97,255,0.25);
   }
   body.light #theme-toggle{ background:#222;color:#fff; }
 
-  /* Fullscreen button */
+  
   #fullscreen-btn{
     background:rgba(255,255,255,0.07);
     border:2px solid rgba(255,255,255,0.14)!important;
@@ -146,7 +141,7 @@
   }
   body.light #fullscreen-btn{ background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12)!important; }
 
-  /* ── FOOTER ── */
+  
   #game-footer{
     position:fixed;bottom:0;left:0;right:0;
     z-index:50;
@@ -172,10 +167,10 @@
     text-transform:uppercase;color:var(--ink3);
   }
   .footer-author{color:var(--c3);font-weight:800;}
-  /* hide footer during gameplay screens */
+  
   body.in-game #game-footer{ display:none; }
 
-  /* ── Screen system ── */
+  
   .screen{
     position:fixed;inset:0;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -188,10 +183,7 @@
   .screen.active{opacity:1;pointer-events:all;transform:translateY(0)}
   .screen.exit{opacity:0;transform:translateY(-10px)}
 
-  /* ── CARD ──
-     Hard border + color accent bar on the left edge.
-     Depth via nested dark panels not blur.
-  ── */
+  
   .card{
     background:var(--panel);
     border:2px solid var(--edge2);
@@ -203,7 +195,7 @@
       8px 8px 0 rgba(0,0,0,0.35);
   }
   body.light .card{box-shadow:8px 8px 0 rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.06)}
-  /* Color-block top bar */
+  
   .card::before{
     content:'';position:absolute;top:0;left:0;right:0;height:3px;
     background:linear-gradient(90deg, var(--c1) 0%, var(--c2) 50%, var(--c3) 100%);
@@ -216,19 +208,17 @@
   }
   .card-body::-webkit-scrollbar{display:none}
 
-  /* ═══════════════════════════════════════════════
-     SPLASH
-  ═══════════════════════════════════════════════ */
+  
   #splash-screen{background:transparent;padding:0}
   #splash-screen .card{
     max-width:480px;text-align:center;
-    /* Big diagonal color stripe behind the logo */
+    
     background:var(--panel);
     overflow:hidden;
   }
   #splash-screen .card-body{padding:48px 32px 52px;overflow:visible}
 
-  /* Diagonal stripe */
+  
   #splash-screen .card-body::before{
     content:'';position:absolute;
     top:-60px;right:-80px;
@@ -254,7 +244,7 @@
   .splash-ring{display:none}
   .splash-logo-wrap{display:block;margin-bottom:4px}
 
-  /* LOGO — massive, two-tone, no gradient */
+  
   .splash-logo{
     font-family:'Black Han Sans',sans-serif;
     font-size:clamp(88px,22vw,148px);
@@ -264,7 +254,7 @@
     animation:logoIn .6s cubic-bezier(.2,.8,.4,1.1) both;
     position:relative;
   }
-  /* Drop shadow colored echo */
+  
   .splash-logo::after{
     content:'DiNGo';
     position:absolute;left:4px;top:4px;
@@ -291,7 +281,7 @@
   }
   .splash-desc strong{color:var(--ink);font-weight:700}
 
-  /* Stats — color-block cells */
+  
   .splash-stats{
     display:flex;justify-content:center;
     margin-bottom:30px;animation:fadeUp .4s .45s both;
@@ -318,7 +308,7 @@
   .btn-enter-icon{font-size:16px}
   @keyframes splashShimmer{}@keyframes splashBtnPulse{}@keyframes enterIconSpin{}
   .splash-micro{margin-top:14px;font-size:10px;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;animation:fadeUp .3s .7s both}
-  /* How to Play button on splash screen */
+  
   .btn-splash-htp{
     display:inline-flex;align-items:center;gap:6px;
     margin-top:10px;
@@ -340,9 +330,7 @@
   .btn-splash-htp:active{transform:translate(1px,1px);box-shadow:none}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-  /* ═══════════════════════════════════════════════
-     BUTTONS
-  ═══════════════════════════════════════════════ */
+  
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:7px;
     border:2px solid transparent;outline:none;cursor:pointer;
@@ -381,9 +369,7 @@
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink2)}
   body.light .btn-ghost{color:var(--ink2);border-color:var(--edge2)}
 
-  /* ═══════════════════════════════════════════════
-     NAME SCREEN
-  ═══════════════════════════════════════════════ */
+  
   .screen-logo{
     font-family:'Black Han Sans',sans-serif;
     font-size:40px;letter-spacing:2px;color:var(--ink);margin-bottom:4px;
@@ -413,7 +399,7 @@
   .avatar-opt svg{ width:100%;height:100%;display:block;border-radius:4px; }
   .avatar-opt:hover{border-color:var(--edge2);transform:scale(1.08)}
   .avatar-opt.selected{border-color:var(--c1);background:rgba(0,255,204,.08);transform:scale(1.1);box-shadow:0 0 0 2px rgba(0,255,204,0.2)}
-  /* Avatar display in player boxes, home, stats — make SVG fill container */
+  
   .player-avatar svg,.home-avatar svg,.stats-big-avatar svg,.pc-avatar svg{
     width:100%;height:100%;display:block;
   }
@@ -431,12 +417,10 @@
   .color-swatch:hover{transform:scale(1.18); box-shadow:0 0 0 2px rgba(255,255,255,0.3)}
   .color-swatch.selected{border-color:var(--ink);transform:scale(1.22); box-shadow:0 0 8px rgba(255,255,255,0.4)}
 
-  /* ═══════════════════════════════════════════════
-     HOME SCREEN
-  ═══════════════════════════════════════════════ */
+  
   #home-screen .card{max-width:460px}
 
-  /* Profile strip — dark band with accent */
+  
   .home-profile-strip{
     display:flex;align-items:center;gap:11px;
     background:var(--panel2);border:2px solid var(--edge);
@@ -444,7 +428,7 @@
     margin-bottom:14px;
     position:relative;overflow:hidden;
   }
-  /* Accent left stripe */
+  
   .home-profile-strip::before{
     content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
     background:var(--c1);
@@ -470,7 +454,7 @@
   .node-dot:nth-child(3){background:var(--c2);opacity:.35}
   @keyframes nodePulse{}
 
-  /* Banners */
+  
   .home-banners{
     margin-bottom:12px;overflow:hidden;border-radius:var(--r);
     border:2px solid var(--edge);height:48px;background:var(--panel2);position:relative;
@@ -485,7 +469,7 @@
   .banner-dot{width:4px;height:4px;border-radius:2px;background:var(--edge2);transition:background .2s}
   .banner-dot.active{background:var(--c1)}
 
-  /* Puzzle section */
+  
   .home-puzzle-section{
     background:var(--panel2);border:2px solid var(--edge);
     border-radius:var(--r);padding:11px 12px;margin-bottom:12px;cursor:pointer;
@@ -519,14 +503,14 @@
   .puzzle-result.lose{color:var(--c2);background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2)}
   .puzzle-result.done{color:var(--c3);background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.2)}
 
-  /* Lobby chat */
+  
   .home-lobby-chat{background:var(--panel2);border:2px solid var(--edge);border-radius:var(--r);padding:10px 12px;margin-bottom:12px}
   .lobby-chat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
   .lobby-chat-label{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--c5);font-weight:700;display:flex;align-items:center;gap:5px}
   .lobby-live-dot{width:5px;height:5px;border-radius:50%;background:var(--c1);animation:blink2 1.4s infinite}
   .lobby-chat-count{font-size:10px;color:var(--ink2)}
 
-  /* ── Online counter pill ── */
+  
   .online-pill{
     display:inline-flex;align-items:center;gap:5px;
     background:rgba(0,255,204,0.08);
@@ -552,7 +536,7 @@
 
   .home-action-zone{position:relative}
 
-  /* PLAY NOW — biggest energy button on screen */
+  
   .btn-play-now{
     width:100%;padding:18px 24px;font-size:16px;letter-spacing:2.5px;text-transform:uppercase;
     font-family:'Black Han Sans',sans-serif;
@@ -575,7 +559,7 @@
   .btn-play-now span:last-child{position:relative;z-index:1}
   @keyframes playIconBounce{}@keyframes playNowShimmer{}@keyframes playNowPulse{}
 
-  /* VS Bot */
+  
   .btn-vs-bot{
     width:100%;padding:12px 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase;
     font-family:'Space Grotesk',sans-serif;font-weight:700;
@@ -594,7 +578,7 @@
   .join-row input{flex:1;letter-spacing:4px;text-transform:uppercase}
   #home-msg{min-height:16px;font-size:12px;font-weight:700;text-align:center;margin-top:10px;color:var(--c2);letter-spacing:.5px}
 
-  /* AI Modal */
+  
   #ai-difficulty-modal{
     position:fixed;inset:0;z-index:700;
     display:flex;align-items:center;justify-content:center;
@@ -636,9 +620,7 @@
   .badge-nightmare{background:rgba(255,20,20,.18);color:#ff4444;border:2px solid rgba(255,20,20,.4);animation:nightmarePulse 1.8s infinite}
   @keyframes nightmarePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(255,20,20,.5)}}
 
-  /* ═══════════════════════════════════════════
-     FEATURE 6 — STATS POPUP
-  ═══════════════════════════════════════════ */
+  
   #stats-popup{
     position:fixed;inset:0;z-index:900;
     display:flex;align-items:center;justify-content:center;
@@ -680,9 +662,7 @@
   .home-avatar-wrap{cursor:pointer}
   .home-avatar-wrap:hover .home-avatar{transform:scale(1.1)}
 
-  /* ═══════════════════════════════════════════
-     FEATURE 9 — BOARD THEMES
-  ═══════════════════════════════════════════ */
+  
   #theme-picker-btn{
     background:rgba(255,255,255,.07);border:2px solid var(--edge2);
     border-radius:var(--r);padding:4px 8px;
@@ -723,15 +703,15 @@
   }
   .tp-cell{border-radius:2px;aspect-ratio:1}
   .theme-opt-name{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink2)}
-  /* Theme applied to board */
-  /* ── FRIENDS SYSTEM ── */
+  
+  
   #friends-screen .card-body{ padding:20px 18px; }
   .friend-card{ transition:border-color .15s; }
   .friend-card:hover{ border-color:var(--edge2)!important; }
   #welcome-back-popup .btn{ font-size:13px; }
   #wb-avatar{ text-shadow:0 0 30px rgba(0,255,204,.3); }
 
-  /* ── RETRO (green terminal) ── */
+  
   body.theme-retro .board{border:2px solid #00ff00;box-shadow:0 0 20px rgba(0,255,0,.2);background:#001100}
   body.theme-retro .cell{border-color:#00aa00;color:#00ff00;background:#001a00;font-family:monospace;letter-spacing:1px}
   body.theme-retro .cell:not(.crossed):hover{background:rgba(0,255,0,.1)!important;border-color:#00ff00!important}
@@ -739,7 +719,7 @@
   body.theme-retro .cell.crossed::after{content:'■';color:#00ff00!important}
   body.theme-retro .cell.win-line{background:rgba(0,255,0,.2)!important;border-color:#00ff00!important;color:#00ff00!important}
 
-  /* ── ICE (blue) ── */
+  
   body.theme-ice .board{border:2px solid #7ee8ff;box-shadow:0 0 20px rgba(100,200,255,.2);background:#050d1a}
   body.theme-ice .cell{border-color:#1a4a6a;color:#7ee8ff;background:#071220}
   body.theme-ice .cell:not(.crossed):hover{background:rgba(100,200,255,.1)!important;border-color:#7ee8ff!important}
@@ -747,7 +727,7 @@
   body.theme-ice .cell.crossed::after{color:#7ee8ff!important}
   body.theme-ice .cell.win-line{background:rgba(100,200,255,.2)!important;border-color:#7ee8ff!important;color:#7ee8ff!important}
 
-  /* ── FIRE (orange) ── */
+  
   body.theme-fire .board{border:2px solid #ff6a00;box-shadow:0 0 20px rgba(255,100,0,.2);background:#1a0500}
   body.theme-fire .cell{border-color:#6a1a00;color:#ff6a00;background:#200800}
   body.theme-fire .cell:not(.crossed):hover{background:rgba(255,100,0,.1)!important;border-color:#ff6a00!important}
@@ -755,7 +735,7 @@
   body.theme-fire .cell.crossed::after{color:#ff6a00!important}
   body.theme-fire .cell.win-line{background:rgba(255,100,0,.2)!important;border-color:#ff6a00!important;color:#ff6a00!important}
 
-  /* ── VOID (purple) ── */
+  
   body.theme-purple .board{border:2px solid #bf7aff;box-shadow:0 0 20px rgba(160,80,255,.2);background:#0a0014}
   body.theme-purple .cell{border-color:#3a0060;color:#bf7aff;background:#0f0020}
   body.theme-purple .cell:not(.crossed):hover{background:rgba(160,80,255,.1)!important;border-color:#bf7aff!important}
@@ -763,7 +743,7 @@
   body.theme-purple .cell.crossed::after{color:#bf7aff!important}
   body.theme-purple .cell.win-line{background:rgba(160,80,255,.2)!important;border-color:#ff7aff!important;color:#ff7aff!important}
 
-  /* ── ROSE (pink) ── */
+  
   body.theme-rose .board{border:2px solid #ff6eb4;box-shadow:0 0 20px rgba(255,80,160,.2);background:#1a000a}
   body.theme-rose .cell{border-color:#6a0030;color:#ff6eb4;background:#200010}
   body.theme-rose .cell:not(.crossed):hover{background:rgba(255,80,160,.1)!important;border-color:#ff6eb4!important}
@@ -771,17 +751,13 @@
   body.theme-rose .cell.crossed::after{color:#ff6eb4!important}
   body.theme-rose .cell.win-line{background:rgba(255,80,160,.2)!important;border-color:#ffd6ec!important;color:#ffd6ec!important}
 
-  /* ═══════════════════════════════════════════
-     FEATURE 10 — MUSIC PLAYER
-  ═══════════════════════════════════════════ */
-  /* Music button in toolbar */
+  
+  
   #music-toggle-btn{ font-size:14px; }
   #music-toggle-btn.playing{ color:var(--c1) !important; border-color:var(--c1) !important; }
   .music-btn:hover{ opacity:.7; }
 
-  /* ═══════════════════════════════════════════
-     FEATURE 11 — WIN ANIMATION PICKER
-  ═══════════════════════════════════════════ */
+  
   .win-anim-row{
     display:flex;gap:6px;margin-top:10px;justify-content:center;
   }
@@ -794,16 +770,14 @@
   .win-anim-opt.active{border-color:var(--c1)}
   .win-anim-opt span{display:block;font-size:8px;letter-spacing:1px;text-transform:uppercase;
     color:var(--ink3);font-weight:700;margin-top:3px;font-family:'Space Grotesk',sans-serif}
-  /* Lightning overlay */
+  
   #lightning-canvas{position:fixed;inset:0;pointer-events:none;z-index:198;display:none}
-  /* Fire canvas */
+  
   #fire-canvas{position:fixed;inset:0;pointer-events:none;z-index:197;display:none}
-  /* Diamond canvas */
+  
   #diamond-canvas{position:fixed;inset:0;pointer-events:none;z-index:196;display:none}
 
-  /* ═══════════════════════════════════════════
-     FEATURE 12 — PLAYER CARD
-  ═══════════════════════════════════════════ */
+  
   #player-card-popup{
     position:fixed;inset:0;z-index:900;
     display:flex;align-items:center;justify-content:center;
@@ -842,7 +816,7 @@
   .pc-btn:hover{color:var(--ink);border-color:var(--c1)}
   .pc-btn.primary{background:var(--c1);color:#000;border-color:var(--c1)}
   .pc-btn.primary:hover{opacity:.85}
-  /* Card button in home screen */
+  
   #show-card-btn{
     display:flex;align-items:center;gap:5px;
     background:transparent;border:2px solid var(--edge2);
@@ -852,9 +826,7 @@
   }
   #show-card-btn:hover{color:var(--c1);border-color:var(--c1)}
 
-  /* ═══════════════════════════════════════════
-     FEATURE 13 — TOURNAMENT MODE
-  ═══════════════════════════════════════════ */
+  
   #tournament-screen .card{max-width:480px}
   .tourn-badge{
     display:inline-flex;align-items:center;gap:6px;
@@ -909,7 +881,7 @@
   .diff-cancel{display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--ink2);font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;padding:8px;transition:color .12s}
   .diff-cancel:hover{color:var(--ink)}
 
-  /* ── How to Play Modal ── */
+  
   #htp-modal{
     position:fixed;inset:0;z-index:800;
     display:flex;align-items:center;justify-content:center;
@@ -969,7 +941,7 @@
   .htp-tag.gold{background:rgba(255,204,0,.1);color:var(--c3);border:1px solid rgba(255,204,0,.25)}
   .htp-tag.red{background:rgba(255,45,85,.1);color:var(--c2);border:1px solid rgba(255,45,85,.25)}
 
-  /* ── Opponent Left Popup ── */
+  
   #opponent-left-popup{
     position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-20px);
     z-index:950;opacity:0;pointer-events:none;
@@ -989,7 +961,7 @@
   .opp-left-ring-svg{position:absolute;inset:0;width:36px;height:36px;transform:rotate(-90deg)}
   #opp-left-secs{font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--c2);position:relative;z-index:1}
 
-  /* ── Abandon countdown banner (hidden — kept for legacy win logic) ── */
+  
   #abandon-banner{
     position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-20px);
     z-index:900;opacity:0;pointer-events:none;
@@ -1007,7 +979,7 @@
     min-width:28px;text-align:center;line-height:1;
   }
 
-  /* ── Move Timer Bar ── */
+  
   #move-timer-wrap{
     display:none;align-items:center;gap:7px;
     margin-bottom:6px;
@@ -1030,7 +1002,7 @@
   #move-timer-secs.warning{color:var(--c3)}
   #move-timer-secs.danger{color:var(--c2)}
 
-  /* ── Lifelines — embedded in each player box ── */
+  
   .player-avatar-wrap{
     display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;
   }
@@ -1040,10 +1012,10 @@
   .lifelines-chips.inline.hidden{display:none}
   .lifeline-chip{font-size:9px;transition:opacity .25s,transform .25s;display:inline-block;line-height:1}
   .lifeline-chip.used{opacity:.15;transform:scale(.7)}
-  /* p2's avatar-wrap is reversed (box is row-reverse) so chips read left→right from avatar */
+  
   .player-box.p2 .player-avatar-wrap{align-items:center}
 
-  /* AI thinking */
+  
   #ai-thinking-bar{display:none;align-items:center;gap:6px;justify-content:center;font-size:10px;color:var(--c4);letter-spacing:2.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px}
   #ai-thinking-bar.show{display:flex}
   .think-dot{width:4px;height:4px;border-radius:1px;background:var(--c4);animation:thinkBounce .9s ease-in-out infinite}
@@ -1055,9 +1027,7 @@
   .player-box.is-bot.active-turn{border-color:var(--c4)!important;box-shadow:4px 4px 0 rgba(123,97,255,.15)!important}
   .player-box.is-bot::after{background:linear-gradient(180deg,var(--c4),var(--c2))!important}
 
-  /* ═══════════════════════════════════════════════
-     ROOM BADGE
-  ═══════════════════════════════════════════════ */
+  
   .room-badge{
     background:var(--panel2);border:2px solid var(--edge);
     border-radius:var(--r);padding:12px 14px;margin-bottom:16px;
@@ -1072,9 +1042,7 @@
   .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
   @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
 
-  /* ═══════════════════════════════════════════════
-     SETUP BOARD
-  ═══════════════════════════════════════════════ */
+  
   .section-title{font-family:'Black Han Sans',sans-serif;font-size:24px;letter-spacing:3px;margin-bottom:4px}
   .section-sub{font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.5}
   .progress-bar{height:3px;background:var(--edge);border-radius:999px;overflow:hidden;margin-bottom:12px}
@@ -1082,9 +1050,7 @@
   .setup-actions{display:flex;gap:6px;margin-bottom:10px}
   .setup-actions .btn{flex:1;font-size:10px;padding:8px 4px}
 
-  /* ═══════════════════════════════════════════════
-     BINGO CELLS
-  ═══════════════════════════════════════════════ */
+  
   .board-wrap{display:flex;justify-content:center;margin-bottom:10px}
   .board{
     display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
@@ -1131,14 +1097,14 @@
     animation:winLineGlowOnce 2s ease-out forwards!important;
   }
   .cell.win-line::after{color:var(--c3)!important}
-  /* One-shot glow: peaks at 1s then fades to a calm steady gold state */
+  
   @keyframes winLineGlowOnce{
     0%  {box-shadow:0 0 6px  rgba(255,204,0,.3), inset 0 0 4px  rgba(255,204,0,.06)}
     40% {box-shadow:0 0 28px rgba(255,204,0,.9), 0 0 56px rgba(255,204,0,.45),
                     inset 0 0 16px rgba(255,204,0,.18)}
     100%{box-shadow:0 0 8px  rgba(255,204,0,.35),inset 0 0 6px  rgba(255,204,0,.07)}
   }
-  /* Flash overlay that fires once when a new line is found */
+  
   @keyframes lineBurst{
     0%{opacity:1;transform:scale(1.18)}
     100%{opacity:0;transform:scale(1)}
@@ -1148,7 +1114,7 @@
     background:rgba(255,204,0,.35)!important;border-color:#ffe066!important;
     box-shadow:0 0 30px rgba(255,204,0,1),0 0 60px rgba(255,204,0,.5)!important;
   }
-  /* Full-screen flash when a line is completed */
+  
   #line-flash{
     position:fixed;inset:0;z-index:9000;
     background:rgba(255,204,0,.12);
@@ -1158,9 +1124,7 @@
   #line-flash.flash{animation:flashFade .45s ease-out forwards}
   @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
 
-  /* ═══════════════════════════════════════════════
-     GAME SCREEN
-  ═══════════════════════════════════════════════ */
+  
   #game-screen .card{max-width:500px}
   #game-screen .card-body{padding:12px 12px 10px}
 
@@ -1206,9 +1170,7 @@
   .action-row{display:flex;gap:6px;margin-top:8px}
   .action-row .btn{flex:1;font-size:10px;padding:9px 4px}
 
-  /* ═══════════════════════════════════════════════
-     NUMBER ANNOUNCEMENT
-  ═══════════════════════════════════════════════ */
+  
   #number-announce{display:flex!important;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;pointer-events:none}
   .announce-bubble{
     background:var(--panel);
@@ -1225,9 +1187,7 @@
   .announce-num{font-family:'Black Han Sans',sans-serif;font-size:clamp(64px,16vw,100px);letter-spacing:4px;line-height:1;color:var(--ink)}
   .announce-sub{font-size:11px;color:var(--ink2);letter-spacing:1.5px;margin-top:4px;text-transform:uppercase}
 
-  /* ═══════════════════════════════════════════════
-     WIN OVERLAY
-  ═══════════════════════════════════════════════ */
+  
   #win-overlay{
     position:fixed;inset:0;z-index:200;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1245,12 +1205,10 @@
   @keyframes winBounce{0%{transform:scale(0.3) rotate(-4deg);opacity:0}65%{transform:scale(1.08) rotate(1deg)}80%{transform:scale(.97)}100%{transform:scale(1) rotate(0);opacity:1}}
   .win-subtitle{font-size:14px;color:var(--ink2);margin-top:8px;margin-bottom:28px;letter-spacing:1.5px;text-align:center;animation:fadeUp .4s .3s both;text-transform:uppercase;font-weight:700}
   .win-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:fadeUp .4s .45s both}
-  /* auto-rematch countdown removed */
+  
   #confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:199}
 
-  /* ═══════════════════════════════════════════════
-     CHAT FAB + PANEL
-  ═══════════════════════════════════════════════ */
+  
   .chat-fab{
     position:fixed;bottom:22px;right:22px;
     width:50px;height:50px;border-radius:50%;
@@ -1315,7 +1273,7 @@
   .chat-send-btn{width:33px;height:33px;border-radius:var(--r);border:2px solid var(--c1);background:var(--c1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:opacity .12s;color:#000}
   .chat-send-btn:hover{opacity:.8}
 
-  /* ── INVITE TO GAME TOAST — improved ── */
+  
   #game-invite-toast {
     animation: inviteSlideIn .3s cubic-bezier(.2,.8,.4,1.1) both;
   }
@@ -1323,7 +1281,7 @@
     from { opacity:0; transform:translateX(-50%) translateY(20px) scale(.9); }
     to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
   }
-  /* Notification badge — supports count number */
+  
   #friends-notif-dot {
     min-width:10px;min-height:10px;
     display:flex;align-items:center;justify-content:center;
@@ -1376,13 +1334,12 @@
 </head>
 <body>
 
-<!-- PWA Install Banner -->
 <div id="pwa-install-banner">
   <div class="pwa-icon">
     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Board grid background -->
+      
       <rect width="36" height="36" rx="8" fill="#0d0d0f"/>
-      <!-- 5×5 mini grid (very small dots) -->
+      
       <g opacity="0.3" fill="#00ffcc">
         <rect x="5" y="5" width="3" height="3" rx="1"/>
         <rect x="10" y="5" width="3" height="3" rx="1"/>
@@ -1401,7 +1358,7 @@
         <rect x="20" y="25" width="3" height="3" rx="1"/>
         <rect x="25" y="25" width="3" height="3" rx="1"/>
       </g>
-      <!-- Diagonal win line — glowing gold -->
+      
       <g fill="#ffcc00">
         <rect x="5" y="5" width="4" height="4" rx="1"/>
         <rect x="10.5" y="10.5" width="4" height="4" rx="1"/>
@@ -1409,11 +1366,11 @@
         <rect x="21.5" y="21.5" width="4" height="4" rx="1"/>
         <rect x="27" y="27" width="4" height="4" rx="1"/>
       </g>
-      <!-- "Di" text top-left in neon mint -->
+      
       <text x="7" y="16" font-family="Arial Black,sans-serif" font-size="8" font-weight="900" fill="#00ffcc" opacity="0.9">Di</text>
-      <!-- "Go" text bottom-right in hot red -->
+      
       <text x="20" y="32" font-family="Arial Black,sans-serif" font-size="8" font-weight="900" fill="#ff2d55" opacity="0.9">Go</text>
-      <!-- Center lightning bolt star -->
+      
       <text x="14" y="21" font-family="Arial,sans-serif" font-size="9" fill="#ffcc00">⚡</text>
     </svg>
   </div>
@@ -1435,11 +1392,10 @@
 <canvas id="fire-canvas"></canvas>
 <canvas id="diamond-canvas"></canvas>
 
-<!-- ── STATS POPUP ── -->
 <div id="stats-popup">
   <div class="stats-card">
     <div class="stats-header">
-      <div class="stats-title">MY STATS</div>
+      <div class="stats-title">PROFILE</div>
       <button class="stats-close" id="stats-close-btn">✕</button>
     </div>
     <div class="stats-body">
@@ -1467,8 +1423,12 @@
           <div class="stats-cell-num" id="stat-winrate">0%</div>
           <div class="stats-cell-lbl">Win Rate</div>
         </div>
+        <div class="stats-cell" style="grid-column:1/-1">
+          <div class="stats-cell-num" id="stat-tournament-wins">0</div>
+          <div class="stats-cell-lbl">Tournament Wins 🏆</div>
+        </div>
       </div>
-      <!-- Win animation picker lives here -->
+      
       <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--ink3);margin-bottom:6px">Win Animation</div>
       <div class="win-anim-row" id="win-anim-row"></div>
       <br>
@@ -1477,7 +1437,6 @@
   </div>
 </div>
 
-<!-- ── PLAYER CARD POPUP ── -->
 <div id="player-card-popup">
   <div class="player-card" id="the-player-card">
     <div class="pc-bg">
@@ -1496,7 +1455,6 @@
   </div>
 </div>
 
-<!-- ── BOARD THEME PICKER MODAL ── -->
 <div id="theme-picker-modal">
   <div class="theme-picker-card">
     <div class="theme-picker-header">
@@ -1507,9 +1465,6 @@
   </div>
 </div>
 
-
-
-<!-- ── UI Toolbar: refresh · home · theme — moves into each card via showScreen() ── -->
 <div id="ui-toolbar">
   <div class="toolbar-left">
     <button id="hard-refresh-btn" title="Hard Refresh">↺</button>
@@ -1530,7 +1485,6 @@
   </div>
 </div>
 
-<!-- Compact music panel - slides in below toolbar, inside card -->
 <div id="music-panel" style="display:none;padding:6px 12px 4px;background:var(--panel2);border-bottom:1px solid var(--edge);align-items:center;gap:8px;flex-wrap:wrap">
   <button class="music-btn" id="music-prev-btn" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink2)">⏮</button>
   <button class="music-btn" id="music-play-btn" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink2)">▶</button>
@@ -1539,8 +1493,6 @@
   <button id="music-style-btn" style="font-size:8px;letter-spacing:1px;text-transform:uppercase;font-weight:700;background:var(--panel);border:2px solid var(--edge);border-radius:10px;padding:2px 8px;cursor:pointer;color:var(--ink3)">Lofi</button>
 </div>
 
-
-<!-- ── MAILBOX PANEL (drops down below toolbar) ─────────────────────────── -->
 <div id="mailbox-panel" style="display:none;position:relative;z-index:200;
   background:var(--panel2);border-bottom:2px solid var(--edge);
   padding:8px 12px 10px;max-height:240px;overflow-y:auto">
@@ -1553,7 +1505,6 @@
   </div>
 </div>
 
-<!-- ── GAME HISTORY POPUP ───────────────────────────────────────────────── -->
 <div id="history-popup" style="display:none;position:fixed;
   top:50%;left:50%;transform:translate(-50%,-50%);
   z-index:900;width:min(340px,92vw);max-height:80vh;overflow-y:auto;
@@ -1572,7 +1523,6 @@
 <div id="history-overlay" style="display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.5);z-index:895"></div>
 
-<!-- Number Announcement -->
 <div id="number-announce" style="display:none">
   <div class="announce-bubble" id="announce-bubble">
     <div class="announce-who" id="announce-who">CALLED</div>
@@ -1581,10 +1531,8 @@
   </div>
 </div>
 
-<!-- Line completion flash overlay -->
 <div id="line-flash"></div>
 
-<!-- Win Overlay -->
 <div id="win-overlay">
   <div class="win-title" id="win-title-text">YOU WIN!</div>
   <div class="win-subtitle" id="win-subtitle-text">Incredible performance 🎯</div>
@@ -1592,25 +1540,22 @@
     <button class="btn btn-gold" id="win-restart-btn">↺ &nbsp;Restart Match</button>
     <button class="btn btn-ghost" id="win-reset-btn">⏏ &nbsp;Exit</button>
   </div>
-  <!-- Auto-rematch removed — players choose manually via Restart or Exit -->
+  
 </div>
 
-
-<!-- SPLASH CANVAS — live animated background -->
 <canvas id="splash-canvas"></canvas>
 
-<!-- ① WELCOME / SPLASH -->
 <div id="splash-screen" class="screen">
   <div class="card">
     <div class="card-body" style="padding:40px 28px 44px">
 
-      <!-- Live badge -->
+      
       <div class="splash-top-badge">
         <span class="badge-live-dot"></span>
         Live Multiplayer · Real-time
       </div>
 
-      <!-- Logo + rings -->
+      
       <div class="splash-logo-wrap">
         <div class="splash-ring ring1"></div>
         <div class="splash-ring ring2"></div>
@@ -1627,7 +1572,7 @@
         <strong>First to 5 lines</strong> claims the arena.
       </p>
 
-      <!-- Live stats row -->
+      
       <div class="splash-stats">
         <div class="splash-stat">
           <span class="splash-stat-num">5×5</span>
@@ -1645,13 +1590,13 @@
         </div>
       </div>
 
-      <!-- Enter button -->
+      
       <button class="btn-splash-enter" id="enter-arena-btn">
         <span class="btn-enter-icon">⚡</span>
         Enter the Arena
       </button>
 
-      <!-- How to Play — on the welcome screen where new players see it first -->
+      
       <button id="htp-btn" class="btn-splash-htp">
         <span>❓</span> How to Play
       </button>
@@ -1662,8 +1607,6 @@
   </div>
 </div>
 
-
-<!-- ② NAME ENTRY -->
 <div id="name-screen" class="screen">
   <div class="card">
     <div class="card-body">
@@ -1690,7 +1633,6 @@
   </div>
 </div>
 
-<!-- ── WELCOME BACK POPUP ── -->
 <div id="welcome-back-popup" style="
   display:none;position:fixed;inset:0;z-index:950;
   background:rgba(0,0,0,.85);
@@ -1709,21 +1651,19 @@
   </div>
 </div>
 
-
-<!-- ③ HOME / LOBBY — Hardware Aesthetic v4 -->
 <div id="home-screen" class="screen">
   <div class="card" style="max-width:480px">
 
-    <!-- Animated grid background -->
+    
     <div class="home-grid-bg">
       <canvas class="home-grid-canvas" id="home-grid-canvas"></canvas>
     </div>
-    <!-- Hardware scan lines -->
+    
     <div class="scanlines"></div>
 
     <div class="card-body" style="position:relative;z-index:3">
 
-      <!-- ① PROFILE STRIP -->
+      
       <div class="home-profile-strip">
         <div class="home-avatar-wrap">
           <div class="home-avatar" id="home-avatar-display">👹</div>
@@ -1737,11 +1677,11 @@
           <div class="node-dot"></div>
           <div class="node-dot"></div>
           <div class="node-dot"></div>
-          <button id="show-card-btn">🪪 Card</button>
+          <button id="show-card-btn">👤 Profile</button>
         </div>
       </div>
 
-      <!-- ② EVENT BANNERS CAROUSEL -->
+      
       <div class="home-banners" id="home-banners">
         <div class="banner-slide banner-rush active">
           <div class="banner-icon">⚡</div>
@@ -1771,7 +1711,7 @@
         </div>
       </div>
 
-      <!-- ④ GLOBAL LOBBY CHAT -->
+      
       <div class="home-lobby-chat">
         <div class="lobby-chat-header">
           <span class="lobby-chat-label">
@@ -1802,27 +1742,27 @@
         </div>
       </div>
 
-      <!-- ⑤ ACTION ZONE -->
+      
       <div class="home-action-zone">
-        <!-- PLAY NOW mega button (auto-match) -->
+        
         <button class="btn-play-now" id="play-now-btn">
           <span class="play-now-icon">⚡</span>
           <span>PLAY NOW</span>
           <span id="play-now-online" style="font-size:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:1px;opacity:0.7;margin-left:4px"></span>
         </button>
 
-        <!-- VS BOT button -->
+        
         <button class="btn-vs-bot" id="vs-bot-btn">
           <span class="bot-icon">🤖</span>
           Play vs AI Bot
         </button>
 
-        <!-- Private match row -->
+        
         <div class="home-private-row">
           <button id="create-btn" class="btn btn-ghost">＋ Create Room</button>
           <button id="join-btn-toggle" class="btn btn-ghost">🔗 Join with Code</button>
         </div>
-        <!-- Tournament row -->
+        
         <div class="home-private-row" style="margin-top:4px">
           <button id="tournament-btn" class="btn btn-ghost" style="flex:1;border-color:rgba(255,204,0,.3);color:var(--c3)">🏆 Tournament</button>
           <button id="friends-btn" class="btn btn-ghost" style="flex:1;border-color:rgba(0,229,255,.3);color:var(--c5);position:relative">
@@ -1831,12 +1771,12 @@
           </button>
         </div>
 
-        <!-- History row -->
+        
         <div class="home-private-row" style="margin-top:4px">
           <button id="history-btn" class="btn btn-ghost" style="flex:1;border-color:rgba(150,200,255,.3);color:var(--ink2)">📋 Match History</button>
         </div>
 
-        <!-- Join row (hidden by default) -->
+        
         <div class="join-row" id="join-row" style="display:none;margin-top:8px">
           <input id="room-code-input" type="text" maxlength="4" placeholder="Room code e.g. A3K9"/>
           <button id="join-btn" class="btn btn-primary">Join</button>
@@ -1846,10 +1786,10 @@
 
       <p id="home-msg"></p>
 
-      <!-- Firebase connection status -->
+      
       <div id="firebase-status" style="display:none;text-align:center;font-size:11px;letter-spacing:1px;padding:8px 12px;border-radius:10px;margin-top:8px;font-weight:600"></div>
 
-      <!-- Firebase rules help (shown on permission error) -->
+      
       <div id="firebase-rules-help" style="display:none;margin-top:10px;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.25);border-radius:12px;padding:12px 14px;font-size:11px;line-height:1.7;color:var(--text2)">
         <div style="color:var(--gold);font-weight:800;letter-spacing:1px;margin-bottom:6px">🔧 FIX: Firebase Rules</div>
         Go to <strong style="color:var(--cyan)">Firebase Console → Realtime Database → Rules</strong> and paste:<br>
@@ -1860,9 +1800,6 @@
   </div>
 </div>
 
-
-<!-- ④ SETUP -->
-<!-- ── FRIENDS SCREEN ── -->
 <div id="friends-screen" class="screen">
   <div class="card">
     <div class="card-body">
@@ -1871,7 +1808,7 @@
         <button class="btn btn-ghost" id="friends-back-btn" style="font-size:11px">← Back</button>
       </div>
 
-      <!-- My shareable username -->
+      
       <div style="background:var(--panel2);border:2px solid var(--edge2);border-radius:var(--r);padding:12px 14px;margin-bottom:16px">
         <div style="font-size:10px;color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Your Username</div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1881,14 +1818,14 @@
         <div style="font-size:10px;color:var(--ink3);margin-top:4px">Share this with friends so they can add you</div>
       </div>
 
-      <!-- Add friend input -->
+      
       <div style="display:flex;gap:6px;margin-bottom:16px">
         <input type="text" id="add-friend-input" maxlength="16" placeholder="@username" style="flex:1;margin-bottom:0"/>
         <button class="btn btn-primary" id="add-friend-btn" style="white-space:nowrap;padding:0 14px">＋ Add</button>
       </div>
       <div id="add-friend-msg" style="font-size:11px;min-height:14px;margin-bottom:10px;text-align:center;color:var(--c2)"></div>
 
-      <!-- Friends list -->
+      
       <div style="font-size:10px;color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">
         Friends <span id="friends-count" style="color:var(--ink3)">(0)</span>
       </div>
@@ -1902,7 +1839,6 @@
   </div>
 </div>
 
-<!-- ── FRIEND REQUEST NOTIFICATION ── -->
 <div id="friend-req-toast" style="
   display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
   z-index:800;background:var(--panel);border:2px solid var(--c1);
@@ -1915,7 +1851,6 @@
   </div>
 </div>
 
-<!-- ── INVITE TO GAME TOAST ── -->
 <div id="game-invite-toast" style="
   display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
   z-index:800;background:var(--panel);border:2px solid var(--c3);
@@ -1928,9 +1863,6 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     TOURNAMENT SCREEN
-══════════════════════════════════════════ -->
 <div id="tournament-screen" class="screen">
   <div class="card">
     <div class="card-body">
@@ -1940,7 +1872,7 @@
         <p class="screen-sub" id="tourn-sub">Create or join a tournament</p>
       </div>
 
-      <!-- Host view -->
+      
       <div id="tourn-host-view" style="display:none">
         <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--ink3);margin-bottom:4px;text-align:center">Share this code</div>
         <div class="tourn-code-display" id="tourn-code-display">----</div>
@@ -1950,7 +1882,7 @@
         <button class="btn btn-ghost" id="tourn-cancel-btn" style="width:100%;margin-top:6px">✕ Cancel</button>
       </div>
 
-      <!-- Join view -->
+      
       <div id="tourn-join-view" style="display:none">
         <input type="text" id="tourn-join-input" maxlength="4"
           style="width:100%;text-align:center;font-family:'Black Han Sans',sans-serif;font-size:32px;letter-spacing:8px;
@@ -1961,7 +1893,7 @@
         <button class="btn btn-ghost" id="tourn-join-cancel-btn" style="width:100%;margin-top:6px">✕ Back</button>
       </div>
 
-      <!-- Bracket view (shown when tournament is running) -->
+      
       <div id="tourn-bracket-view" style="display:none">
         <div class="tourn-bracket" id="tourn-bracket"></div>
         <div class="tourn-status-bar" id="tourn-bracket-status">Match in progress…</div>
@@ -1969,7 +1901,7 @@
         <button class="btn btn-ghost" id="tourn-leave-btn" style="width:100%;margin-top:6px">⏏ Leave Tournament</button>
       </div>
 
-      <!-- Initial choice -->
+      
       <div id="tourn-choice-view">
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-gold" id="tourn-host-btn" style="flex:1">＋ Host</button>
@@ -2009,13 +1941,11 @@
   </div>
 </div>
 
-
-<!-- ⑤ GAME -->
 <div id="game-screen" class="screen">
   <div class="card">
     <div class="card-body">
 
-      <!-- Score bar — labels are set dynamically from real player names -->
+      
       <div class="score-bar">
         <div class="score-chip">
           <div class="score-num c1" id="score-p1">0</div>
@@ -2031,7 +1961,7 @@
         </div>
       </div>
 
-      <!-- Player boxes with live status message -->
+      
       <div class="players-row">
         <div class="player-box p1" id="p1-box">
           <div class="player-avatar-wrap">
@@ -2071,7 +2001,7 @@
         <button id="theme-picker-btn">🎨</button>
       </div>
 
-      <!-- ── MOVE TIMER BAR ── -->
+      
       <div id="move-timer-wrap">
         <div id="move-timer-bar-track">
           <div id="move-timer-bar-fill"></div>
@@ -2097,8 +2027,6 @@
   </div>
 </div>
 
-
-<!-- ── HOW TO PLAY MODAL ── -->
 <div id="htp-modal">
   <div class="htp-card">
     <div class="htp-header">
@@ -2125,7 +2053,7 @@
         <div class="htp-step-num">3</div>
         <div class="htp-step-text">
           <strong>Complete 5 in a row to score a line.</strong> A line can run horizontally, vertically, or diagonally — any direction counts. Watch all three directions!
-          <!-- Mini demo board -->
+          
           <div class="htp-win-demo" id="htp-demo-board"></div>
           <span class="htp-tag gold">Row ✓</span>
           <span class="htp-tag gold" style="margin-left:4px">Column ✓</span>
@@ -2161,7 +2089,6 @@
   </div>
 </div>
 
-<!-- ── OPPONENT LEFT POPUP — shows only when opponent clicks Exit, only in game screen, auto-closes 5s ── -->
 <div id="opponent-left-popup">
   <div class="opp-left-icon">🏃</div>
   <div class="opp-left-body">
@@ -2181,13 +2108,11 @@
   </div>
 </div>
 
-<!-- ── ABANDON BANNER (kept for legacy graceful-leave win logic, but now hidden visually) ── -->
 <div id="abandon-banner" style="display:none">
   <span class="abandon-icon">🏃</span>
   <div class="abandon-text">Opponent left! You win in <strong id="abandon-timer">60</strong>s</div>
 </div>
 
-<!-- AI DIFFICULTY SELECTION MODAL -->
 <div id="ai-difficulty-modal">
   <div class="diff-card">
     <div class="diff-title">VS AI BOT</div>
@@ -2242,8 +2167,6 @@
   </div>
 </div>
 
-
-<!-- CHAT FAB + PANEL -->
 <button class="chat-fab" id="chat-fab" style="display:none;">
   💬
   <div class="chat-badge" id="chat-badge"></div>
@@ -2258,19 +2181,15 @@
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════════════
-     PLAIN SCRIPT — instant UI, no Firebase dependency
-═══════════════════════════════════════════════ -->
 <script>
-/* ── Screen transitions ───────────────────────────────────────── */
+
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const screen = document.getElementById(name + '-screen');
   if (!screen) return;
   screen.classList.add('active');
 
-  // Move toolbar + music panel into the top of this card
+  
   const toolbar = document.getElementById('ui-toolbar');
   const musicPanel = document.getElementById('music-panel');
   const card = screen.querySelector('.card');
@@ -2279,15 +2198,13 @@ function showScreen(name) {
     if (musicPanel) card.insertBefore(musicPanel, card.children[1] || card.firstChild.nextSibling);
   }
 
-  // Hide the home button when already on home/splash
+  
   document.getElementById('global-home-btn').style.display =
     (name === 'splash' || name === 'home') ? 'none' : 'flex';
 }
 
-// Place the toolbar in the initial splash card right away
 showScreen('splash');
 
-/* ── Theme toggle ─────────────────────────────────────────────── */
 let isLight = false;
 document.getElementById('theme-toggle').addEventListener('click', () => {
   isLight = !isLight;
@@ -2295,12 +2212,10 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.getElementById('theme-icon').textContent  = isLight ? '☀️' : '🌙';
 });
 
-/* ── Hard Refresh — forces full reload bypassing cache ── */
 document.getElementById('hard-refresh-btn').addEventListener('click', () => {
   window.location.reload(true);
 });
 
-/* ── Global home pill ─────────────────────────────────────────── */
 document.getElementById('global-home-btn').addEventListener('click', () => {
   winShown = false; lastLineCount = 0; cleanupScheduled = false; botWinShown = false;
   detachRoomListeners();
@@ -2311,16 +2226,13 @@ document.getElementById('global-home-btn').addEventListener('click', () => {
   document.getElementById('win-overlay').classList.remove('show');
 });
 
-/* ── In-card home buttons ─────────────────────────────────────── */
 document.getElementById('home-from-setup').addEventListener('click', () => {
   leaveRoomCleanup();
   showScreen('home');
   document.getElementById('chat-fab').style.display = 'none';
   document.getElementById('chat-panel').classList.remove('open');
 });
-/* home-from-game is handled in the Firebase module with bot-mode support */
 
-/* ── Enter arena ──────────────────────────────────────────────── */
 document.getElementById('enter-arena-btn').addEventListener('click', () => {
   const saved = loadProfile();
   if (saved) {
@@ -2329,10 +2241,6 @@ document.getElementById('enter-arena-btn').addEventListener('click', () => {
     showScreen('name');
   }
 });
-
-/* ══════════════════════════════════════════════════════════════
-   PHASE 1+2 — PERSISTENT PROFILE
-══════════════════════════════════════════════════════════════ */
 
 const PROFILE_KEY = 'dingo_profile';
 
@@ -2353,14 +2261,12 @@ function applyProfile(p) {
   applyAccentColor(p.color);
 }
 
-/* Generate suggested @username from display name */
 function suggestUsername(name) {
   const base = (name || 'player').toLowerCase().replace(/[^a-z0-9]/g,'');
   const num  = Math.floor(1000 + Math.random()*8999);
   return (base || 'player') + num;
 }
 
-/* Welcome back popup */
 function showWelcomeBack(profile) {
   applyProfile(profile);
   const s = loadStats();
@@ -2385,10 +2291,9 @@ document.getElementById('wb-edit-btn').addEventListener('click', () => {
   showScreen('name');
 });
 
-/* Pre-fill name screen with saved data */
 function prefillNameScreen(profile) {
   if (!profile) return;
-  // Select matching avatar by id first, then fall back to svg string comparison
+  
   let matched = false;
   document.querySelectorAll('.avatar-opt').forEach(el => {
     const isMatch = (el.dataset.avatarId && el.dataset.avatarId === profile.avatarId)
@@ -2400,13 +2305,13 @@ function prefillNameScreen(profile) {
       matched = true;
     }
   });
-  // If no match (e.g. old emoji profile), default to first avatar
+  
   if (!matched && AVATAR_DEFS.length) {
     document.querySelectorAll('.avatar-opt')[0]?.classList.add('selected');
     window.DINGO.selectedAvatar   = AVATAR_DEFS[0].svg;
     window.DINGO.selectedAvatarId = AVATAR_DEFS[0].id;
   }
-  // Select matching colour
+  
   document.querySelectorAll('.color-swatch').forEach((sw, i) => {
     if (COLORS[i] && COLORS[i].val === profile.color) {
       document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
@@ -2418,7 +2323,6 @@ function prefillNameScreen(profile) {
   document.getElementById('username-input').value     = profile.username  || '';
 }
 
-/* Auto-suggest username when name is typed */
 document.getElementById('player-name-input').addEventListener('input', () => {
   const unInput = document.getElementById('username-input');
   if (!unInput.value || unInput.dataset.autoSuggested === 'true') {
@@ -2427,27 +2331,15 @@ document.getElementById('player-name-input').addEventListener('input', () => {
   }
 });
 document.getElementById('username-input').addEventListener('input', () => {
-  // Once user manually edits, stop auto-suggesting
+  
   document.getElementById('username-input').dataset.autoSuggested = 'false';
-  // Sanitise: lowercase, alphanumeric only
+  
   const el = document.getElementById('username-input');
   el.value = el.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
 });
 
-
-
-
-
-
-/* ── Shared player data (read by Firebase module script) ─────── */
-/* DINGO shared state — selectedAvatar is set after AVATAR_DEFS are declared below */
 window.DINGO = { selectedAvatar:'', selectedAvatarId:'', selectedColor:'#00e5ff', playerName:'Player' };
 
-/* ══════════════════════════════════════════
-   HOME SCREEN — Hardware UI upgrades
-══════════════════════════════════════════ */
-
-/* Update profile strip when entering home */
 function refreshHomeProfile() {
   const p = loadProfile();
   if (p) applyProfile(p);
@@ -2458,16 +2350,13 @@ function refreshHomeProfile() {
   const s = (typeof loadStats === 'function') ? loadStats() : {wins:0};
   const rank = s.wins >= 50 ? 'MASTER' : s.wins >= 20 ? 'LEGEND' : s.wins >= 10 ? 'ELITE' : s.wins >= 3 ? 'CLUTCH' : 'ARENA';
   document.getElementById('home-rank-badge').textContent = rank;
-  // Show @username under name if available
+  
   const unEl = document.getElementById('home-rank-label-el');
   if (unEl) unEl.textContent = d.username ? '@' + d.username : '⚡ Ready to dominate';
 }
 
-
-
 let homeGridCleanup = null; function initHomeGrid(){return null;}
 
-/* Banner carousel */
 (function initBanners() {
   const slides = document.querySelectorAll('.banner-slide');
   const dots   = document.querySelectorAll('.banner-dot');
@@ -2483,7 +2372,6 @@ let homeGridCleanup = null; function initHomeGrid(){return null;}
   dots.forEach(d => d.addEventListener('click', () => go(+d.dataset.idx)));
 })();
 
-/* Join toggle */
 document.getElementById('join-btn-toggle').addEventListener('click', () => {
   const row = document.getElementById('join-row');
   const visible = row.style.display !== 'none';
@@ -2491,11 +2379,10 @@ document.getElementById('join-btn-toggle').addEventListener('click', () => {
   if (!visible) document.getElementById('room-code-input').focus();
 });
 
-/* ── How to Play modal ─────────────────────────── */
 (function initHTP() {
-  // Build the mini demo board: a 5×5 showing a diagonal win line
+  
   const demo = document.getElementById('htp-demo-board');
-  // Layout: indices 0,6,12,18,24 are the diagonal win line; some others are crossed
+  
   const crossed  = new Set([1,5,7,10,15,20]);
   const winLine  = new Set([0,6,12,18,24]);
   const nums = [7,14,3,19,5, 23,8,2,11,21, 16,25,6,17,9, 4,12,22,13,24, 18,1,15,20,10];
@@ -2518,7 +2405,6 @@ document.getElementById('join-btn-toggle').addEventListener('click', () => {
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
 })();
 
-/* ── VS Bot button — opens difficulty modal ───── */
 document.getElementById('vs-bot-btn').addEventListener('click', () => {
   if (navigator.vibrate) navigator.vibrate(30);
   document.getElementById('ai-difficulty-modal').classList.add('show');
@@ -2526,7 +2412,7 @@ document.getElementById('vs-bot-btn').addEventListener('click', () => {
 document.getElementById('diff-cancel-btn').addEventListener('click', () => {
   document.getElementById('ai-difficulty-modal').classList.remove('show');
 });
-// Difficulty selection — dispatches a custom event picked up by the Firebase module
+
 document.querySelectorAll('.diff-option').forEach(opt => {
   opt.addEventListener('click', () => {
     const level = opt.dataset.level;
@@ -2536,10 +2422,8 @@ document.querySelectorAll('.diff-option').forEach(opt => {
   });
 });
 
-/* Haptic on create / play now */
 function haptic(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
 
-/* Hook: run home setup whenever home screen is shown */
 const _baseShowScreen = showScreen;
 window.showScreen = function(name) {
   _baseShowScreen(name);
@@ -2549,7 +2433,6 @@ window.showScreen = function(name) {
   }
 };
 
-/* Lobby chat placeholder messages */
 const LOBBY_FAKE = [
   {a:'👹',n:'Ryze',t:'anyone wanna get destroyed? 😈'},
   {a:'🦊',n:'Nova',t:'just hit 5 lines on my first game!!'},
@@ -2574,11 +2457,6 @@ function rotateLobbyMessages() {
   document.getElementById('lobby-chat-count') && (document.getElementById('lobby-chat-count').textContent = '');
 }
 
-/* ══════════════════════════════════════════════════════════
-   DYNAMIC SVG AVATARS — 12 unique character faces
-   Each avatar stores: id (for matching), svg (full markup),
-   label (display name). DINGO.selectedAvatar holds the svg.
-══════════════════════════════════════════════════════════ */
 const AVATAR_DEFS = [
   { id:'ninja', label:'Ninja', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#12132a"/><circle cx="20" cy="20" r="19" fill="url(#ng)" opacity="0.4"/><defs><radialGradient id="ng" cx="30%" cy="25%"><stop offset="0%" stop-color="#3a3a7a"/><stop offset="100%" stop-color="#12132a"/></radialGradient></defs><rect x="5" y="17" width="30" height="7" rx="3.5" fill="#e63946"/><rect x="5" y="17" width="30" height="2.5" rx="1.5" fill="#ff6b6b"/><circle cx="14" cy="13.5" r="3.2" fill="white"/><circle cx="26" cy="13.5" r="3.2" fill="white"/><circle cx="15" cy="13.5" r="1.8" fill="#12132a"/><circle cx="27" cy="13.5" r="1.8" fill="#12132a"/><circle cx="15.6" cy="12.8" r="0.7" fill="white"/><circle cx="27.6" cy="12.8" r="0.7" fill="white"/><path d="M8 9 Q14 5 20 8 Q26 5 32 9" stroke="#e63946" stroke-width="2" fill="none" stroke-linecap="round"/></svg>` },
   { id:'dragon', label:'Dragon', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dg" cx="35%" cy="30%"><stop offset="0%" stop-color="#4dd9e0"/><stop offset="100%" stop-color="#0a6a70"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#dg)"/><ellipse cx="10" cy="9" rx="5" ry="7" rx="5" fill="#0a6a70" transform="rotate(-25,10,9)"/><ellipse cx="30" cy="9" rx="5" ry="7" fill="#0a6a70" transform="rotate(25,30,9)"/><ellipse cx="10" cy="8" rx="3" ry="4.5" fill="#4dd9e0" opacity="0.5" transform="rotate(-25,10,8)"/><ellipse cx="30" cy="8" rx="3" ry="4.5" fill="#4dd9e0" opacity="0.5" transform="rotate(25,30,8)"/><ellipse cx="14" cy="19" rx="5" ry="3.5" fill="#072e30"/><ellipse cx="26" cy="19" rx="5" ry="3.5" fill="#072e30"/><ellipse cx="14" cy="19" rx="2" ry="3" fill="#ffe066"/><ellipse cx="26" cy="19" rx="2" ry="3" fill="#ffe066"/><path d="M14 27 Q20 31 26 27" stroke="#072e30" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="14" cy="24" r="1" fill="#072e30"/><circle cx="26" cy="24" r="1" fill="#072e30"/></svg>` },
@@ -2593,14 +2471,13 @@ const AVATAR_DEFS = [
   { id:'shadow', label:'Shadow', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="sg" cx="50%" cy="50%"><stop offset="0%" stop-color="#2d3436"/><stop offset="100%" stop-color="#0a0a0a"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#sg)"/><circle cx="14" cy="20" r="4" fill="#1a0000"/><circle cx="26" cy="20" r="4" fill="#1a0000"/><circle cx="14" cy="20" r="2.5" fill="#ff2d55"/><circle cx="26" cy="20" r="2.5" fill="#ff2d55"/><circle cx="14.8" cy="19.5" r="1" fill="#ff6b6b"/><circle cx="26.8" cy="19.5" r="1" fill="#ff6b6b"/><path d="M14 27 Q20 30 26 27" stroke="#ff2d55" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M5 20 Q8 12 20 10 Q32 12 35 20" stroke="#2d3436" stroke-width="3" fill="none" opacity="0.7"/><path d="M3 15 Q10 5 20 7 Q30 5 37 15" stroke="#1a1a1a" stroke-width="4" fill="none"/></svg>` },
   { id:'bolt', label:'Bolt', svg:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg2" cx="40%" cy="30%"><stop offset="0%" stop-color="#ffe066"/><stop offset="100%" stop-color="#e67e00"/></radialGradient></defs><circle cx="20" cy="20" r="19" fill="url(#bg2)"/><path d="M22 4 L12 20 L19 20 L17 36 L28 18 L21 18Z" fill="white" opacity="0.9"/><path d="M22 4 L12 20 L19 20 L17 36 L28 18 L21 18Z" fill="#e67e00" opacity="0.3"/><circle cx="14" cy="23" r="3" fill="#7d3c00"/><circle cx="26" cy="23" r="3" fill="#7d3c00"/><circle cx="14.5" cy="22.5" r="1.5" fill="#ffe066"/><circle cx="26.5" cy="22.5" r="1.5" fill="#ffe066"/><path d="M15 30 Q20 34 25 30" stroke="#7d3c00" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>` }
 ];
-/* Keep a flat array of SVG strings for compatibility with indices */
+
 const AVATARS = AVATAR_DEFS.map(d => d.svg);
 
-/* Helper: render avatar safely in any element (supports SVG or emoji fallback) */
 function renderAvatar(el, avatarStr) {
   if (!el) return;
   if (!avatarStr) { el.textContent = '👤'; return; }
-  // SVG strings start with '<svg'; emoji/text fallback uses textContent
+  
   if (avatarStr.trim().startsWith('<svg')) {
     el.innerHTML = avatarStr;
   } else {
@@ -2608,7 +2485,7 @@ function renderAvatar(el, avatarStr) {
   }
 }
 const COLORS  = [
-  /* ── Neons ── */
+  
   {val:'#00e5ff',label:'Cyan'},
   {val:'#00ffcc',label:'Mint'},
   {val:'#06ffa5',label:'Green'},
@@ -2617,7 +2494,7 @@ const COLORS  = [
   {val:'#ff2d55',label:'Red'},
   {val:'#ff6b35',label:'Orange'},
   {val:'#ffd166',label:'Gold'},
-  /* ── Pastels ── */
+  
   {val:'#b5eaff',label:'Sky'},
   {val:'#c3fbd8',label:'Mint Pastel'},
   {val:'#ffc8dd',label:'Rose'},
@@ -2626,52 +2503,49 @@ const COLORS  = [
   {val:'#bde0fe',label:'Periwinkle'},
   {val:'#e8c8ff',label:'Lavender'},
   {val:'#fffacd',label:'Cream'},
-  /* ── Light ── */
+  
   {val:'#ffffff',label:'White'},
   {val:'#f0e6ff',label:'Ghost'},
   {val:'#e0f7fa',label:'Ice'},
   {val:'#fff0f3',label:'Blush'},
 ];
 
-/* Render avatar grid — SVG avatars, each tagged with data-avatar-id for matching */
 const avatarRow = document.getElementById('avatar-row');
 AVATAR_DEFS.forEach((def, i) => {
   const el = document.createElement('div');
   el.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
-  el.dataset.avatarId = def.id;                // for reliable matching in prefill
-  el.innerHTML = def.svg;                      // render SVG (not textContent)
+  el.dataset.avatarId = def.id;                
+  el.innerHTML = def.svg;                      
   el.title = def.label;
   el.addEventListener('click', () => {
     document.querySelectorAll('.avatar-opt').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
-    window.DINGO.selectedAvatar    = def.svg;   // store SVG string
-    window.DINGO.selectedAvatarId  = def.id;    // store id for matching
+    window.DINGO.selectedAvatar    = def.svg;   
+    window.DINGO.selectedAvatarId  = def.id;    
   });
   avatarRow.appendChild(el);
 });
-// Apply the first avatar as default immediately
+
 window.DINGO.selectedAvatar   = AVATAR_DEFS[0].svg;
 window.DINGO.selectedAvatarId = AVATAR_DEFS[0].id;
 
-/* ── applyAccentColor: swaps --c1 on :root so every element that uses var(--c1) updates instantly ── */
 function applyAccentColor(hex) {
   document.documentElement.style.setProperty('--c1', hex);
-  // Also patch the rgba variants used in inline backgrounds / borders throughout the CSS.
-  // We decompose the hex into r,g,b so the rest of the hardcoded rgba(0,255,204,…) rules
-  // stay visually consistent. We store these as CSS custom properties too.
+  
+  
+  
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);
   document.documentElement.style.setProperty('--c1-r', r);
   document.documentElement.style.setProperty('--c1-g', g);
   document.documentElement.style.setProperty('--c1-b', b);
-  // Patch the splash badge live-dot, home live-dot, and progress bar which reference --c1 directly — already covered.
-  // Update avatar-opt selected border, setup cell border, etc. — those already use var(--c1).
-  // Save to DINGO so Firebase module can read it
+  
+  
+  
   window.DINGO.selectedColor = hex;
 }
 
-/* Render colour swatches */
 const colorRow = document.getElementById('color-row');
 COLORS.forEach((c, i) => {
   const sw = document.createElement('div');
@@ -2681,14 +2555,13 @@ COLORS.forEach((c, i) => {
   sw.addEventListener('click', () => {
     document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
     sw.classList.add('selected');
-    applyAccentColor(c.val);   // ← live-update the whole site accent
+    applyAccentColor(c.val);   
   });
   colorRow.appendChild(sw);
 });
-// Apply default accent colour (first swatch = Cyan) on page load
+
 applyAccentColor(COLORS[0].val);
 
-/* Continue to lobby — save full profile */
 document.getElementById('name-confirm-btn').addEventListener('click', () => {
   const name     = document.getElementById('player-name-input').value.trim() || 'Player';
   let   username = document.getElementById('username-input').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
@@ -2696,6 +2569,10 @@ document.getElementById('name-confirm-btn').addEventListener('click', () => {
 
   window.DINGO.playerName     = name;
   window.DINGO.username       = username;
+
+  
+  const oldProfile = loadProfile();
+  const oldUsername = oldProfile && oldProfile.username ? oldProfile.username : null;
 
   const profile = {
     name,
@@ -2708,6 +2585,13 @@ document.getElementById('name-confirm-btn').addEventListener('click', () => {
   localStorage.setItem('dingo_token', profile.token);
   saveProfile(profile);
 
+  
+  if (oldUsername && oldUsername !== username) {
+    // Cancel onDisconnect handlers for old username first, then fully delete the old record
+    try { db.ref('users/' + oldUsername + '/online').onDisconnect().cancel(); } catch(e) {}
+    db.ref('users/' + oldUsername).remove().catch(()=>{});
+  }
+
   showScreen('home');
   if (typeof refreshHomeProfile === 'function') refreshHomeProfile();
   if (typeof registerUserPresence === 'function') registerUserPresence();
@@ -2717,10 +2601,6 @@ document.getElementById('player-name-input').addEventListener('keydown', e => {
 });
 </script>
 
-
-<!-- ═══════════════════════════════════════════════
-     FIREBASE MODULE SCRIPT — all game logic
-═══════════════════════════════════════════════ -->
 <script>
 const app = firebase.initializeApp({
   apiKey:            "AIzaSyAhhGzyMUJrfzYsOw4Uy-qu6F_IOqrh3PA",
@@ -2734,12 +2614,6 @@ const app = firebase.initializeApp({
 });
 const db = firebase.database();
 
-/* helper shims so the rest of the code works unchanged */
-/* Fix: the codebase uses the modular SDK signature ref(db, 'path'),
-   so we detect which style is being used and handle both.
-   When called as ref(db, 'rooms/foo'), dbOrPath is the DB object
-   and path is the string we actually want. When called as ref('rooms/foo'),
-   dbOrPath is already the string path. */
 function ref(dbOrPath, path)    { return db.ref(path !== undefined ? path : dbOrPath); }
 function get(r)                 { return r.get(); }
 function set(r, v)              { return r.set(v); }
@@ -2747,15 +2621,13 @@ function update(r, v)           { return r.update(v); }
 function onValue(r, cb)         { r.on('value', cb); }
 function push(r, v)             { return r.push(v); }
 
-/* ── Room-scoped listener registry — call detachRoomListeners() on exit ── */
-let _roomListeners = []; // [{ref, cb}]
+let _roomListeners = []; 
 function onRoomValue(r, cb) { r.on('value', cb); _roomListeners.push({ref: r, cb}); }
 function detachRoomListeners() {
   _roomListeners.forEach(({ref: r, cb}) => { try { r.off('value', cb); } catch(e){} });
   _roomListeners = [];
 }
 
-/* ── Firebase connection health check ─────────── */
 function setFirebaseStatus(ok, msg) {
   const el = document.getElementById('firebase-status');
   if (!el) return;
@@ -2773,7 +2645,6 @@ function setFirebaseStatus(ok, msg) {
   }
 }
 
-// Test Firebase connection using .info/connected
 onValue(ref(db, '.info/connected'), snap => {
   if (snap.val() === true) {
     setFirebaseStatus(true, '✅ Connected to server');
@@ -2782,23 +2653,14 @@ onValue(ref(db, '.info/connected'), snap => {
   }
 });
 
-/* ═══════════════════════════════════════════════
-   REAL-TIME ONLINE COUNTER  v2
-   ── Each browser tab gets its own node:
-        presence/sessions/<sessionId>  = true
-   ── Firebase onDisconnect removes it automatically
-      even on refresh, tab-close, or lost internet.
-   ── Count = number of nodes under sessions/.
-   ── Free-tier safe: tiny nodes, auto-cleaned.
-═══════════════════════════════════════════════ */
 (function initOnlineCounter() {
 
-  /* Unique ID for THIS tab/session — regenerated on every page load
-     so a refresh is always treated as a fresh session */
-  const sessionId  = Math.random().toString(36).slice(2, 10);
-  const sessionRef = db.ref('presence/sessions/' + sessionId);
-  const allRef     = db.ref('presence/sessions');
-  const connRef    = db.ref('.info/connected');
+  // Use a tab-unique session ID (not stored in localStorage) so each tab/refresh
+  // creates a fresh presence entry and old ones are cleaned up on disconnect.
+  const tabSessionId = Math.random().toString(36).slice(2, 12) + '_' + Date.now();
+  const sessionRef   = db.ref('presence/sessions/' + tabSessionId);
+  const allRef       = db.ref('presence/sessions');
+  const connRef      = db.ref('.info/connected');
 
   function updateUI(n) {
     const num  = Math.max(0, n || 0);
@@ -2810,23 +2672,26 @@ onValue(ref(db, '.info/connected'), snap => {
     if (btnEl) btnEl.textContent = num > 1 ? `· ${num} online` : '';
   }
 
-  /* Count child nodes = number of active sessions */
+  // Listen to total count
   allRef.on('value', snap => {
     const count = snap.exists() ? Object.keys(snap.val() || {}).length : 0;
     updateUI(count);
   });
 
-  /* When connected: register this session and schedule auto-remove on disconnect */
+  // On connect: register this tab's session; remove it on disconnect or page unload
   connRef.on('value', snap => {
     if (!snap.val()) return;
-    /* onDisconnect must be set BEFORE the write — Firebase guarantee */
     sessionRef.onDisconnect().remove();
-    sessionRef.set(true);
+    sessionRef.set({ ts: Date.now() });
+  });
+
+  // Also clean up on page unload (best-effort for browsers that support it)
+  window.addEventListener('beforeunload', () => {
+    try { sessionRef.remove(); } catch(e) {}
   });
 
 })();
 
-/* ── Game state ───────────────────────────────── */
 let myPlayerId   = (localStorage.getItem('dingo_device_id') || (() => { const id = Math.random().toString(36).substring(2,9); localStorage.setItem('dingo_device_id', id); return id; })());
 let roomId       = "";
 let playerRole   = "";
@@ -2836,14 +2701,11 @@ let chatOpen     = false;
 let winShown     = false;
 let countdownInterval = null;
 let scores = { p1:0, p2:0 };
-/* Player identity — read fresh from window.DINGO at create/join time */
+
 let playerName   = 'Player';
 let playerAvatar = AVATAR_DEFS[0].svg;
 let playerColor  = '#00e5ff';
 
-/* ═══════════════════════════════════════════════
-   SOUND ENGINE
-═══════════════════════════════════════════════ */
 let audioCtx = null;
 function getAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2873,23 +2735,17 @@ const sfx = {
   announce: ()=>playTone([[660,0,.06],[880,.06,.12]],'sine',0.15),
 };
 
-/* ═══════════════════════════════════════════════
-   AI BOT ENGINE — runs entirely locally, no Firebase
-═══════════════════════════════════════════════ */
-
-// ── Shared bot game state ──
-let botMode       = false;   // true when playing vs AI
-let botLevel      = 'easy';  // 'easy' | 'medium' | 'hard'
-let botBoard      = [];      // AI's 5×5 board layout (numbers 1-25)
-let playerBotBoard= [];      // Player's 5×5 board layout
-let botSelected   = [];      // numbers called so far in bot game
+let botMode       = false;   
+let botLevel      = 'easy';  
+let botBoard      = [];      
+let playerBotBoard= [];      
+let botSelected   = [];      
 let botScores     = {player:0, bot:0};
 let botWinShown   = false;
 let botCountdownInterval = null;
 const BOT_AVATARS = {easy:'🎲', medium:'🛡️', hard:'🧠', expert:'⚔️', nightmare:'💀'};
 const BOT_NAMES   = {easy:'ChillBot', medium:'DefendBot', hard:'ProBot', expert:'EliteBot', nightmare:'NightmareAI'};
 
-/* ── Generate a random shuffled board ── */
 function genRandomBoard() {
   const nums = Array.from({length:25}, (_,i) => i+1);
   for (let i = nums.length-1; i > 0; i--) {
@@ -2899,7 +2755,6 @@ function genRandomBoard() {
   return nums;
 }
 
-/* ─── Check win lines for a board & selected set ─── */
 function botCheckLines(board, selected) {
   const hits = board.map(n => selected.includes(n) ? 1 : 0);
   let lines = 0; const winIdx = new Set();
@@ -2909,26 +2764,19 @@ function botCheckLines(board, selected) {
   return { lines, winIdx };
 }
 
-/* ─── Count consecutive pieces in a line ─── */
 function countLine(board, selected, indices) {
   return indices.filter(i => selected.includes(board[i])).length;
 }
 function isLineOpen(board, selected, indices) {
-  // True if the line has no opponent pieces blocking (all cells are either selected or empty)
+  
   return indices.every(i => selected.includes(board[i]) || !selected.includes(board[i]));
 }
 
-/* ═══════════════════════════════════════════════
-   AI MOVE CALCULATORS
-═══════════════════════════════════════════════ */
-
-/* LEVEL 1 — Easy: pure random */
 function aiMoveEasy(calledNums) {
   const available = Array.from({length:25}, (_,i)=>i+1).filter(n=>!calledNums.includes(n));
   return available[Math.floor(Math.random()*available.length)];
 }
 
-/* LEVEL 2 — Medium: Win > Block > Random near pieces */
 function aiMoveMedium(calledNums, playerBoard, botBrd) {
   const ALL_LINES = [];
   for(let r=0;r<5;r++){const b=r*5;ALL_LINES.push([b,b+1,b+2,b+3,b+4])}
@@ -2937,7 +2785,7 @@ function aiMoveMedium(calledNums, playerBoard, botBrd) {
 
   const available = Array.from({length:25},(_,i)=>i+1).filter(n=>!calledNums.includes(n));
 
-  // Rule 1: Win — find a number that completes 5 on bot's board
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => botBrd[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -2947,7 +2795,7 @@ function aiMoveMedium(calledNums, playerBoard, botBrd) {
     }
   }
 
-  // Rule 2: Block — find a number that completes 5 on player's board (4-in-a-row threat)
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => playerBoard[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -2956,7 +2804,7 @@ function aiMoveMedium(calledNums, playerBoard, botBrd) {
       return uncalled[0];
     }
   }
-  // Also block open-ended 3-in-a-row on player board
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => playerBoard[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -2967,7 +2815,7 @@ function aiMoveMedium(calledNums, playerBoard, botBrd) {
     }
   }
 
-  // Rule 3: Random near existing called pieces
+  
   const adjacentNums = new Set();
   calledNums.forEach(n => {
     const idx = botBrd.indexOf(n);
@@ -2981,11 +2829,10 @@ function aiMoveMedium(calledNums, playerBoard, botBrd) {
   const nearPicks = available.filter(n => adjacentNums.has(n));
   if (nearPicks.length > 0) return nearPicks[Math.floor(Math.random()*nearPicks.length)];
 
-  // Fallback: random
+  
   return aiMoveEasy(calledNums);
 }
 
-/* LEVEL 3 — Hard: Heuristic scoring matrix */
 function aiMoveHard(calledNums, playerBoard, botBrd) {
   const ALL_LINES = [];
   for(let r=0;r<5;r++){const b=r*5;ALL_LINES.push([b,b+1,b+2,b+3,b+4])}
@@ -2998,49 +2845,48 @@ function aiMoveHard(calledNums, playerBoard, botBrd) {
   const scores = {};
   available.forEach(n => { scores[n] = 0; });
 
-  // Score each available number
+  
   available.forEach(num => {
-    // Center bonus: numbers near center of player's board have higher value
+    
     const playerIdx = playerBoard.indexOf(num);
     const botIdx    = botBrd.indexOf(num);
 
-    // Evaluate on both boards for every line containing this number
+    
     ALL_LINES.forEach(line => {
-      // ── BOT BOARD lines ──
+      
       if (line.includes(botIdx)) {
         const vals    = line.map(i => botBrd[i]);
         const called  = vals.filter(v => calledNums.includes(v)).length;
         const blocked = vals.some(v => playerBoard.includes(v) && !calledNums.includes(v) && v !== num);
         if (!blocked) {
-          // Reward building the bot's own line
-          if   (called === 4) scores[num] += 15000; // WIN
+          
+          if   (called === 4) scores[num] += 15000; 
           else if(called === 3) scores[num] +=  2000;
           else if(called === 2) scores[num] +=   300;
           else if(called === 1) scores[num] +=    50;
           else                  scores[num] +=    10;
         }
       }
-      // ── PLAYER BOARD lines — BLOCK threats ──
+      
       if (line.includes(playerIdx)) {
         const vals   = line.map(i => playerBoard[i]);
         const called = vals.filter(v => calledNums.includes(v)).length;
-        if   (called === 4) scores[num] += 10000; // block immediate win
-        else if(called === 3) scores[num] +=  1500; // block 3-in-row
+        if   (called === 4) scores[num] += 10000; 
+        else if(called === 3) scores[num] +=  1500; 
         else if(called === 2) scores[num] +=   200;
         else if(called === 1) scores[num] +=    30;
       }
     });
 
-    // Center positional bonus on bot's board (indices 6,7,8,11,12,13,16,17,18)
+    
     const centerIdxs = [6,7,8,11,12,13,16,17,18];
     if (centerIdxs.includes(botIdx)) scores[num] += 15;
   });
 
-  // Pick the highest-scoring number
+  
   return available.reduce((best, n) => scores[n] > scores[best] ? n : best, available[0]);
 }
 
-/* ── Master AI move dispatcher ── */
 function getAIMove(calledNums) {
   if (botLevel === 'easy')      return aiMoveEasy(calledNums);
   if (botLevel === 'medium')    return aiMoveMedium(calledNums, playerBotBoard, botBoard);
@@ -3049,7 +2895,6 @@ function getAIMove(calledNums) {
   if (botLevel === 'nightmare') return aiMoveNightmare(calledNums, playerBotBoard, botBoard);
 }
 
-/* LEVEL 4 — Expert: Fork-hunting + multi-threat awareness */
 function aiMoveExpert(calledNums, playerBoard, botBrd) {
   const ALL_LINES = [];
   for(let r=0;r<5;r++){const b=r*5;ALL_LINES.push([b,b+1,b+2,b+3,b+4])}
@@ -3059,7 +2904,7 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
   const available = Array.from({length:25},(_,i)=>i+1).filter(n=>!calledNums.includes(n));
   if (!available.length) return null;
 
-  // Immediate win — always take it
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => botBrd[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -3067,7 +2912,7 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
         vals.filter(v => calledNums.includes(v)).length === 4) return uncalled[0];
   }
 
-  // Block immediate player win
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => playerBoard[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -3082,11 +2927,11 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
     const botIdx    = botBrd.indexOf(num);
     const playerIdx = playerBoard.indexOf(num);
 
-    // Count how many bot lines this number advances (fork potential)
+    
     let botThreats = 0, playerThreats = 0;
 
     ALL_LINES.forEach(line => {
-      // Bot lines
+      
       if (line.includes(botIdx)) {
         const called = line.filter(i => calledNums.includes(botBrd[i])).length;
         if (called === 4) scores[num] += 50000;
@@ -3095,7 +2940,7 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
         else if (called === 1)   scores[num] += 60;
         else                     scores[num] += 10;
       }
-      // Player threats to block
+      
       if (line.includes(playerIdx)) {
         const called = line.filter(i => calledNums.includes(playerBoard[i])).length;
         if (called === 4) scores[num] += 40000;
@@ -3105,12 +2950,12 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
       }
     });
 
-    // Big bonus for FORK moves — moves that create 2+ simultaneous threats
+    
     if (botThreats >= 2) scores[num] += botThreats * 1500;
-    // Big bonus for blocking player forks
+    
     if (playerThreats >= 2) scores[num] += playerThreats * 1200;
 
-    // Center position bonus
+    
     const centerIdxs = [6,7,8,11,12,13,16,17,18];
     if (centerIdxs.includes(botIdx)) scores[num] += 25;
   });
@@ -3118,7 +2963,6 @@ function aiMoveExpert(calledNums, playerBoard, botBrd) {
   return available.reduce((best, n) => scores[n] > scores[best] ? n : best, available[0]);
 }
 
-/* LEVEL 5 — Nightmare: Near-perfect with lookahead simulation */
 function aiMoveNightmare(calledNums, playerBoard, botBrd) {
   const ALL_LINES = [];
   for(let r=0;r<5;r++){const b=r*5;ALL_LINES.push([b,b+1,b+2,b+3,b+4])}
@@ -3128,7 +2972,7 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
   const available = Array.from({length:25},(_,i)=>i+1).filter(n=>!calledNums.includes(n));
   if (!available.length) return null;
 
-  /* Score a board state — returns combined threat score */
+  
   function scoreState(called, botBrd, playerBoard) {
     let s = 0;
     ALL_LINES.forEach(line => {
@@ -3136,13 +2980,13 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
       const pVals = line.map(i => playerBoard[i]);
       const bCalled = bVals.filter(v => called.includes(v)).length;
       const pCalled = pVals.filter(v => called.includes(v)).length;
-      // Bot progress
+      
       if      (bCalled === 5) s += 1000000;
       else if (bCalled === 4) s += 50000;
       else if (bCalled === 3) s += 2000;
       else if (bCalled === 2) s += 200;
       else if (bCalled === 1) s += 20;
-      // Player threats (negative — we want to minimise)
+      
       if      (pCalled === 5) s -= 800000;
       else if (pCalled === 4) s -= 40000;
       else if (pCalled === 3) s -= 1500;
@@ -3151,24 +2995,24 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
     return s;
   }
 
-  /* Lookahead 1: simulate calling this number, then pick opponent's best counter */
+  
   function lookahead(num, called) {
     const newCalled = [...called, num];
-    // My immediate gain
+    
     const myGain = scoreState(newCalled, botBrd, playerBoard) - scoreState(called, botBrd, playerBoard);
-    // Simulate opponent's best reply (1-ply lookahead)
+    
     const remaining = available.filter(n => n !== num);
     if (!remaining.length) return myGain;
     let oppBest = -Infinity;
-    remaining.slice(0,8).forEach(oppNum => { // limit to 8 for performance
+    remaining.slice(0,8).forEach(oppNum => { 
       const afterOpp = [...newCalled, oppNum];
       const oppGain  = scoreState(afterOpp, playerBoard, botBrd) - scoreState(newCalled, playerBoard, botBrd);
       if (oppGain > oppBest) oppBest = oppGain;
     });
-    return myGain - oppBest * 0.85; // discount opponent's reply
+    return myGain - oppBest * 0.85; 
   }
 
-  // Immediate win check
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => botBrd[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -3176,7 +3020,7 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
         vals.filter(v => calledNums.includes(v)).length === 4) return uncalled[0];
   }
 
-  // Immediate block check
+  
   for (const line of ALL_LINES) {
     const vals = line.map(i => playerBoard[i]);
     const uncalled = vals.filter(v => !calledNums.includes(v));
@@ -3184,7 +3028,7 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
         vals.filter(v => calledNums.includes(v)).length === 4) return uncalled[0];
   }
 
-  // Full scored lookahead for remaining moves
+  
   let bestScore = -Infinity, bestMove = available[0];
   available.forEach(num => {
     const s = lookahead(num, calledNums);
@@ -3193,18 +3037,13 @@ function aiMoveNightmare(calledNums, playerBoard, botBrd) {
   return bestMove;
 }
 
-/* ═══════════════════════════════════════════════
-   BOT GAME — UI & FLOW (no Firebase)
-═══════════════════════════════════════════════ */
-
-/* Highlight win cells on bot game board — staggered burst + flash */
 let botLastLineCount = 0;
 function botHighlightWinCells(board, selected, prefix) {
   const { winIdx, lines } = botCheckLines(board, selected);
   const isNewLine = lines > botLastLineCount;
   botLastLineCount = lines;
 
-  // Group win indices into lines so we can stagger per-line
+  
   const newLineSegs = [];
   if (isNewLine) {
     const ALL_LINES_BOT = [];
@@ -3237,7 +3076,6 @@ function botHighlightWinCells(board, selected, prefix) {
   }
 }
 
-/* Render the player's bot-game board */
 function renderBotGameBoard() {
   const boardDiv = document.getElementById('game-board');
   boardDiv.innerHTML = '';
@@ -3249,7 +3087,6 @@ function renderBotGameBoard() {
   });
 }
 
-/* Cross off a number visually (player board) */
 function botCrossCell(num) {
   const cell = document.getElementById(`cell-${num}`);
   if (cell && !cell.classList.contains('crossed')) {
@@ -3258,7 +3095,6 @@ function botCrossCell(num) {
   }
 }
 
-/* Show turn indicator + start/stop move timer for bot game */
 function botUpdateTurnUI(isPlayerTurn) {
   document.getElementById('turn-indicator').textContent = isPlayerTurn ? 'Your Turn!' : "Bot's Turn…";
   document.getElementById('p1-box').classList.toggle('active-turn', isPlayerTurn);
@@ -3267,16 +3103,14 @@ function botUpdateTurnUI(isPlayerTurn) {
   if (isPlayerTurn) {
     startMoveTimer(true, handleBotTimerExpiry);
   } else {
-    stopMoveTimer(); // no timer for bot's turn
+    stopMoveTimer(); 
   }
 }
 
-/* triggerBotTurn — called by timer expiry to auto-pass player's turn in bot mode */
 function triggerBotTurn() {
   if (!botWinShown) executeBotTurn();
 }
 
-/* Check and handle win condition for bot game */
 function botCheckWin() {
   const playerResult = botCheckLines(playerBotBoard, botSelected);
   const botResult    = botCheckLines(botBoard, botSelected);
@@ -3295,7 +3129,6 @@ function botCheckWin() {
   return false;
 }
 
-/* Execute the AI's turn with a short thinking delay */
 function executeBotTurn() {
   botUpdateTurnUI(false);
   const delay = botLevel === 'nightmare' ? 1400
@@ -3312,13 +3145,12 @@ function executeBotTurn() {
   }, delay);
 }
 
-/* Player clicks a cell in bot game */
 function handleBotGameClick(num) {
   if (botWinShown) return;
   if (botSelected.includes(num)) return;
-  // Only allow on player's turn (ai-thinking-bar hidden = player's turn)
+  
   if (document.getElementById('ai-thinking-bar').classList.contains('show')) return;
-  stopMoveTimer(); // cancel the turn timer — player acted in time
+  stopMoveTimer(); 
   botSelected.push(num);
   botCrossCell(num);
   if (!botCheckWin()) executeBotTurn();
@@ -3329,7 +3161,6 @@ function updateBotScoreDisplay() {
   document.getElementById('score-p2').textContent = botScores.bot;
 }
 
-/* Win overlay for bot game */
 function showBotWinOverlay(playerWon) {
   const winPhrases  = ['Domination! 👑','Flawless Victory! ⚡','You\'re on fire! 🔥','GG! Absolutely lethal 🎯','Champion energy! 💎'];
   const losePhrases = ['The bot outsmarted you… 🤖','GG, rematch? 💪','Respect the grind 🤝','Bot.exe wins this round 😤'];
@@ -3339,11 +3170,10 @@ function showBotWinOverlay(playerWon) {
     ? winPhrases[Math.floor(Math.random()*winPhrases.length)]
     : losePhrases[Math.floor(Math.random()*losePhrases.length)];
   document.getElementById('win-overlay').classList.add('show');
+  
   if (playerWon) { launchWinAnimation(); recordWin(); } else { recordLoss(); }
-  // No auto-rematch — player chooses via Restart / Exit
+  
 }
-
-/* startBotRematchCountdown removed — bot rematch uses manual buttons only */
 
 function restartBotGame() {
   if (botCountdownInterval) clearInterval(botCountdownInterval);
@@ -3355,7 +3185,7 @@ function restartBotGame() {
   document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
   document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
   document.getElementById('ai-thinking-bar').classList.remove('show');
-  // Refresh boards and restart
+  
   botSelected = [];
   botBoard = genRandomBoard();
   playerBotBoard = genRandomBoard();
@@ -3364,7 +3194,6 @@ function restartBotGame() {
   sfx.click();
 }
 
-/* ── Listen for startBotGame event from plain script ── */
 document.addEventListener('startBotGame', (e) => {
   readDINGO();
   botMode  = true;
@@ -3373,22 +3202,22 @@ document.addEventListener('startBotGame', (e) => {
   botSelected  = [];
   botScores    = {player:0, bot:0};
 
-  // Generate boards
+  
   playerBotBoard = genRandomBoard();
   botBoard       = genRandomBoard();
 
-  // Set up UI
+  
   document.getElementById('p1-name').textContent   = playerName;
   renderAvatar(document.getElementById('p1-avatar'), playerAvatar)
   document.getElementById('p2-name').textContent   = BOT_NAMES[botLevel];
   renderAvatar(document.getElementById('p2-avatar'), BOT_AVATARS[botLevel])
   document.getElementById('p2-box').classList.add('is-bot');
 
-  // Show AI mode pill
+  
   const pill = document.getElementById('ai-mode-pill');
   pill.classList.add('show');
   pill.textContent = botLevel.toUpperCase();
-  // Color pill per level
+  
   const pillColors = {
     easy:      'rgba(0,255,204,.15)',
     medium:    'rgba(255,204,0,.15)',
@@ -3402,26 +3231,25 @@ document.addEventListener('startBotGame', (e) => {
   pill.style.background = pillColors[botLevel] || '';
   pill.style.color      = pillTextColors[botLevel] || '';
 
-  // Score labels — use actual names instead of generic "You" / "Bot"
+  
   document.getElementById('score-lbl-p1').textContent = playerName;
   document.getElementById('score-lbl-p2').textContent = BOT_NAMES[botLevel];
   updateBotScoreDisplay();
 
-  // Render board and go to game screen
+  
   showScreen('game');
   renderBotGameBoard();
   resetLifelines();
   activateMoveTimerUI();
   botUpdateTurnUI(true);
 
-  // Hide chat FAB (bot game has no chat)
+  
   document.getElementById('chat-fab').style.display = 'none';
   document.getElementById('chat-panel').classList.remove('open');
 
   sfx.click();
 });
 
-/* Patch restart/reset buttons to handle bot game */
 document.getElementById('win-restart-btn').addEventListener('click', () => {
   if (botMode) restartBotGame(); else doRestart();
 });
@@ -3435,7 +3263,6 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   if (botMode) { botMode=false; doReset(); } else doReset();
 });
 
-/* Also patch home-from-game for bot mode */
 document.getElementById('home-from-game').addEventListener('click', () => {
   botMode = false;
   document.getElementById('ai-mode-pill').classList.remove('show');
@@ -3448,9 +3275,6 @@ document.getElementById('home-from-game').addEventListener('click', () => {
   document.getElementById('win-overlay').classList.remove('show');
 });
 
-/* ═══════════════════════════════════════════════
-   ROOM HELPERS
-═══════════════════════════════════════════════ */
 function genRoomId() {
   const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   return Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
@@ -3461,21 +3285,11 @@ function readDINGO() {
   playerColor  = window.DINGO.selectedColor  || '#00e5ff';
 }
 
-/* ═══════════════════════════════════════════════
-   OPPONENT EXIT DETECTION (v2)
-   ─ The old presence/countdown system is replaced.
-   ─ Now we ONLY show "Opponent Left" when the opponent
-     explicitly clicks an exit/home button — not on
-     accidental disconnect or tab close.
-   ─ Exit writes `p1Exited` or `p2Exited: true` to gameState.
-   ─ The other player picks it up, shows a 5-second popup,
-     then auto-wins. Popup only shows on game-screen.
-═══════════════════════════════════════════════ */
-let presenceRef        = null; // kept for API compat — not actively used now
+let presenceRef        = null; 
 let opponentWasPresent = false;
 
 function setupPresence() {
-  // No-op now — we no longer use Firebase presence for abandonment
+  
   opponentWasPresent = false;
 }
 
@@ -3483,7 +3297,7 @@ let oppLeftPopupTimeout  = null;
 let oppLeftSecsInterval  = null;
 
 function showOppLeftPopup() {
-  // Only show if we are currently in the game screen
+  
   const gameScreen = document.getElementById('game-screen');
   if (!gameScreen || !gameScreen.classList.contains('active')) return;
 
@@ -3494,7 +3308,7 @@ function showOppLeftPopup() {
   popup.classList.add('show');
   sfx.ping && sfx.ping();
 
-  // Reset ring + counter
+  
   ring.style.transition = 'none';
   ring.style.strokeDashoffset = '0';
   void ring.offsetWidth;
@@ -3502,7 +3316,7 @@ function showOppLeftPopup() {
   let secsLeft = 5;
   secsEl.textContent = secsLeft;
 
-  // Animate ring draining over 5 seconds
+  
   ring.style.transition = 'stroke-dashoffset 5s linear';
   ring.style.strokeDashoffset = '100';
 
@@ -3516,16 +3330,16 @@ function showOppLeftPopup() {
   oppLeftPopupTimeout = setTimeout(() => {
     clearInterval(oppLeftSecsInterval);
     popup.classList.remove('show');
-    declareAbandonWin(); // remaining player wins after popup closes
+    declareAbandonWin(); 
   }, 5200);
 }
 
 function watchOpponentPresence() {
   if (!roomId || !playerRole || botMode) return;
   const opponentRole = playerRole === 'p1' ? 'p2' : 'p1';
-  const exitKey      = opponentRole + 'Exited'; // e.g. 'p2Exited'
+  const exitKey      = opponentRole + 'Exited'; 
 
-  // Listen for the exit flag the opponent writes when they click exit
+  
   onRoomValue(ref(db, `rooms/${roomId}/gameState`), snap => {
     const state = snap.val();
     if (!state) return;
@@ -3535,9 +3349,8 @@ function watchOpponentPresence() {
   });
 }
 
-/* ─── stopAbandonCountdown — kept so existing call sites don't break ─── */
 function stopAbandonCountdown(hideOnly = true) {
-  // No-op — countdown removed, but we keep this so other call sites compile
+  
 }
 
 async function declareAbandonWin() {
@@ -3549,35 +3362,36 @@ async function declareAbandonWin() {
   });
 }
 
-/* ─── Graceful leave: write exit flag so opponent is notified instantly ─── */
 function leaveRoomCleanup() {
   stopAbandonCountdown(false);
   stopMoveTimer();
+  stopRoomHeartbeat();          // stop heartbeat if we're P1 waiting
   opponentWasPresent = false;
 
-  // Detach all room-scoped Firebase listeners first
   detachRoomListeners();
 
-  // Write exit flag then check if BOTH players have now exited → delete room
   if (roomId && playerRole) {
-    const exitKey     = playerRole + 'Exited';
-    const capturedRoom = roomId; // capture before clearing below
+    const exitKey      = playerRole + 'Exited';
+    const capturedRoom = roomId;
+
+    // Cancel the onDisconnect we set (so our manual cleanup below takes effect)
+    cancelRoomOnDisconnect(capturedRoom);
 
     update(ref(db, `rooms/${capturedRoom}/gameState`), { [exitKey]: true })
       .then(() => ref(db, `rooms/${capturedRoom}/gameState`).get())
       .then(snap => {
         const state = snap.val();
         if (state && state.p1Exited && state.p2Exited) {
-          // Both players have exited — safe to delete the room now
           set(ref(db, `rooms/${capturedRoom}`), null).catch(() => {});
         }
       })
       .catch(() => {});
   }
 
-  // If we created a room but nobody ever joined (p1, no p2) — delete immediately
+  // P1 leaving a waiting room: close it immediately and delete if no P2 joined
   if (roomId && playerRole === 'p1') {
     const capturedRoom = roomId;
+    set(ref(db, `rooms/${capturedRoom}/gameState/status`), 'closed').catch(() => {});
     ref(db, `rooms/${capturedRoom}/players`).get().then(snap => {
       const players = snap.val();
       if (players && !players.p2) {
@@ -3586,7 +3400,6 @@ function leaveRoomCleanup() {
     }).catch(() => {});
   }
 
-  // Reset all local game state so next match starts clean
   roomId = '';
   playerRole = '';
   myBoard = [];
@@ -3602,45 +3415,31 @@ function leaveRoomCleanup() {
   botLastLineCount = 0;
 }
 
-/* ═══════════════════════════════════════════════
-   ROOM CLEANUP — fallback deletion after win
-   Triggers 10s after win is declared. In most
-   cases both players will have already exited and
-   deleted the room via leaveRoomCleanup(). This
-   is just a safety net for edge cases (e.g. one
-   player closes the app without clicking Exit).
-═══════════════════════════════════════════════ */
 let cleanupScheduled = false;
 function scheduleRoomCleanup() {
   if (cleanupScheduled || !roomId) return;
   cleanupScheduled = true;
-  const roomToDelete = roomId; // capture now — roomId may clear later
+  const roomToDelete = roomId; 
   setTimeout(async () => {
     try {
-      // Only delete if room still exists (may already be gone via leaveRoomCleanup)
+      
       const snap = await ref(db, `rooms/${roomToDelete}`).get();
       if (snap.exists()) {
         await set(ref(db, `rooms/${roomToDelete}`), null);
       }
-    } catch (e) { /* already deleted — ignore */ }
-  }, 10000); // 10 second safety net
+    } catch (e) {  }
+  }, 10000); 
 }
 
-/* ═══════════════════════════════════════════════
-   STAGGERED BINGO LINE BURST + TOAST
-   When a new 5-in-a-row is completed the five cells
-   light up one by one (domino-style, 55 ms apart)
-   and a "BINGO!" toast drops in from the top of the board.
-═══════════════════════════════════════════════ */
 function triggerLineBurst(cellElements) {
-  // cellElements: array of DOM elements in the line, in order
+  
   cellElements.forEach((cell, i) => {
     setTimeout(() => {
       cell.classList.add('line-burst');
       setTimeout(() => cell.classList.remove('line-burst'), 420);
     }, i * 55);
   });
-  // Show the BINGO toast after the last cell lights up
+  
   setTimeout(() => showBingoToast(), cellElements.length * 55 + 40);
 }
 
@@ -3661,7 +3460,7 @@ function showBingoToast() {
     toast.textContent = 'BINGO!';
     document.body.appendChild(toast);
   }
-  // Force reflow then animate in
+  
   void toast.offsetWidth;
   toast.style.opacity = '1';
   toast.style.transform = 'translate(-50%,-50%) scale(1)';
@@ -3672,7 +3471,37 @@ function showBingoToast() {
   }, 900);
 }
 
-/* ── PLAY NOW — instant auto-matchmaking ───────────── */
+// ─── Heartbeat helpers ───────────────────────────────────────────────────────
+// While P1 is waiting, we pulse a timestamp every 8 s so searchers can tell
+// the room is still alive.  On disconnect Firebase deletes the whole room.
+let _heartbeatInterval = null;
+
+function startRoomHeartbeat(rid) {
+  stopRoomHeartbeat();
+  // onDisconnect: if this tab closes / goes offline → wipe the waiting room
+  const roomRef = db.ref('rooms/' + rid);
+  roomRef.onDisconnect().remove();
+  // Pulse heartbeat every 8 seconds
+  _heartbeatInterval = setInterval(() => {
+    db.ref('rooms/' + rid + '/hostHeartbeat').set(Date.now()).catch(() => {});
+  }, 8000);
+  // Write initial heartbeat immediately
+  db.ref('rooms/' + rid + '/hostHeartbeat').set(Date.now()).catch(() => {});
+}
+
+function stopRoomHeartbeat() {
+  if (_heartbeatInterval) { clearInterval(_heartbeatInterval); _heartbeatInterval = null; }
+}
+
+// Call this whenever we leave a P1 waiting room so the onDisconnect is cancelled
+function cancelRoomOnDisconnect(rid) {
+  if (rid) {
+    try { db.ref('rooms/' + rid).onDisconnect().cancel(); } catch(e) {}
+  }
+  stopRoomHeartbeat();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 document.getElementById('play-now-btn').addEventListener('click', async () => {
   readDINGO();
   if (navigator.vibrate) navigator.vibrate([40, 15, 40]);
@@ -3682,26 +3511,58 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
   btn.innerHTML = '<span class="play-now-icon">⏳</span> FINDING MATCH…';
   msg.textContent = '';
   try {
+    // Clean up any existing room this player created (prevents self-match on re-queue)
+    if (roomId) {
+      cancelRoomOnDisconnect(roomId);
+      leaveRoomCleanup();
+    }
+
     const roomsSnap = await get(ref(db, 'rooms'));
     const rooms = roomsSnap.val() || {};
+    const STALE_MS = 20000; // rooms with heartbeat older than 20 s are considered ghost rooms
+    const now = Date.now();
     let foundRoom = null;
+
     for (const [id, room] of Object.entries(rooms)) {
+      // Must be waiting, have a P1, no P2 yet, not created by us
       if (
-        room.gameState?.status === 'waiting' &&
-        room.players?.p1 &&
-        !room.players?.p2
-      ) { foundRoom = id; break; }
+        room.gameState?.status !== 'waiting' ||
+        !room.players?.p1 ||
+        room.players?.p2 ||
+        room.players?.p1 === myPlayerId
+      ) continue;
+
+      // Freshness check: if the room has a heartbeat, it must be recent.
+      // Rooms without a heartbeat field are old-format rooms — skip them to be safe.
+      const hb = room.hostHeartbeat;
+      if (!hb || (now - hb) > STALE_MS) {
+        // Ghost/stale room — delete it to keep DB clean, then skip
+        db.ref('rooms/' + id).remove().catch(() => {});
+        continue;
+      }
+
+      foundRoom = id;
+      break;
     }
+
     if (foundRoom) {
       roomId = foundRoom; playerRole = 'p2';
+
+      // Cancel the host's onDisconnect so the room isn't deleted when they stop heartbeating
+      // (P2 joining = room is now "taken", we'll manage cleanup ourselves)
+      try { db.ref('rooms/' + roomId).onDisconnect().cancel(); } catch(e) {}
+
       await update(ref(db, `rooms/${roomId}/players`), { p2: myPlayerId });
       await update(ref(db, `rooms/${roomId}/playerInfo`), {
-        p2: { name: playerName, avatar: playerAvatar, color: playerColor }
+        p2: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' }
       });
+      // Mark room as no longer open so no third player can join
+      await update(ref(db, `rooms/${roomId}/gameState`), { status: 'matched' });
+
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Connected!';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence();
+      setupPresence(); watchOpponentPresence(); watchRestartVotes();
       onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar); if(playerRole==='p2'&&info.p1) setCurrentOpponent(info.p1.name, info.p1.username||'', info.p1.avatar||''); }
@@ -3712,27 +3573,53 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
         if (s) { scores.p1 = s.p1||0; scores.p2 = s.p2||0; updateScoreDisplay(); }
       });
     } else {
+      // No valid room found — create one and wait
       roomId = genRoomId(); playerRole = 'p1';
       await set(ref(db, `rooms/${roomId}`), {
-        players:    { p1: myPlayerId },
-        playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor } },
-        gameState:  { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
-        scores:     { p1: 0, p2: 0 }
+        players:      { p1: myPlayerId },
+        playerInfo:   { p1: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' } },
+        gameState:    { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
+        scores:       { p1: 0, p2: 0 },
+        hostHeartbeat: Date.now()
       });
+
+      // Start heartbeat + auto-delete on disconnect
+      startRoomHeartbeat(roomId);
+
+      // Watch for a P2 joining: when that happens, stop heartbeat (room is now active)
+      const _waitRoomId = roomId;
+      const p2Watcher = db.ref('rooms/' + _waitRoomId + '/players/p2');
+      p2Watcher.on('value', snap => {
+        if (snap.val()) {
+          // Opponent arrived — cancel onDisconnect and stop heartbeat
+          cancelRoomOnDisconnect(_waitRoomId);
+          p2Watcher.off('value');
+        }
+      });
+
+      // Also watch for gameState changing to 'matched' (P2 set it) — same cleanup
+      const stateWatcher = db.ref('rooms/' + _waitRoomId + '/gameState/status');
+      stateWatcher.on('value', snap => {
+        if (snap.val() === 'matched' || snap.val() === 'playing') {
+          cancelRoomOnDisconnect(_waitRoomId);
+          stateWatcher.off('value');
+        }
+      });
+
       document.getElementById('display-room-code').innerText = roomId;
       document.getElementById('waiting-label').innerText = 'Waiting for an opponent…';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence();
+      setupPresence(); watchOpponentPresence(); watchRestartVotes();
       onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
         const info = snap.val();
         if (info?.p2) {
           document.getElementById('p2-name').textContent = info.p2.name;
-          renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar)
+          renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar);
           document.getElementById('waiting-label').textContent = `${info.p2.name} joined!`;
         }
         if (info?.p1) {
           document.getElementById('p1-name').textContent = info.p1.name;
-          renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar)
+          renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar);
         }
       });
       onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
@@ -3755,7 +3642,6 @@ document.getElementById('play-now-btn').addEventListener('click', async () => {
   }
 });
 
-/* ── Create Room ──────────────────────────────── */
 document.getElementById('create-btn').addEventListener('click', async () => {
   readDINGO(); sfx.click();
   if (navigator.vibrate) navigator.vibrate([30, 10, 30]);
@@ -3768,21 +3654,21 @@ document.getElementById('create-btn').addEventListener('click', async () => {
 
     const roomData = {
       players:   { p1: myPlayerId },
-      playerInfo:{ p1: { name: playerName, avatar: playerAvatar, color: playerColor } },
+      playerInfo:{ p1: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' } },
       gameState: { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
       scores:    { p1: 0, p2: 0 }
     };
 
     await set(ref(db, `rooms/${roomId}`), roomData);
 
-    // Confirm the write actually landed
+    
     const check = await get(ref(db, `rooms/${roomId}/players`));
     if (!check.exists()) throw new Error('Room write did not persist — check Firebase rules');
 
     document.getElementById('display-room-code').innerText  = roomId;
     document.getElementById('waiting-label').innerText      = 'Waiting for opponent…';
     initSetupBoard(); showScreen('setup'); showChat();
-    setupPresence(); watchOpponentPresence();
+    setupPresence(); watchOpponentPresence(); watchRestartVotes();
 
     onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
       const info = snap.val();
@@ -3803,7 +3689,7 @@ document.getElementById('create-btn').addEventListener('click', async () => {
 
   } catch(err) {
     console.error('Create room error:', err);
-    // Show a clear, helpful error message
+    
     let errMsg = `❌ ${err.message}`;
     if (err.message.includes('permission') || err.message.includes('PERMISSION')) {
       errMsg = '❌ Firebase rules blocking writes. Set rules to allow read/write.';
@@ -3819,7 +3705,6 @@ document.getElementById('create-btn').addEventListener('click', async () => {
   }
 });
 
-/* ── Join Room ────────────────────────────────── */
 document.getElementById('join-btn').addEventListener('click', async () => {
   readDINGO(); sfx.click();
   const btn=document.getElementById('join-btn'), msg=document.getElementById('home-msg');
@@ -3835,8 +3720,11 @@ document.getElementById('join-btn').addEventListener('click', async () => {
         'playerInfo/p2/name':playerName,
         'playerInfo/p2/avatar':playerAvatar,
         'playerInfo/p2/color':playerColor,
+        'playerInfo/p2/username': window.DINGO.username || '',
       });
       const info=snap.val().playerInfo||{};
+      // Set opponent for history tracking
+      if(info.p1) setCurrentOpponent(info.p1.name, info.p1.username||'', info.p1.avatar||'');
       document.getElementById('display-room-code').innerText=roomId;
       document.getElementById('p1-name').textContent=info.p1?info.p1.name:'P1';
       renderAvatar(document.getElementById('p1-avatar'), info.p1?info.p1.avatar:'🎮')
@@ -3844,7 +3732,11 @@ document.getElementById('join-btn').addEventListener('click', async () => {
       renderAvatar(document.getElementById('p2-avatar'), playerAvatar)
       document.getElementById('waiting-label').textContent='You joined!';
       initSetupBoard(); showScreen('setup'); showChat();
-      setupPresence(); watchOpponentPresence();
+      setupPresence(); watchOpponentPresence(); watchRestartVotes();
+      onRoomValue(ref(db,`rooms/${roomId}/playerInfo`), snap => {
+        const info2 = snap.val();
+        if(info2?.p1) setCurrentOpponent(info2.p1.name, info2.p1.username||'', info2.p1.avatar||'');
+      });
       onRoomValue(ref(db,`rooms/${roomId}/scores`),s=>{
         const sc=s.val();if(sc){scores.p1=sc.p1||0;scores.p2=sc.p2||0;updateScoreDisplay()}
       });
@@ -3856,13 +3748,11 @@ document.getElementById('join-btn').addEventListener('click', async () => {
   finally{btn.disabled=false;btn.textContent='Join'}
 });
 
-/* ─── Score display ───────────────────────────── */
 function updateScoreDisplay(){
   document.getElementById('score-p1').textContent=scores.p1;
   document.getElementById('score-p2').textContent=scores.p2;
 }
 
-/* ─── Setup board ─────────────────────────────── */
 function initSetupBoard(){
   const bd=document.getElementById('setup-board');
   bd.innerHTML=''; myBoard=new Array(25).fill(null); setupCounter=1;
@@ -3897,14 +3787,13 @@ document.getElementById('shuffle-btn').addEventListener('click',()=>{
 });
 document.getElementById('clear-btn').addEventListener('click',()=>{sfx.click();initSetupBoard()});
 
-/* ─── Ready ───────────────────────────────────── */
 let readyListenerActive = false;
 document.getElementById('ready-btn').addEventListener('click',async()=>{
   sfx.click();
   const btn=document.getElementById('ready-btn');
   btn.disabled=true; btn.textContent='⏳ Waiting…';
   await update(ref(db,`rooms/${roomId}/boards`),{[playerRole]:myBoard});
-  // Guard: only register one boards listener per round
+  
   if(!readyListenerActive){
     readyListenerActive=true;
     onRoomValue(ref(db,`rooms/${roomId}/boards`),snap=>{
@@ -3918,43 +3807,29 @@ document.getElementById('ready-btn').addEventListener('click',async()=>{
   }
 });
 
-/* ═══════════════════════════════════════════════
-   MOVE TIMER + LIFELINES
-   ─ 25-second countdown starts whenever it becomes
-     a player's turn (both multiplayer and bot mode).
-   ─ Each player has 3 lifelines. When the timer expires
-     on your turn:  one lifeline is consumed and the
-     turn automatically passes to your opponent.
-   ─ If all 3 lifelines are gone the opponent wins
-     immediately.
-   ─ Timer resets every time the turn changes.
-═══════════════════════════════════════════════ */
-const MOVE_TIME   = 25;   // seconds per move
-let moveTimerInt  = null; // setInterval handle
+const MOVE_TIME   = 25;   
+let moveTimerInt  = null; 
 let moveTimerSecs = MOVE_TIME;
-let lifelineState = { p1: 3, p2: 3 }; // remaining lifelines per player
+let lifelineState = { p1: 3, p2: 3 }; 
 
-/* ─── Show the timer bar (lifelines are always visible inside player boxes) ─── */
 function activateMoveTimerUI() {
   document.getElementById('move-timer-wrap').classList.add('active');
-  // Lifelines are embedded in player boxes — always visible, no activation needed
+  
 }
 
-/* ─── Render lifeline chips for both players ─── */
 function renderLifelines() {
   ['p1','p2'].forEach(role => {
     const container = document.getElementById('lifelines-' + role);
     if (!container) return;
     container.querySelectorAll('.lifeline-chip').forEach(chip => {
-      const n = parseInt(chip.dataset.n, 10); // chip 1,2,3
-      // A chip is "used" if the player has fewer lifelines than that chip's slot
+      const n = parseInt(chip.dataset.n, 10); 
+      
       const remaining = lifelineState[role];
       chip.classList.toggle('used', n > remaining);
     });
   });
 }
 
-/* ─── Update the timer bar fill and colour based on seconds left ─── */
 function updateTimerBarUI(secsLeft) {
   const fill    = document.getElementById('move-timer-bar-fill');
   const secsEl  = document.getElementById('move-timer-secs');
@@ -3962,7 +3837,7 @@ function updateTimerBarUI(secsLeft) {
   fill.style.width = pct + '%';
   secsEl.textContent = secsLeft;
 
-  // Colour: green → yellow → red
+  
   const warn = secsLeft <= 10;
   const dang = secsLeft <= 5;
   fill.classList.toggle('warning', warn && !dang);
@@ -3971,10 +3846,9 @@ function updateTimerBarUI(secsLeft) {
   secsEl.classList.toggle('danger', dang);
 }
 
-/* ─── Stop any running timer ─── */
 function stopMoveTimer() {
   if (moveTimerInt) { clearInterval(moveTimerInt); moveTimerInt = null; }
-  // Reset bar to full without animation so next start is clean
+  
   const fill = document.getElementById('move-timer-bar-fill');
   if (fill) {
     fill.style.transition = 'none';
@@ -3987,9 +3861,6 @@ function stopMoveTimer() {
   if (secsEl) { secsEl.textContent = MOVE_TIME; secsEl.classList.remove('warning','danger'); }
 }
 
-/* ─── Start the 25-second move timer.
-       isMyTurn: true when the local player must act.
-       onExpire: callback called when the timer hits 0. ─── */
 function startMoveTimer(isMyTurn, onExpire) {
   stopMoveTimer();
   moveTimerSecs = MOVE_TIME;
@@ -4005,26 +3876,25 @@ function startMoveTimer(isMyTurn, onExpire) {
   }, 1000);
 }
 
-/* ─── Handle timer expiry for MULTIPLAYER ─── */
 async function handleMultiplayerTimerExpiry() {
   if (!roomId || !playerRole) return;
   const myLifelines = lifelineState[playerRole];
 
   if (myLifelines <= 1) {
-    // Last lifeline gone — opponent wins
+    
     lifelineState[playerRole] = 0;
     renderLifelines();
-    // Write lifelines + winner to Firebase so opponent sees both
+    
     await update(ref(db, `rooms/${roomId}/gameState`), {
       winner: playerRole === 'p1' ? 'p2' : 'p1',
       status: 'timeout',
       [`lifelines_${playerRole}`]: 0
     });
   } else {
-    // Consume a lifeline and pass the turn
+    
     lifelineState[playerRole] = myLifelines - 1;
     renderLifelines();
-    // Pass turn without selecting a number, also broadcast lifeline count
+    
     const stateRef = ref(db, `rooms/${roomId}/gameState`);
     const snap = await get(stateRef);
     const state = snap.val();
@@ -4037,14 +3907,13 @@ async function handleMultiplayerTimerExpiry() {
   }
 }
 
-/* ─── Handle timer expiry for BOT MODE ─── */
 function handleBotTimerExpiry() {
-  const myLifelines = lifelineState.p1; // player is always p1 in bot mode
+  const myLifelines = lifelineState.p1; 
 
   if (myLifelines <= 1) {
     lifelineState.p1 = 0;
     renderLifelines();
-    // Bot wins by timeout
+    
     botWinShown = true;
     stopMoveTimer();
     document.getElementById('win-title-text').textContent = '⏰ TIME OUT';
@@ -4054,16 +3923,15 @@ function handleBotTimerExpiry() {
   } else {
     lifelineState.p1 = myLifelines - 1;
     renderLifelines();
-    // Auto-pass: trigger bot's turn immediately
+    
     triggerBotTurn();
   }
 }
 
-/* ─── Reset lifelines for a fresh game ─── */
 function resetLifelines() {
   lifelineState = { p1: 3, p2: 3 };
   renderLifelines();
-  // Sync initial lifeline state to Firebase for multiplayer
+  
   if (roomId) {
     update(ref(db, `rooms/${roomId}/gameState`), {
       lifelines_p1: 3,
@@ -4084,11 +3952,10 @@ function showAnnouncement(num,callerName,isMe){
   announceTimer=setTimeout(()=>{bubble.classList.remove('pop');bubble.classList.add('fade-out')},1600);
 }
 
-/* ═══════════════════════════════════════════════
-   START GAME
-═══════════════════════════════════════════════ */
 function startGame(){
-  winShown=false; // always clear on fresh start
+  _restartPending  = false;
+  _execRestartDone = false;
+  winShown=false; 
   showScreen('game');
   const boardDiv=document.getElementById('game-board');
   boardDiv.innerHTML='';
@@ -4096,7 +3963,7 @@ function startGame(){
   stopMoveTimer();
   resetLifelines();
   activateMoveTimerUI();
-  // Re-register opponent presence watcher (detached on rematch cleanup)
+  
   if(!botMode) watchOpponentPresence();
 
   onRoomValue(ref(db,`rooms/${roomId}/playerInfo`),snap=>{
@@ -4113,7 +3980,7 @@ function startGame(){
     }
   });
 
-  // Re-register scores listener (needed after rematch listener detach)
+  
   if(!botMode){
     onRoomValue(ref(db,`rooms/${roomId}/scores`),snap=>{
       const s=snap.val();
@@ -4130,11 +3997,13 @@ function startGame(){
 
   onRoomValue(ref(db,`rooms/${roomId}/gameState`),snap=>{
     const state=snap.val(); if(!state)return;
+
+    
     const turnText=document.getElementById('turn-indicator');
     document.getElementById('p1-box').classList.toggle('active-turn',state.currentTurn==='p1');
     document.getElementById('p2-box').classList.toggle('active-turn',state.currentTurn==='p2');
 
-    // ── Sync lifelines from Firebase so BOTH players see the same state ──
+    
     const opponentRole = playerRole === 'p1' ? 'p2' : 'p1';
     if (typeof state.lifelines_p1 === 'number') lifelineState.p1 = state.lifelines_p1;
     if (typeof state.lifelines_p2 === 'number') lifelineState.p2 = state.lifelines_p2;
@@ -4151,13 +4020,13 @@ function startGame(){
       setTimeout(()=>{
         showWinOverlay(iWon, wasAbandoned);
       },500);
-      // The player who did NOT declare the win also schedules cleanup
-      // (so cleanup fires even if the declarer disconnects right after)
+      
+      
       scheduleRoomCleanup();
       turnText.innerText=''; return;
     }
     turnText.innerText=state.currentTurn===playerRole?'Your Turn!':"Opponent's Turn…";
-    // ── Start 25-second move timer on every turn change ──
+    
     const isMyTurn = state.currentTurn === playerRole;
     startMoveTimer(isMyTurn, handleMultiplayerTimerExpiry);
 
@@ -4165,7 +4034,7 @@ function startGame(){
       if(state.selectedNumbers.length>lastLen){
         const newNum=state.selectedNumbers[state.selectedNumbers.length-1];
         if(newNum!==0){
-          /* announcement popup removed — number cross animation on cell is enough */
+          
         }
       }
       lastLen=state.selectedNumbers.length;
@@ -4180,18 +4049,15 @@ function startGame(){
   });
 }
 
-/* ─── Handle click ────────────────────────────── */
 async function handleNumberClick(num){
   const stateRef=ref(db,`rooms/${roomId}/gameState`);
   const snap=await get(stateRef); const state=snap.val();
   if(state.currentTurn===playerRole&&!state.winner&&!state.selectedNumbers.includes(num)){
-    stopMoveTimer(); // player acted in time — cancel the turn timer
+    stopMoveTimer(); 
     await update(stateRef,{selectedNumbers:[...state.selectedNumbers,num],currentTurn:playerRole==='p1'?'p2':'p1'});
   }
 }
 
-/* ─── Win check + highlight ───────────────────── */
-/* ─── Screen flash helper ─────────────────────────── */
 let flashTimeout = null;
 function fireLineFlash() {
   const el = document.getElementById('line-flash');
@@ -4202,10 +4068,8 @@ function fireLineFlash() {
   flashTimeout = setTimeout(() => el.classList.remove('flash'), 500);
 }
 
-/* ─── Win check + highlight (multiplayer) ─────────── */
 let lastLineCount = 0;
 
-// ALL_LINES definition shared with win-check helpers
 const BOARD_LINES = [];
 for(let r=0;r<5;r++){const b=r*5;BOARD_LINES.push([b,b+1,b+2,b+3,b+4]);}
 for(let c=0;c<5;c++){BOARD_LINES.push([c,c+5,c+10,c+15,c+20]);}
@@ -4215,12 +4079,12 @@ function checkAndHighlightWin(sel){
   const hits = myBoard.map(n => sel.includes(n) ? 1 : 0);
   let lines = 0;
   const winIdx = new Set();
-  // Track which new line cells to burst (per line so we can stagger in order)
+  
   const newLineSegments = [];
 
   BOARD_LINES.forEach(line => {
     if (line.every(i => hits[i])) {
-      // This line is complete
+      
       const isNew = !line.some(i => {
         const c = document.getElementById(`cell-${myBoard[i]}`);
         return c && c.classList.contains('win-line');
@@ -4234,13 +4098,13 @@ function checkAndHighlightWin(sel){
   const isNewLine = lines > lastLineCount;
   lastLineCount = lines;
 
-  // Apply win-line class to all winning cells
+  
   winIdx.forEach(idx => {
     const c = document.getElementById(`cell-${myBoard[idx]}`);
     if (c && !c.classList.contains('win-line')) c.classList.add('win-line');
   });
 
-  // Staggered burst for every newly completed line
+  
   if (isNewLine && newLineSegments.length > 0) {
     newLineSegments.forEach(seg => {
       const els = seg.map(i => document.getElementById(`cell-${myBoard[i]}`)).filter(Boolean);
@@ -4252,13 +4116,10 @@ function checkAndHighlightWin(sel){
 
   if (lines >= 5) {
     update(ref(db, `rooms/${roomId}/gameState`), {winner: playerRole});
-    scheduleRoomCleanup(); // ← delete Firebase data 15 s after win is declared
+    scheduleRoomCleanup(); 
   }
 }
 
-/* ═══════════════════════════════════════════════
-   WIN OVERLAY
-═══════════════════════════════════════════════ */
 const winPhrases =['Domination! 👑','Flawless Victory! ⚡','You\'re on fire! 🔥','GG! Absolutely lethal 🎯','Champion energy! 💎'];
 const losePhrases=['So close… Try again 💪','Next time you\'ll have it!','Respect the grind 🤝'];
 function showWinOverlay(iWon, wasAbandoned){
@@ -4280,10 +4141,6 @@ function showWinOverlay(iWon, wasAbandoned){
   updateScoreDisplay();
 }
 
-/* ─── Rematch countdown ───────────────────────── */
-/* auto-rematch countdown removed — players use Restart / Exit buttons manually */
-
-/* ─── Confetti ────────────────────────────────── */
 function launchConfetti(){
   const canvas=document.getElementById('confetti-canvas'),ctx=canvas.getContext('2d');
   canvas.width=window.innerWidth; canvas.height=window.innerHeight;
@@ -4309,10 +4166,6 @@ function launchConfetti(){
   setTimeout(()=>{cancelAnimationFrame(frame);ctx.clearRect(0,0,canvas.width,canvas.height)},5000);
 }
 
-/* ═══════════════════════════════════════════════
-   FEATURE 11 — WIN ANIMATIONS
-   Player picks their celebration style in stats popup
-═══════════════════════════════════════════════ */
 let selectedWinAnim = localStorage.getItem('winAnim') || 'confetti';
 
 const WIN_ANIMS = [
@@ -4450,16 +4303,15 @@ function launchDiamond() {
   })();
 }
 
-/* ═══════════════════════════════════════════════
-   FEATURE 6 — PERSONAL STATS
-   Stored in localStorage — zero Firebase cost
-═══════════════════════════════════════════════ */
 function loadStats() {
-  return JSON.parse(localStorage.getItem('dingo_stats') || '{"played":0,"wins":0,"losses":0}');
+  const s = JSON.parse(localStorage.getItem('dingo_stats') || '{"played":0,"wins":0,"losses":0,"tournamentWins":0}');
+  if (typeof s.tournamentWins !== 'number') s.tournamentWins = 0;
+  return s;
 }
 function saveStats(s) { localStorage.setItem('dingo_stats', JSON.stringify(s)); }
 function recordWin()  { const s=loadStats(); s.played++; s.wins++;    saveStats(s); }
 function recordLoss() { const s=loadStats(); s.played++; s.losses++;  saveStats(s); }
+function recordTournamentWin() { const s=loadStats(); s.tournamentWins++; saveStats(s); }
 
 function openStatsPopup() {
   const d = window.DINGO || {};
@@ -4473,6 +4325,7 @@ function openStatsPopup() {
   document.getElementById('stat-losses').textContent   = s.losses;
   const wr = s.played > 0 ? Math.round(s.wins/s.played*100) : 0;
   document.getElementById('stat-winrate').textContent  = wr + '%';
+  document.getElementById('stat-tournament-wins').textContent = s.tournamentWins || 0;
   renderWinAnimPicker();
   document.getElementById('stats-popup').classList.add('show');
 }
@@ -4482,12 +4335,9 @@ document.getElementById('stats-close-btn').addEventListener('click', () => {
   document.getElementById('stats-popup').classList.remove('show');
 });
 document.getElementById('stats-reset-btn').addEventListener('click', () => {
-  if(confirm('Reset all stats?')){ saveStats({played:0,wins:0,losses:0}); openStatsPopup(); }
+  if(confirm('Reset all stats?')){ saveStats({played:0,wins:0,losses:0,tournamentWins:0}); openStatsPopup(); }
 });
 
-/* ═══════════════════════════════════════════════
-   FEATURE 12 — PLAYER CARD
-═══════════════════════════════════════════════ */
 const RANK_TITLES = ['Rookie','Arena Fighter','Champion','Legend','DiNGo Master'];
 function getRankTitle() {
   const s = loadStats();
@@ -4511,7 +4361,7 @@ function openPlayerCard() {
   document.getElementById('player-card-popup').classList.add('show');
 }
 
-document.getElementById('show-card-btn').addEventListener('click', openPlayerCard);
+document.getElementById('show-card-btn').addEventListener('click', openStatsPopup);
 document.getElementById('pc-close-btn').addEventListener('click', () => {
   document.getElementById('player-card-popup').classList.remove('show');
 });
@@ -4523,9 +4373,6 @@ document.getElementById('pc-share-btn').addEventListener('click', () => {
   }
 });
 
-/* ═══════════════════════════════════════════════
-   FEATURE 9 — BOARD THEMES
-═══════════════════════════════════════════════ */
 const BOARD_THEMES = [
   { id:'default', name:'Neon',   bg:'#0d0d0f', cell:'#00ffcc', win:'#ffcc00' },
   { id:'retro',   name:'Retro',  bg:'#001100', cell:'#00ff00', win:'#ffff00' },
@@ -4580,18 +4427,11 @@ document.getElementById('theme-picker-btn').addEventListener('click',()=>{
 document.getElementById('theme-modal-close').addEventListener('click',()=>{
   document.getElementById('theme-picker-modal').classList.remove('show');
 });
-// Apply saved theme on load
+
 applyBoardTheme(activeTheme);
 
-/* ═══════════════════════════════════════════════
-   FEATURE 10 — BACKGROUND MUSIC  (5 relaxing tracks)
-   All audio is synthesized via Web Audio API — no files needed.
-   Each track is a self-contained composer function that schedules
-   notes/pads/bass into a shared AudioContext and loops seamlessly.
-═══════════════════════════════════════════════ */
 let musicAudioCtx = null, musicPlaying = false, musicNodes = [], musicTrack = 0;
 
-/* ── 5 named tracks ───────────────────────────────────────────────────────── */
 const MUSIC_TRACKS = [
   { name: 'Ocean Drift',   fn: 'composeOceanDrift'   },
   { name: 'Lo-Fi Chill',   fn: 'composeLoFiChill'    },
@@ -4629,7 +4469,7 @@ function playMusic() {
   try {
     const ctx = getMusicCtx();
     const composerName = MUSIC_TRACKS[musicTrack].fn;
-    window[composerName](ctx);   // each composer pushes its nodes into musicNodes
+    window[composerName](ctx);   
     musicPlaying = true;
     updateMusicUI();
   } catch(e) {
@@ -4639,11 +4479,6 @@ function playMusic() {
   }
 }
 
-/* ── Shared helpers ─────────────────────────────────────────────────────────
-   makeGain  : create a GainNode and connect it to a destination
-   makeOsc   : create a scheduled oscillator through a gain node
-   schedLoop : schedule N bars of notes and re-call playMusic when done
-──────────────────────────────────────────────────────────────────────────── */
 function makeGain(ctx, val, dest) {
   const g = ctx.createGain();
   g.gain.value = val;
@@ -4666,24 +4501,18 @@ function schedNote(ctx, dest, freq, t, dur, type='sine', vol=0.18) {
 }
 
 function schedLoop(ctx, durationSec) {
-  // When the track finishes, restart if still in "playing" state
+  
   const tid = setTimeout(() => { if (musicPlaying) playMusic(); }, (durationSec + 0.2) * 1000);
   musicNodes.push({ stop: () => clearTimeout(tid), disconnect: () => {} });
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   TRACK 1 — Ocean Drift
-   Slow, ambient pads built from detuned sine waves in C-major pentatonic.
-   A gentle reverb-like effect is created by stacking 3 slightly detuned
-   oscillators per note (a classic "chorus pad" technique).
-══════════════════════════════════════════════════════════════════════════ */
 function composeOceanDrift(ctx) {
   const master = makeGain(ctx, 0.18);
-  // C-major pentatonic: C3 D3 E3 G3 A3 C4 D4 E4
+  
   const freqs = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63];
-  const chord1 = [0, 2, 4];   // C E G
-  const chord2 = [1, 4, 5];   // D A C
-  const barsec = 3.6;          // very slow
+  const chord1 = [0, 2, 4];   
+  const chord2 = [1, 4, 5];   
+  const barsec = 3.6;          
   const bars   = 8;
 
   for (let b = 0; b < bars; b++) {
@@ -4691,7 +4520,7 @@ function composeOceanDrift(ctx) {
     const t = ctx.currentTime + b * barsec;
     chord.forEach((idx, i) => {
       const f = freqs[idx];
-      // Stacked detuned sines = warm pad
+      
       [-3, 0, 3].forEach(detune => {
         const osc  = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -4706,34 +4535,29 @@ function composeOceanDrift(ctx) {
         musicNodes.push(osc); musicNodes.push(gain);
       });
     });
-    // Low sub bass pulse
+    
     schedNote(ctx, master, freqs[chord[0]] / 2, t + 0.1, barsec * 0.4, 'sine', 0.22);
   }
 
   schedLoop(ctx, bars * barsec);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   TRACK 2 — Lo-Fi Chill
-   Classic lo-fi formula: soft muted piano notes (triangle wave), lazy drum
-   hits (short noise bursts), and a warm bass line.  Tempo: 78 BPM.
-══════════════════════════════════════════════════════════════════════════ */
 function composeLoFiChill(ctx) {
   const master = makeGain(ctx, 0.15);
   const bpm    = 78;
   const beat   = 60 / bpm;
-  const bars   = 16;  // 16 beats
+  const bars   = 16;  
   const dur    = bars * beat;
 
-  // Chord voicings (Fmaj7 → Am7 → Dm7 → Cmaj7) in Hz — each lasts 4 beats
+  
   const chords = [
-    [174.61, 220.00, 261.63, 349.23],   // Fmaj7
-    [220.00, 261.63, 329.63, 440.00],   // Am7
-    [146.83, 174.61, 220.00, 293.66],   // Dm7
-    [130.81, 164.81, 196.00, 261.63],   // Cmaj7
+    [174.61, 220.00, 261.63, 349.23],   
+    [220.00, 261.63, 329.63, 440.00],   
+    [146.83, 174.61, 220.00, 293.66],   
+    [130.81, 164.81, 196.00, 261.63],   
   ];
 
-  // Piano notes — two notes per beat, alternating chords
+  
   chords.forEach((ch, ci) => {
     const chStart = ctx.currentTime + ci * 4 * beat;
     ch.forEach((f, ni) => {
@@ -4742,7 +4566,7 @@ function composeLoFiChill(ctx) {
     });
   });
 
-  // Bass: root of each chord, quarter notes
+  
   const roots = [87.31, 110.00, 73.42, 65.41];
   roots.forEach((r, ci) => {
     for (let b = 0; b < 4; b++) {
@@ -4751,10 +4575,10 @@ function composeLoFiChill(ctx) {
     }
   });
 
-  // Lo-fi drum hits: kick (low thud) + snare (noise burst)
+  
   for (let b = 0; b < bars; b++) {
     const t = ctx.currentTime + b * beat;
-    // Kick on beats 1 & 3 (0, 2, 4, 6 ...)
+    
     if (b % 4 === 0 || b % 4 === 2) {
       const osc = ctx.createOscillator(); const g = ctx.createGain();
       osc.type = 'sine';
@@ -4766,7 +4590,7 @@ function composeLoFiChill(ctx) {
       osc.start(t); osc.stop(t + 0.15);
       musicNodes.push(osc); musicNodes.push(g);
     }
-    // Snare on beats 2 & 4
+    
     if (b % 4 === 1 || b % 4 === 3) {
       const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
       const d   = buf.getChannelData(0);
@@ -4784,14 +4608,9 @@ function composeLoFiChill(ctx) {
   schedLoop(ctx, dur);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   TRACK 3 — Neon Night
-   Slow synthwave: arpeggiated sawtooth chords over a pulsing bass and
-   a gentle high-pass filtered hi-hat.  Tempo: 95 BPM.
-══════════════════════════════════════════════════════════════════════════ */
 function composeNeonNight(ctx) {
   const master = makeGain(ctx, 0.13);
-  // Low-pass filter for warmth
+  
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass'; lpf.frequency.value = 2800; lpf.Q.value = 0.8;
   lpf.connect(master);
@@ -4800,7 +4619,7 @@ function composeNeonNight(ctx) {
   const beat = 60 / bpm;
   const bars = 16;
 
-  // Arpeggios — Am pentatonic descending
+  
   const arp = [440, 392, 329.63, 261.63, 220, 196, 164.81, 130.81];
   for (let i = 0; i < bars * 2; i++) {
     const f = arp[i % arp.length];
@@ -4815,14 +4634,14 @@ function composeNeonNight(ctx) {
     musicNodes.push(osc); musicNodes.push(g);
   }
 
-  // Pulsing bass (one note per 2 beats)
+  
   const bassLine = [55, 55, 65.41, 55, 49, 55, 65.41, 49];
   bassLine.forEach((f, i) => {
     const t = ctx.currentTime + i * beat * 2;
     schedNote(ctx, master, f, t, beat * 1.7, 'sine', 0.32);
   });
 
-  // Pad chord swell every 4 beats
+  
   [[110, 138.59, 164.81], [98, 123.47, 146.83]].forEach((ch, ci) => {
     ch.forEach(f => {
       const t = ctx.currentTime + ci * beat * 8;
@@ -4840,31 +4659,26 @@ function composeNeonNight(ctx) {
   schedLoop(ctx, bars * beat);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   TRACK 4 — Pixel Rain
-   Calm chiptune: square-wave melody in G-major pentatonic with a
-   light pulse bass.  Quiet and meditative.  Tempo: 90 BPM.
-══════════════════════════════════════════════════════════════════════════ */
 function composePixelRain(ctx) {
   const master = makeGain(ctx, 0.10);
   const bpm    = 90;
   const beat   = 60 / bpm;
 
-  // G-major pentatonic: G4 A4 B4 D5 E5 G5
+  
   const scale = [392, 440, 493.88, 587.33, 659.25, 783.99];
-  // A gentle melody — pattern over 16 beats
+  
   const melody = [0,2,4,2, 1,3,5,3, 2,4,3,1, 0,2,1,null];
   melody.forEach((idx, b) => {
     if (idx === null) return;
     const t = ctx.currentTime + b * beat;
     schedNote(ctx, master, scale[idx], t, beat * 0.55, 'square', 0.12);
-    // Harmony a third below on alternate beats
+    
     if (b % 2 === 0 && idx >= 2) {
       schedNote(ctx, master, scale[idx - 2], t + 0.01, beat * 0.45, 'square', 0.06);
     }
   });
 
-  // Bass: root notes, half notes
+  
   [196, 220, 196, 174.61].forEach((f, i) => {
     const t = ctx.currentTime + i * beat * 4;
     schedNote(ctx, master, f, t, beat * 3.6, 'sine', 0.22);
@@ -4873,16 +4687,10 @@ function composePixelRain(ctx) {
   schedLoop(ctx, 16 * beat);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   TRACK 5 — Forest Hum
-   Ambient drone: overlapping sine tones tuned to natural harmonics (C2 and
-   its 3rd, 5th, 7th, 9th) that shift slowly in volume, creating the organic
-   swelling texture of insects and distant wind.
-══════════════════════════════════════════════════════════════════════════ */
 function composeForestHum(ctx) {
   const master = makeGain(ctx, 0.14);
-  const root = 65.41; // C2
-  // Natural harmonic series
+  const root = 65.41; 
+  
   const harmonics = [1, 1.5, 2, 2.5, 3, 4, 5, 6].map(h => root * h);
   const totalDur  = 28;
 
@@ -4893,7 +4701,7 @@ function composeForestHum(ctx) {
     const gain   = ctx.createGain();
     osc.type     = 'sine';
     osc.frequency.value = f;
-    // Each harmonic swells in and out at a slightly different phase
+    
     const t0 = ctx.currentTime + delay;
     gain.gain.setValueAtTime(0, t0);
     gain.gain.linearRampToValueAtTime(0.06 / (1 + i * 0.4), t0 + dur * 0.3);
@@ -4904,7 +4712,7 @@ function composeForestHum(ctx) {
     musicNodes.push(osc); musicNodes.push(gain);
   });
 
-  // Random bird-like trill notes (triangle, very soft)
+  
   for (let i = 0; i < 8; i++) {
     const t = ctx.currentTime + 2 + i * 3.2 + Math.random() * 1.5;
     const f = [880, 1047, 1174.66, 1318.51][Math.floor(Math.random() * 4)];
@@ -4915,7 +4723,6 @@ function composeForestHum(ctx) {
   schedLoop(ctx, totalDur);
 }
 
-/* ── Toolbar button: toggle panel + auto-start first track ─────────────── */
 document.getElementById('music-toggle-btn').addEventListener('click', () => {
   const panel = document.getElementById('music-panel');
   if (!panel) return;
@@ -4939,37 +4746,25 @@ document.getElementById('music-style-btn').addEventListener('click', () => {
   musicTrack = (musicTrack + 1) % MUSIC_TRACKS.length;
   if (musicPlaying) playMusic(); else updateMusicUI();
 });
-/* ═══════════════════════════════════════════════
-   FEATURE 14 — GAME HISTORY
-   Records every completed match locally and displays
-   in a popup with opponent name, result, date, and
-   a quick "Add Friend" button.
-═══════════════════════════════════════════════ */
 
-/* -- Storage helpers ---------------------------------------------------- */
 const HISTORY_KEY = 'dingo_history';
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return []; }
 }
 function saveHistory(arr) {
-  // Keep only the 50 most recent entries to avoid bloat
+  
   localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-50)));
 }
 
-/* _currentOpponent: filled in during multiplayer setup so that
-   recordWin/recordLoss can embed opponent info in the history entry. */
-let _currentOpponent = null; // { name, username, avatar }
+let _currentOpponent = null; 
 
-/* Call this once opponent's playerInfo is known (after Firebase playerInfo update) */
 function setCurrentOpponent(name, username, avatar) {
   _currentOpponent = { name: name || 'Unknown', username: username || '', avatar: avatar || '' };
 }
 
-/* Augment the existing recordWin / recordLoss helpers -------------------- */
 const _origRecordWin  = recordWin;
 const _origRecordLoss = recordLoss;
 
-// Override recordWin to also log the history entry
 recordWin = function() {
   _origRecordWin();
   addHistoryEntry('win');
@@ -4980,19 +4775,24 @@ recordLoss = function() {
 };
 
 function addHistoryEntry(result) {
+  
+  
+  if (!_currentOpponent || !_currentOpponent.username) {
+    _currentOpponent = null;
+    return;
+  }
   const history = loadHistory();
   history.push({
     result,
-    opponent: _currentOpponent ? { ..._currentOpponent } : null,
+    opponent: { ..._currentOpponent },
     ts: Date.now()
   });
   saveHistory(history);
-  _currentOpponent = null; // reset after recording
+  _currentOpponent = null;
 }
 
-/* -- Render history popup ----------------------------------------------- */
 function openHistoryPopup() {
-  const history = loadHistory().reverse(); // most recent first
+  const history = loadHistory().reverse(); 
   const list    = document.getElementById('history-list');
   const myProfile = loadProfile();
 
@@ -5003,9 +4803,9 @@ function openHistoryPopup() {
     history.forEach(entry => {
       const won   = entry.result === 'win';
       const opp   = entry.opponent;
-      const date  = entry.ts ? new Date(entry.ts).toLocaleDateString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const date  = entry.ts ? new Date(entry.ts).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 
-      // Build avatar HTML safely (SVG vs emoji)
+      
       let avHtml = '<span style="font-size:22px">👤</span>';
       if (opp && opp.avatar) {
         avHtml = opp.avatar.trim().startsWith('<svg')
@@ -5023,9 +4823,9 @@ function openHistoryPopup() {
         <div style="flex-shrink:0">${avHtml}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            ${opp ? (opp.name || 'Unknown') : 'vs Bot'}
+            ${opp ? (opp.name || 'Unknown') : 'Unknown'}
           </div>
-          <div style="font-size:10px;color:var(--ink3)">${opp && opp.username ? '@' + opp.username : ''} · ${date}</div>
+          <div style="font-size:10px;color:var(--ink3)">${opp && opp.username ? '@' + opp.username + ' · ' : opp && !opp.username ? '🤖 Bot · ' : ''}${date}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
           <div style="font-size:11px;font-weight:800;letter-spacing:1px;
@@ -5045,7 +4845,7 @@ function openHistoryPopup() {
             : ''}
         </div>
       `;
-      // Attach friend request button safely
+      
       const addBtn = card.querySelector('.hist-add-btn');
       if (addBtn) {
         addBtn.addEventListener('click', async () => {
@@ -5071,7 +4871,6 @@ function closeHistoryPopup() {
   document.getElementById('history-overlay').style.display = 'none';
 }
 
-/* sendFriendRequest: reusable — sends a request to Firebase */
 async function sendFriendRequest(toUsername, toName, toAvatar) {
   const myProfile = loadProfile();
   if (!myProfile || !myProfile.username) return;
@@ -5085,20 +4884,9 @@ async function sendFriendRequest(toUsername, toName, toAvatar) {
   });
 }
 
-/* Wire up history button and popup close actions */
 document.getElementById('history-btn').addEventListener('click', openHistoryPopup);
 document.getElementById('history-close-btn').addEventListener('click', closeHistoryPopup);
 document.getElementById('history-overlay').addEventListener('click', closeHistoryPopup);
-
-
-/* ═══════════════════════════════════════════════
-   FEATURE 15 — MAILBOX (missed friend requests)
-   Watches friendRequests/<myUsername> in Firebase.
-   Any pending request that hasn't been acted on yet
-   (status === 'pending') shows in the mailbox panel
-   so players can accept/decline anytime, even after
-   they return from being offline.
-═══════════════════════════════════════════════ */
 
 let _mailboxOpen = false;
 
@@ -5119,7 +4907,6 @@ document.getElementById('mailbox-btn').addEventListener('click', () => {
   if (_mailboxOpen) { closeMailbox(); } else { openMailbox(); }
 });
 
-/* Watch for pending friend requests and update badge + live list */
 function watchMailbox(myUsername) {
   if (!myUsername) return;
   db.ref('friendRequests/' + myUsername).on('value', snap => {
@@ -5127,7 +4914,7 @@ function watchMailbox(myUsername) {
     const pending = Object.entries(data).filter(([,v]) => v && v.status === 'pending');
     const count  = pending.length;
 
-    // Update badge
+    
     const badge = document.getElementById('mailbox-badge');
     if (badge) {
       if (count > 0) {
@@ -5138,12 +4925,11 @@ function watchMailbox(myUsername) {
       }
     }
 
-    // If panel is open, refresh it live
+    
     if (_mailboxOpen) loadMailboxEntries();
   });
 }
 
-/* Render all pending requests into the mailbox panel */
 async function loadMailboxEntries() {
   const myProfile = loadProfile();
   const listEl    = document.getElementById('mailbox-list');
@@ -5183,7 +4969,7 @@ async function loadMailboxEntries() {
           style="font-size:10px;padding:3px 10px">✕</button>
       </div>
     `;
-    // Accept
+    
     row.querySelector('.mbox-accept').addEventListener('click', async () => {
       const from = fromUsername;
       const mp   = loadProfile();
@@ -5196,13 +4982,13 @@ async function loadMailboxEntries() {
       });
       await db.ref('friendRequests/' + mp.username + '/' + from).remove();
       row.remove();
-      // Refresh the live friends list if visible
+      
       if (document.getElementById('friends-screen').classList.contains('active')) {
         renderFriendsList();
       }
       showToast('✓ ' + (reqData.name || from) + ' added as friend!', 2500);
     });
-    // Decline
+    
     row.querySelector('.mbox-decline').addEventListener('click', async () => {
       const mp = loadProfile();
       if (mp) await db.ref('friendRequests/' + mp.username + '/' + fromUsername).remove();
@@ -5212,7 +4998,6 @@ async function loadMailboxEntries() {
   });
 }
 
-/* Small generic toast (reuse if exists, else make a simple one) */
 function showToast(msg, ms) {
   let t = document.getElementById('generic-toast');
   if (!t) {
@@ -5227,14 +5012,6 @@ function showToast(msg, ms) {
   t._to = setTimeout(() => { t.style.opacity = '0'; }, ms || 2000);
 }
 
-
-
-/* ═══════════════════════════════════════════════
-   FEATURE 13 — TOURNAMENT MODE
-   Host creates 4-player bracket with a room code.
-   All state stored in Firebase under tournaments/<code>
-   Free-tier safe: small data, deleted after completion.
-═══════════════════════════════════════════════ */
 let tournCode='', tournRole='', tournData=null;
 
 function genTournCode(){
@@ -5265,10 +5042,27 @@ function renderTournSlots(players){
   }
   const count=filled.length;
   document.getElementById('tourn-status-bar').textContent=
-    count>=4?'All players ready! Start when you\'re ready.':
+    count>=4?'All players ready! Starting tournament…':
     `${count}/4 players joined — waiting for ${4-count} more…`;
   const startBtn=document.getElementById('tourn-start-btn');
   if(startBtn) startBtn.disabled=count<4;
+
+  // Auto-start tournament when exactly 4 players have joined (host triggers it)
+  if (count >= 4 && tournRole === 'p1' && tournCode) {
+    db.ref(`tournaments/${tournCode}/status`).get().then(snap => {
+      if (snap.val() === 'lobby') {
+        // Auto-start
+        db.ref(`tournaments/${tournCode}`).update({
+          status: 'bracket',
+          semiFinals: [
+            {p1:'p1',p2:'p2',winner:null,roomId:null},
+            {p1:'p3',p2:'p4',winner:null,roomId:null},
+          ],
+          final: {p1:null,p2:null,winner:null,roomId:null}
+        });
+      }
+    }).catch(()=>{});
+  }
 }
 
 function renderTournBracket(data){
@@ -5277,7 +5071,7 @@ function renderTournBracket(data){
   div.innerHTML='';
   const sf=data.semiFinals||[];
   const fi=data.final||null;
-  // Semi Finals
+  
   const sfDiv=document.createElement('div'); sfDiv.className='bracket-round';
   sfDiv.innerHTML='<div class="bracket-round-label">Semi Finals</div>';
   sf.forEach((m,i)=>{
@@ -5293,7 +5087,7 @@ function renderTournBracket(data){
     sfDiv.appendChild(md);
   });
   div.appendChild(sfDiv);
-  // Final
+  
   if(fi){
     const fiDiv=document.createElement('div'); fiDiv.className='bracket-round';
     fiDiv.innerHTML='<div class="bracket-round-label">🏆 Final</div>';
@@ -5319,76 +5113,39 @@ function renderTournBracket(data){
   }
 }
 
-function watchTournament(code){
-  db.ref(`tournaments/${code}`).on('value',snap=>{
-    const data=snap.val();
-    if(!data) return;
-    tournData=data;
-    if(data.status==='lobby'){
-      renderTournSlots(data.players);
-    } else if(data.status==='bracket'||data.status==='final'){
-      showTournView('tourn-bracket-view');
-      renderTournBracket(data);
-      // Check if it's my match
-      const myMatchBtn=document.getElementById('tourn-play-match-btn');
-      let myMatch=null;
-      const sf=data.semiFinals||[];
-      sf.forEach(m=>{ if(!m.winner&&(m.p1===tournRole||m.p2===tournRole)) myMatch=m; });
-      if(!myMatch&&data.final&&!data.final.winner&&(data.final.p1===tournRole||data.final.p2===tournRole)) myMatch=data.final;
-      if(myMatchBtn) myMatchBtn.style.display=myMatch?'block':'none';
-      const statusEl=document.getElementById('tourn-bracket-status');
-      if(statusEl){
-        if(data.status==='final'&&data.final&&data.final.winner){
-          statusEl.textContent=data.players[data.final.winner]?.name+' is the Champion! 🏆';
-        } else if(myMatch){
-          statusEl.textContent='Your match is ready! Click below to play.';
-        } else {
-          statusEl.textContent='Waiting for your next match…';
-        }
-      }
-    }
-  });
-}
-
 document.getElementById('tournament-btn').addEventListener('click',()=>{
   showTournView('tourn-choice-view');
   showScreen('tournament');
 });
 
-/* ══════════════════════════════════════════════════════════════
-   PHASE 3 — FRIENDS SYSTEM
-   Firebase structure:
-     users/<username>/  { name, avatar, color, online: true/false }
-     friendRequests/<to>/<from>/ { name, avatar, username, status:'pending' }
-     friends/<username>/<friendUsername>/ { name, avatar, online }
-     gameInvites/<username>/ { from, fromName, fromAvatar, roomId }
-══════════════════════════════════════════════════════════════ */
-
 let _friendsListeners = [];
-let _pendingFriendReq = null; // { from, fromName, fromAvatar }
-let _pendingGameInvite = null; // { from, fromName, fromAvatar, roomId }
+let _pendingFriendReq = null; 
+let _pendingGameInvite = null; 
 
-/* Register user in Firebase so friends can find them */
 function registerUserPresence() {
   const p = loadProfile();
   if (!p || !p.username) return;
   const userRef = db.ref('users/' + p.username);
-  userRef.update({ name: p.name, avatar: p.avatar, color: p.color, online: true, lastSeen: Date.now() });
-  userRef.child('online').onDisconnect().set(false);
+
+  // Listen for connection state to handle reconnects cleanly
+  db.ref('.info/connected').on('value', snap => {
+    if (!snap.val()) return;
+    // On (re)connect: set online=false on disconnect, then set online=true
+    userRef.child('online').onDisconnect().set(false);
+    userRef.update({ name: p.name, avatar: p.avatar, color: p.color, online: true, lastSeen: Date.now() });
+  });
+
   window.DINGO.username = p.username;
-  // Update my-username display in friends screen
+  
   const el = document.getElementById('my-username-display');
   if (el) el.textContent = '@' + p.username;
-  // Watch for incoming friend requests
+  
   watchFriendRequests(p.username);
-  // Watch for game invites
   watchGameInvites(p.username);
-  // Watch friends online status
   watchFriendsStatus(p.username);
   watchMailbox(p.username);
 }
 
-/* Show friends screen */
 document.getElementById('friends-btn').addEventListener('click', () => {
   const p = loadProfile();
   const el = document.getElementById('my-username-display');
@@ -5397,11 +5154,10 @@ document.getElementById('friends-btn').addEventListener('click', () => {
   showScreen('friends');
 });
 document.getElementById('friends-back-btn').addEventListener('click', () => {
-  detachFriendStatusListeners(); // stop live Firebase listeners when leaving
+  detachFriendStatusListeners(); 
   showScreen('home');
 });
 
-/* Copy username */
 document.getElementById('copy-username-btn').addEventListener('click', () => {
   const p = loadProfile();
   if (!p) return;
@@ -5411,7 +5167,6 @@ document.getElementById('copy-username-btn').addEventListener('click', () => {
   setTimeout(() => document.getElementById('copy-username-btn').textContent = '📋 Copy', 2000);
 });
 
-/* Add friend */
 document.getElementById('add-friend-btn').addEventListener('click', async () => {
   const myProfile = loadProfile();
   if (!myProfile) return;
@@ -5430,7 +5185,7 @@ document.getElementById('add-friend-btn').addEventListener('click', async () => 
       return;
     }
     const theirData = snap.val();
-    // Send friend request
+    
     await db.ref('friendRequests/' + target + '/' + myProfile.username).set({
       name:   myProfile.name,
       avatar: myProfile.avatar,
@@ -5447,7 +5202,6 @@ document.getElementById('add-friend-btn').addEventListener('click', async () => 
   }
 });
 
-/* Watch for incoming friend requests */
 function watchFriendRequests(myUsername) {
   const reqRef = db.ref('friendRequests/' + myUsername);
   reqRef.on('child_added', snap => {
@@ -5461,7 +5215,7 @@ function watchFriendRequests(myUsername) {
 
 function showFriendRequestToast(fromUsername, data) {
   _pendingFriendReq = { from: fromUsername, ...data };
-  // Build avatar safely — SVG must go via innerHTML (textContent would print raw markup)
+  
   const isSvg = data.avatar && data.avatar.trim().startsWith('<svg');
   const avHtml = isSvg
     ? `<span style="display:inline-block;width:22px;height:22px;vertical-align:middle;border-radius:4px;overflow:hidden">${data.avatar}</span>`
@@ -5478,14 +5232,14 @@ document.getElementById('freq-accept-btn').addEventListener('click', async () =>
   const myProfile = loadProfile();
   if (!myProfile) return;
   const from = _pendingFriendReq.from;
-  // Add each other as friends
+  
   await db.ref('friends/' + myProfile.username + '/' + from).set({
     name: _pendingFriendReq.name, avatar: _pendingFriendReq.avatar, username: from, online: false
   });
   await db.ref('friends/' + from + '/' + myProfile.username).set({
     name: myProfile.name, avatar: myProfile.avatar, username: myProfile.username, online: false
   });
-  // Remove request
+  
   await db.ref('friendRequests/' + myProfile.username + '/' + from).remove();
   document.getElementById('friend-req-toast').style.display = 'none';
   document.getElementById('friends-notif-dot').style.display = 'none';
@@ -5501,13 +5255,7 @@ document.getElementById('freq-decline-btn').addEventListener('click', async () =
   _pendingFriendReq = null;
 });
 
-/* Watch friends online status */
-/* ─── Realtime online-status listeners for the friends screen ───────────────
-   We keep a map of { username → Firebase ref } so we can detach every listener
-   the moment the user leaves the friends screen.  This prevents ghost callbacks
-   from firing on unrelated screens.
-──────────────────────────────────────────────────────────────────────────── */
-let _friendStatusListeners = {}; // { username: dbRef }
+let _friendStatusListeners = {}; 
 
 function detachFriendStatusListeners() {
   Object.entries(_friendStatusListeners).forEach(([u, r]) => {
@@ -5516,8 +5264,6 @@ function detachFriendStatusListeners() {
   _friendStatusListeners = {};
 }
 
-/* watchFriendsStatus — simplified: just keeps the friend count badge live.
-   Per-card live status is now owned by renderFriendsList itself. */
 function watchFriendsStatus(myUsername) {
   db.ref('friends/' + myUsername).on('value', snap => {
     const count = snap.exists() ? Object.keys(snap.val() || {}).length : 0;
@@ -5526,7 +5272,6 @@ function watchFriendsStatus(myUsername) {
   });
 }
 
-/* Local friends cache — kept for legacy compat */
 function getLocalFriends() {
   try { return JSON.parse(localStorage.getItem('dingo_friends') || '{}'); } catch(e) { return {}; }
 }
@@ -5534,11 +5279,6 @@ function setLocalFriends(data) {
   localStorage.setItem('dingo_friends', JSON.stringify(data));
 }
 
-/* ─── applyOnlineStatus ──────────────────────────────────────────────────────
-   Updates the three status elements inside a friend card in-place, without
-   rebuilding the whole card.  Called once immediately (current value) and
-   again automatically every time Firebase changes the value.
-──────────────────────────────────────────────────────────────────────────── */
 function applyOnlineStatus(card, username, isOnline) {
   if (!card) return;
   const dot    = card.querySelector('.fs-dot');
@@ -5553,18 +5293,12 @@ function applyOnlineStatus(card, username, isOnline) {
     label.textContent = isOnline ? 'Online' : 'Offline';
     label.style.color = isOnline ? 'var(--c1)' : 'var(--ink3)';
   }
-  // Show invite button only when friend is online
+  
   if (invRow) invRow.style.display = isOnline ? 'block' : 'none';
 }
 
-/* ─── renderFriendsList ──────────────────────────────────────────────────────
-   Builds the friends list once from a snapshot, then attaches a LIVE Firebase
-   listener to each card so the online/offline dot updates in real-time.
-   Key difference from the old code: we use .on('value') instead of .get(),
-   which fires immediately with the current state AND on every future change.
-──────────────────────────────────────────────────────────────────────────── */
 async function renderFriendsList() {
-  // Detach any previous status listeners before rebuilding the list
+  
   detachFriendStatusListeners();
 
   const myProfile = loadProfile();
@@ -5597,14 +5331,14 @@ async function renderFriendsList() {
     for (const username of keys) {
       const f = friends[username];
 
-      // Avatar — SVG or emoji fallback
+      
       const avatarHtml = (f.avatar && f.avatar.trim().startsWith('<svg'))
         ? `<div style="width:40px;height:40px;flex-shrink:0;border-radius:8px;overflow:hidden">${f.avatar}</div>`
         : `<div style="font-size:28px;flex-shrink:0;width:40px;text-align:center">${f.avatar || '👤'}</div>`;
 
       const card = document.createElement('div');
       card.className = 'friend-card';
-      card.dataset.username = username; // used by applyOnlineStatus to find the card
+      card.dataset.username = username; 
       card.style.cssText = `
         display:flex;align-items:center;gap:12px;
         background:var(--panel2);border:2px solid var(--edge2);
@@ -5612,8 +5346,8 @@ async function renderFriendsList() {
         transition:border-color .15s;
       `;
 
-      // The .fs-dot, .fs-label and .fs-invite-row are deliberately classed
-      // so applyOnlineStatus() can update them cheaply without innerHTML rebuilds.
+      
+      
       card.innerHTML = `
         ${avatarHtml}
         <div style="flex:1;min-width:0">
@@ -5634,24 +5368,24 @@ async function renderFriendsList() {
         </div>
       `;
 
-      // Safe event listener — no inline onclick
+      
       card.querySelector('.fs-invite-btn')
           .addEventListener('click', () => inviteFriend(username));
 
       container.appendChild(card);
 
-      // ── Attach LIVE listener — this is the core fix ──────────────────────
-      // Firebase fires immediately with the current stored value, which gives
-      // us the correct initial state.  Then it fires again automatically
-      // whenever the friend's online field changes — no polling or re-renders.
+      
+      
+      
+      
       const statusRef = db.ref('users/' + username + '/online');
       statusRef.on('value', snap => {
         const isOnline = snap.val() === true;
-        // Query the card fresh in case the list was rebuilt since this fired
+        
         const liveCard = container.querySelector(`.friend-card[data-username="${username}"]`);
         applyOnlineStatus(liveCard, username, isOnline);
       });
-      _friendStatusListeners[username] = statusRef; // track so we can detach later
+      _friendStatusListeners[username] = statusRef; 
     }
 
   } catch(e) {
@@ -5660,30 +5394,24 @@ async function renderFriendsList() {
   }
 }
 
-/* Invite friend to a game — improved:
-   1. Creates the room immediately so the code is valid when friend joins
-   2. Navigates the inviter to the setup screen as host (room code shown)
-   3. Sends the invite to Firebase with roomId + notification badge
-   4. Shows a dismissable in-app toast instead of alert()
-*/
 async function inviteFriend(username) {
   const myProfile = loadProfile();
   if (!myProfile) return;
 
-  // Read current DINGO profile into game state vars
+  
   readDINGO();
 
-  // Generate a room and create it in Firebase so it's live when friend joins
+  
   const inviteRoomId = genRoomId();
   try {
     await set(ref(db, `rooms/${inviteRoomId}`), {
       players:    { p1: myPlayerId },
-      playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor } },
+      playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' } },
       gameState:  { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
       scores:     { p1: 0, p2: 0 }
     });
 
-    // Write the invite to the friend's gameInvites node
+    
     await db.ref('gameInvites/' + username).push({
       from:       myProfile.username,
       fromName:   myProfile.name,
@@ -5692,7 +5420,7 @@ async function inviteFriend(username) {
       ts:         Date.now()
     });
 
-    // Navigate the inviter to the setup screen as host (p1)
+    
     roomId     = inviteRoomId;
     playerRole = 'p1';
     document.getElementById('display-room-code').innerText = roomId;
@@ -5703,7 +5431,7 @@ async function inviteFriend(username) {
     setupPresence();
     watchOpponentPresence();
 
-    // Listen for p2 joining
+    
     onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
       const info = snap.val();
       if (info?.p2) {
@@ -5721,7 +5449,7 @@ async function inviteFriend(username) {
       if (s) { scores.p1 = s.p1 || 0; scores.p2 = s.p2 || 0; updateScoreDisplay(); }
     });
 
-    // Show a success toast in the setup screen
+    
     showInviteSentToast(username, inviteRoomId);
 
   } catch(err) {
@@ -5731,7 +5459,6 @@ async function inviteFriend(username) {
   }
 }
 
-/* Small "Invite sent!" toast that appears briefly in the setup screen */
 function showInviteSentToast(username, code) {
   let t = document.getElementById('invite-sent-toast');
   if (!t) {
@@ -5756,7 +5483,6 @@ function showInviteSentToast(username, code) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
-/* Watch for game invites */
 let _gameInviteBadgeCount = 0;
 function watchGameInvites(myUsername) {
   db.ref('gameInvites/' + myUsername).on('child_added', snap => {
@@ -5764,7 +5490,7 @@ function watchGameInvites(myUsername) {
     if (!data) return;
     _pendingGameInvite = { ...data, key: snap.key };
 
-    // Build avatar html for toast
+    
     const avHtml = (data.fromAvatar && data.fromAvatar.trim().startsWith('<svg'))
       ? `<span style="display:inline-block;width:24px;height:24px;vertical-align:middle">${data.fromAvatar}</span>`
       : (data.fromAvatar || '🎮');
@@ -5772,7 +5498,7 @@ function watchGameInvites(myUsername) {
       avHtml + ' <strong>@' + data.from + '</strong> invited you to play!';
     document.getElementById('game-invite-toast').style.display = 'block';
 
-    // Notification badge on the Friends button
+    
     _gameInviteBadgeCount++;
     const dot = document.getElementById('friends-notif-dot');
     if (dot) {
@@ -5781,10 +5507,10 @@ function watchGameInvites(myUsername) {
       dot.style.cssText += ';background:var(--c3);color:#000;font-size:7px;line-height:8px;text-align:center;font-weight:800';
     }
 
-    // Ping sound
+    
     if (typeof sfx !== 'undefined') sfx.ping();
 
-    // Clean up old invite from Firebase
+    
     db.ref('gameInvites/' + myUsername + '/' + snap.key).remove();
   });
 }
@@ -5792,7 +5518,7 @@ function watchGameInvites(myUsername) {
 document.getElementById('ginv-accept-btn').addEventListener('click', () => {
   if (!_pendingGameInvite) return;
   document.getElementById('game-invite-toast').style.display = 'none';
-  // Clear notification badge
+  
   _gameInviteBadgeCount = 0;
   const dot = document.getElementById('friends-notif-dot');
   if (dot) { dot.style.display = 'none'; dot.textContent = ''; }
@@ -5811,6 +5537,223 @@ document.getElementById('ginv-decline-btn').addEventListener('click', () => {
   _pendingGameInvite = null;
 });
 
+let _tournMatchJoined = false; 
+
+async function joinTournamentRoom(roomId_toJoin, myMatchRef, isP1OfMatch) {
+  if (_tournMatchJoined) return;
+  _tournMatchJoined = true;
+
+  readDINGO();
+
+  if (isP1OfMatch) {
+    
+    roomId = roomId_toJoin;
+    playerRole = 'p1';
+  } else {
+    
+    roomId = roomId_toJoin;
+    playerRole = 'p2';
+    await update(ref(db, `rooms/${roomId}/players`), { p2: myPlayerId });
+    await update(ref(db, `rooms/${roomId}/playerInfo`), {
+      p2: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' }
+    });
+  }
+
+  document.getElementById('display-room-code').innerText = roomId;
+  document.getElementById('waiting-label').innerText = isP1OfMatch ? 'Waiting for opponent…' : 'Connected!';
+  initSetupBoard(); showScreen('setup'); showChat();
+  setupPresence(); watchOpponentPresence(); watchRestartVotes();
+
+  onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
+    const info = snap.val();
+    if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar); if(playerRole==='p2') setCurrentOpponent(info.p1.name, info.p1.username||'', info.p1.avatar||''); }
+    if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar); if(playerRole==='p1') setCurrentOpponent(info.p2.name, info.p2.username||'', info.p2.avatar||''); }
+  });
+  onRoomValue(ref(db, `rooms/${roomId}/scores`), snap => {
+    const s = snap.val();
+    if (s) { scores.p1 = s.p1||0; scores.p2 = s.p2||0; updateScoreDisplay(); }
+  });
+}
+
+document.getElementById('tourn-play-match-btn').addEventListener('click', async () => {
+  if (!tournCode || !tournRole || !tournData) return;
+  if (_tournMatchJoined) return;
+
+  const data = tournData;
+  const sf = data.semiFinals || [];
+  let myMatch = null;
+  let myMatchIndex = null;
+  let isFinal = false;
+
+  
+  sf.forEach((m, i) => {
+    if (!m.winner && (m.p1 === tournRole || m.p2 === tournRole)) {
+      myMatch = m; myMatchIndex = i;
+    }
+  });
+  if (!myMatch && data.final && !data.final.winner &&
+      (data.final.p1 === tournRole || data.final.p2 === tournRole)) {
+    myMatch = data.final; isFinal = true;
+  }
+
+  if (!myMatch) {
+    alert('No active match found for you in this tournament.');
+    return;
+  }
+
+  const isP1OfMatch = myMatch.p1 === tournRole;
+  const matchPath = isFinal
+    ? `tournaments/${tournCode}/final`
+    : `tournaments/${tournCode}/semiFinals/${myMatchIndex}`;
+
+  if (myMatch.roomId) {
+    
+    await joinTournamentRoom(myMatch.roomId, matchPath, isP1OfMatch);
+    return;
+  }
+
+  if (!isP1OfMatch) {
+    
+    
+    alert("Waiting for your opponent to set up the room. Stay on this screen — you'll be taken in automatically!");
+    return;
+  }
+
+  
+  const newRoomId = genRoomId();
+  try {
+    await set(ref(db, `rooms/${newRoomId}`), {
+      players:    { p1: myPlayerId },
+      playerInfo: { p1: { name: playerName, avatar: playerAvatar, color: playerColor, username: window.DINGO.username || '' } },
+      gameState:  { status: 'waiting', currentTurn: 'p1', selectedNumbers: [0], winner: '' },
+      scores:     { p1: 0, p2: 0 },
+      tournamentMatch: { tournCode, matchPath } 
+    });
+    
+    await db.ref(matchPath + '/roomId').set(newRoomId);
+    await joinTournamentRoom(newRoomId, matchPath, true);
+  } catch(e) {
+    alert('Error creating match room: ' + e.message);
+    _tournMatchJoined = false;
+  }
+});
+
+const _origRecordWin2  = recordWin;
+const _origRecordLoss2 = recordLoss;
+recordWin = async function() {
+  _origRecordWin2();
+  await reportTournamentResult(true);
+};
+recordLoss = async function() {
+  _origRecordLoss2();
+  await reportTournamentResult(false);
+};
+
+async function reportTournamentResult(iWon) {
+  if (!tournCode) return; 
+  
+  const snap = await db.ref(`rooms/${roomId}/tournamentMatch`).get().catch(() => null);
+  if (!snap || !snap.exists()) return;
+  const { matchPath } = snap.val();
+  if (!matchPath || !iWon) return; 
+
+  
+  await db.ref(matchPath + '/winner').set(tournRole);
+
+  
+  if (!matchPath.includes('final')) {
+    const tournSnap = await db.ref(`tournaments/${tournCode}`).get();
+    const tData = tournSnap.val();
+    if (!tData) return;
+    const sf = tData.semiFinals || [];
+    if (sf.length === 2 && sf[0].winner && sf[1].winner) {
+      
+      await db.ref(`tournaments/${tournCode}/final`).update({
+        p1: sf[0].winner,
+        p2: sf[1].winner,
+        winner: null,
+        roomId: null
+      });
+      await db.ref(`tournaments/${tournCode}`).update({ status: 'final' });
+    }
+  } else {
+    // Won the final — record tournament win in stats
+    recordTournamentWin();
+    await db.ref(`tournaments/${tournCode}`).update({ status: 'complete' });
+  }
+
+  
+  _tournMatchJoined = false;
+}
+
+function watchTournament(code){
+  db.ref(`tournaments/${code}`).on('value',snap=>{
+    const data=snap.val();
+    if(!data) return;
+    tournData=data;
+    if(data.status==='lobby'){
+      const count=Object.keys(data.players||{}).length;
+      // All players see the slots view, only p1 is host
+      renderTournSlots(data.players);
+      if(tournRole !== 'p1') {
+        // Show bracket view for non-hosts so they see slot updates
+        showTournView('tourn-bracket-view');
+        const statusEl=document.getElementById('tourn-bracket-status');
+        if(statusEl){
+          statusEl.textContent = count>=4
+            ? '⚡ Tournament starting…'
+            : `${count}/4 players joined — waiting for ${4-count} more…`;
+        }
+        const btn=document.getElementById('tourn-play-match-btn');
+        if(btn) btn.style.display='none';
+      }
+    } else if(data.status==='bracket'||data.status==='final'||data.status==='complete'){
+      showTournView('tourn-bracket-view');
+      renderTournBracket(data);
+
+      const myMatchBtn=document.getElementById('tourn-play-match-btn');
+      let myMatch=null, myMatchIndex=null, isFinal=false;
+      const sf=data.semiFinals||[];
+      sf.forEach((m,i)=>{ if(!m.winner&&(m.p1===tournRole||m.p2===tournRole)){ myMatch=m; myMatchIndex=i; }});
+      if(!myMatch&&data.final&&!data.final.winner&&
+         (data.final.p1===tournRole||data.final.p2===tournRole)){
+        myMatch=data.final; isFinal=true;
+      }
+
+      
+      if(myMatch && myMatch.roomId && !_tournMatchJoined && myMatch.p2===tournRole){
+        const matchPath = isFinal
+          ? `tournaments/${tournCode}/final`
+          : `tournaments/${tournCode}/semiFinals/${myMatchIndex}`;
+        joinTournamentRoom(myMatch.roomId, matchPath, false);
+      }
+
+      if(myMatchBtn){
+        if(myMatch && !_tournMatchJoined){
+          myMatchBtn.style.display='block';
+          myMatchBtn.textContent = myMatch.roomId && myMatch.p1===tournRole
+            ? '⚡ Resume My Match'
+            : '⚡ Play My Match';
+        } else {
+          myMatchBtn.style.display='none';
+        }
+      }
+
+      const statusEl=document.getElementById('tourn-bracket-status');
+      if(statusEl){
+        if(data.status==='complete'&&data.final&&data.final.winner){
+          statusEl.textContent='🏆 '+(data.players[data.final.winner]?.name||'?')+' is the Champion!';
+        } else if(myMatch && !_tournMatchJoined){
+          statusEl.textContent='Your match is ready! Click below to play.';
+        } else if(_tournMatchJoined){
+          statusEl.textContent='Match in progress…';
+        } else {
+          statusEl.textContent='Waiting for your next match…';
+        }
+      }
+    }
+  });
+}
 
 document.getElementById('tourn-back-btn').addEventListener('click',()=>showScreen('home'));
 document.getElementById('tourn-host-btn').addEventListener('click',()=>{
@@ -5842,28 +5785,56 @@ document.getElementById('tourn-leave-btn').addEventListener('click',()=>{
 
 document.getElementById('tourn-join-confirm-btn').addEventListener('click',async()=>{
   const code=document.getElementById('tourn-join-input').value.trim().toUpperCase();
-  if(code.length!==4){ alert('Enter a 4-letter code'); return; }
-  const snap=await db.ref(`tournaments/${code}`).get();
-  const data=snap.val();
-  if(!data){ alert('Tournament not found'); return; }
-  if(data.status!=='lobby'){ alert('This tournament has already started'); return; }
-  const taken=Object.keys(data.players||{});
-  if(taken.length>=4){ alert('Tournament is full'); return; }
-  const slot='p'+(taken.length+1);
-  tournCode=code; tournRole=slot;
+  if(code.length!==4){ alert('Enter a 4-letter letter code'); return; }
   const d=window.DINGO||{};
-  await db.ref(`tournaments/${code}/players/${slot}`).set({
-    name:d.playerName||'Player', avatar:d.selectedAvatar||AVATAR_DEFS[0].svg
-  });
-  watchTournament(code);
-  document.getElementById('tourn-sub').textContent='Joined · '+code;
-  showTournView('tourn-bracket-view');
-  showScreen('tournament');
+
+  
+  
+  let claimedSlot = null;
+  try {
+    const result = await db.ref(`tournaments/${code}/players`).transaction(players => {
+      if (players === null) return null; 
+      const taken = Object.keys(players);
+      if (taken.length >= 4) return; 
+      
+      for (let i = 1; i <= 4; i++) {
+        if (!players['p' + i]) {
+          players['p' + i] = { name: d.playerName || 'Player', avatar: d.selectedAvatar || AVATAR_DEFS[0].svg };
+          claimedSlot = 'p' + i;
+          return players;
+        }
+      }
+      return; 
+    });
+
+    if (!result.committed || !claimedSlot) {
+      
+      const snap = await db.ref(`tournaments/${code}`).get();
+      const data = snap.val();
+      if (!data) { alert('Tournament not found'); return; }
+      if (data.status !== 'lobby') { alert('This tournament has already started'); return; }
+      alert('Tournament is full (4/4 players)'); return;
+    }
+
+    const snap = await db.ref(`tournaments/${code}`).get();
+    const data = snap.val();
+    if (!data) { alert('Tournament not found'); return; }
+    if (data.status !== 'lobby') { alert('This tournament has already started'); return; }
+
+    tournCode = code;
+    tournRole = claimedSlot;
+    watchTournament(code);
+    document.getElementById('tourn-sub').textContent = 'Joined · ' + code;
+    showTournView('tourn-bracket-view');
+    showScreen('tournament');
+  } catch(e) {
+    alert('Error joining tournament: ' + e.message);
+  }
 });
 
 document.getElementById('tourn-start-btn').addEventListener('click',async()=>{
   if(!tournCode) return;
-  // Build bracket: p1 vs p2, p3 vs p4
+  
   await db.ref(`tournaments/${tournCode}`).update({
     status:'bracket',
     semiFinals:[
@@ -5874,33 +5845,117 @@ document.getElementById('tourn-start-btn').addEventListener('click',async()=>{
   });
 });
 
-/* ─── Restart / reset ─────────────────────────── */
-async function doRestart(){
-  if(countdownInterval)clearInterval(countdownInterval);
-  winShown=false; lastLineCount=0; cleanupScheduled=false; botWinShown=false;
+let _restartPending = false;
+
+// Persistent restart-vote watcher — survives detachRoomListeners because it
+// re-registers itself after execRestart completes.
+function watchRestartVotes() {
+  if (!roomId) return;
+  onRoomValue(ref(db, `rooms/${roomId}/gameState`), snap => {
+    const state = snap.val();
+    if (!state) return;
+
+    // Both voted → execute restart
+    if (state.restartVote_p1 && state.restartVote_p2) {
+      execRestart();
+      return;
+    }
+
+    // Opponent voted, we haven't yet → prompt
+    if ((state.restartVote_p1 || state.restartVote_p2) && !_restartPending) {
+      const opRole = playerRole === 'p1' ? 'p2' : 'p1';
+      if (state[`restartVote_${opRole}`]) {
+        const subtitle = document.getElementById('win-subtitle-text');
+        const overlay  = document.getElementById('win-overlay');
+        if (subtitle && overlay && overlay.classList.contains('show')) {
+          subtitle.textContent = '⚡ Opponent wants to restart — click Restart to continue!';
+        }
+        // Re-enable buttons so this player can vote
+        document.getElementById('win-restart-btn').disabled = false;
+        document.getElementById('restart-btn').disabled = false;
+      }
+    }
+  });
+}
+
+async function doRestart() {
+  if (_restartPending) return;  
+  _restartPending = true;
   stopMoveTimer();
   stopAbandonCountdown(false);
-  document.getElementById('win-overlay').classList.remove('show');
-  document.querySelectorAll('.cell.win-line').forEach(c=>c.classList.remove('win-line'));
-  document.querySelectorAll('.cell.crossed').forEach(c=>c.classList.remove('crossed'));
 
-  // Detach ALL old room listeners — new ones will be registered fresh when ready-btn is clicked
+  
+  await update(ref(db, `rooms/${roomId}/gameState`), {
+    [`restartVote_${playerRole}`]: true
+  });
+
+  
+  const subtitle = document.getElementById('win-subtitle-text');
+  if (subtitle) subtitle.textContent = '⏳ Waiting for opponent to restart…';
+
+  
+  document.getElementById('win-restart-btn').disabled = true;
+  document.getElementById('restart-btn').disabled = true;
+}
+
+let _execRestartDone = false;
+async function execRestart() {
+  if (_execRestartDone) return;
+  _execRestartDone = true;
+  _restartPending  = false;
+
+  if (countdownInterval) clearInterval(countdownInterval);
+  winShown = false; lastLineCount = 0; cleanupScheduled = false; botWinShown = false;
+  stopMoveTimer();
+
+  // P1 resets the shared DB state so both players get a clean slate
+  if (playerRole === 'p1') {
+    await update(ref(db, `rooms/${roomId}/gameState`), {
+      status: 'waiting', currentTurn: 'p1',
+      selectedNumbers: [0], winner: '',
+      lifelines_p1: 3, lifelines_p2: 3,
+      restartVote_p1: null, restartVote_p2: null,
+      p1Exited: null, p2Exited: null
+    });
+    await set(ref(db, `rooms/${roomId}/boards`), null);
+  }
+
+  // Now detach listeners (after DB writes are done)
   detachRoomListeners();
 
-  // Reset Firebase room state for new round
-  await update(ref(db,`rooms/${roomId}/gameState`),{
-    status:'waiting', currentTurn:'p1', selectedNumbers:[0], winner:'',
-    lifelines_p1:3, lifelines_p2:3
-  });
-  await set(ref(db,`rooms/${roomId}/boards`),null);
+  // Reset local UI state
+  document.getElementById('win-overlay').classList.remove('show');
+  document.querySelectorAll('.cell.win-line').forEach(c => c.classList.remove('win-line'));
+  document.querySelectorAll('.cell.crossed').forEach(c => c.classList.remove('crossed'));
 
-  // Reset local lifeline state (without writing to Firebase since we just did above)
-  lifelineState = { p1:3, p2:3 };
+  lifelineState = { p1: 3, p2: 3 };
   renderLifelines();
 
+  document.getElementById('win-restart-btn').disabled = false;
+  document.getElementById('restart-btn').disabled = false;
+  const subtitle = document.getElementById('win-subtitle-text');
+  if (subtitle) subtitle.textContent = '';
+
+  // Reset readyListenerActive so the ready-btn listener re-registers properly
+  readyListenerActive = false;
+
+  setTimeout(() => { _execRestartDone = false; }, 500);
+
   initSetupBoard(); showScreen('setup');
-  const rb=document.getElementById('ready-btn');
-  rb.disabled=false; rb.textContent="✓ I'm Ready!";
+  const rb = document.getElementById('ready-btn');
+  rb.disabled = false; rb.textContent = "✓ I'm Ready!";
+
+  // Re-attach lobby listeners for the room
+  showChat();
+  onRoomValue(ref(db, `rooms/${roomId}/playerInfo`), snap => {
+    const info = snap.val();
+    if (info?.p1) { document.getElementById('p1-name').textContent = info.p1.name; renderAvatar(document.getElementById('p1-avatar'), info.p1.avatar); }
+    if (info?.p2) { document.getElementById('p2-name').textContent = info.p2.name; renderAvatar(document.getElementById('p2-avatar'), info.p2.avatar); }
+  });
+
+  // Re-register restart vote watcher (was detached above)
+  watchRestartVotes();
+
   sfx.click();
 }
 function doReset(){
@@ -5909,37 +5964,26 @@ function doReset(){
   lastLineCount = 0;
   cleanupScheduled = false;
   botWinShown = false;
-  // Clean up Firebase listeners, presence & room before leaving
+  
   leaveRoomCleanup();
-  // Go home — never back to the splash/welcome screen
+  
   showScreen('home');
   document.getElementById('chat-fab').style.display='none';
   document.getElementById('chat-panel').classList.remove('open');
   document.getElementById('win-overlay').classList.remove('show');
 }
 
-/* original restart/reset handled above with bot-mode awareness */
-/* ── Keeping doRestart / doReset for multiplayer mode ── */
-
-/* ═══════════════════════════════════════════════
-   CHAT SYSTEM
-   — emoji + text
-   — last message shown in BOTH players' profile boxes
-═══════════════════════════════════════════════ */
 const CHAT_EMOJIS=['👍','🔥','😂','😱','🎯','💀','🏆','😤','🤯','👏','😈','🫡'];
 
-/* Track last seen message ts to avoid re-processing */
 let lastChatTs = 0;
 
-/* Update the little status line under a player's name —
-   works on BOTH screens since both players share the same DOM structure */
 function updatePlayerStatus(senderRole, text) {
-  // Update on THIS player's screen under the correct player box
+  
   const el = document.getElementById(senderRole + '-status');
   if (!el) return;
   el.textContent = text.length > 22 ? text.slice(0,21)+'…' : text;
   el.classList.remove('visible');
-  // Force reflow so the animation re-triggers
+  
   void el.offsetWidth;
   el.classList.add('visible');
   clearTimeout(el._fadeTimer);
@@ -5980,16 +6024,16 @@ function showChat(){
     });
     container.scrollTop=container.scrollHeight;
 
-    // ── Always update BOTH players' status boxes from the latest message ──
-    // This fires on BOTH clients via Firebase realtime, so both screens update
+    
+    
     if(list.length>0){
       const last=list[list.length-1];
-      // Only process if this is a genuinely new message
+      
       if((last.ts||0) > lastChatTs){
         lastChatTs = last.ts||Date.now();
-        // Update the sender's status box on this screen (works for both players)
+        
         updatePlayerStatus(last.sender, last.text);
-        // Show badge + ping only for the receiver (not the sender)
+        
         if(last.sender !== playerRole){
           if(!chatOpen){
             document.getElementById('chat-badge').classList.add('show');
@@ -6020,7 +6064,6 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
   if(chatOpen){document.getElementById('chat-badge').classList.remove('show');document.getElementById('chat-messages').scrollTop=9999}
 });
 
-/* ── Fullscreen toggle ── */
 (function initFullscreen() {
   const btn  = document.getElementById('fullscreen-btn');
   const icon = document.getElementById('fullscreen-icon');
@@ -6047,20 +6090,16 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
 })();
 </script>
 
-<!-- ═══════════════════════════════════════════════
-     PWA — Service Worker registration + Install Prompt
-     Uses real sw.js and manifest.json files (NOT blobs)
-═══════════════════════════════════════════════ -->
 <script>
 (function initPWA() {
 
-  /* ── 1. Register the real Service Worker ── */
+  
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { scope: './' })
         .then(reg => {
           console.log('[DiNGo SW] Registered, scope:', reg.scope);
-          /* If a new SW is waiting, prompt user to refresh */
+          
           reg.addEventListener('updatefound', () => {
             const newSW = reg.installing;
             newSW.addEventListener('statechange', () => {
@@ -6074,16 +6113,16 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
     });
   }
 
-  /* ── 2. Install prompt banner logic ── */
+  
   const banner     = document.getElementById('pwa-install-banner');
   const installBtn = document.getElementById('pwa-install-btn');
   const dismissBtn = document.getElementById('pwa-dismiss-btn');
   let deferredPrompt = null;
 
-  /* Don't show if dismissed within last 7 days */
+  
   const lastDismiss    = parseInt(localStorage.getItem('pwa_dismiss') || '0', 10);
   const wasDismissed   = (Date.now() - lastDismiss) < 7 * 24 * 3600 * 1000;
-  /* Don't show if already running as installed PWA */
+  
   const alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches
                         || window.navigator.standalone === true;
 
@@ -6091,7 +6130,7 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
     window.addEventListener('beforeinstallprompt', e => {
       e.preventDefault();
       deferredPrompt = e;
-      /* Delay banner slightly so it doesn't clash with the splash */
+      
       setTimeout(() => banner && banner.classList.add('show'), 3500);
     });
   }
@@ -6104,7 +6143,7 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
       deferredPrompt = null;
       console.log('[DiNGo PWA] Install outcome:', outcome);
     } else {
-      /* iOS Safari fallback */
+      
       alert('📲 To install on iPhone/iPad:\nTap the Share button → "Add to Home Screen"');
     }
   });
@@ -6114,7 +6153,7 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
     localStorage.setItem('pwa_dismiss', String(Date.now()));
   });
 
-  /* Hide banner once gameplay starts */
+  
   const origShowForPWA = window.showScreen;
   window.showScreen = function(name) {
     if (origShowForPWA) origShowForPWA.call(this, name);
@@ -6123,14 +6162,14 @@ document.getElementById('chat-fab').addEventListener('click',()=>{
     }
   };
 
-  /* ── 3. Show "installed" toast when launched as PWA ── */
+  
   if (alreadyInstalled) {
     console.log('[DiNGo] Running as installed PWA ✅');
   }
 
 })();
 </script>
-<!-- ── FOOTER ── -->
+
 <div id="game-footer">
   <div class="footer-left">
     <span class="footer-brand">DiNGo</span> &nbsp;·&nbsp; Live Multiplayer Bingo

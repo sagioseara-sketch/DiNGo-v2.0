@@ -17,7 +17,7 @@ jobs:
           node-version: 18
 
       - run: npm install
-      - run: mkdir www && cp -r index.html Manifest.json icons sw.js www/
+      - run: mkdir www && cp -r index.html Manifest.json icon sw.js www/
 
       - run: npx cap add android
 
